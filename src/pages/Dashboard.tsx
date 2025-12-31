@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase, signOut } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import {
     LogOut,
     FileText,
-    Clock,
-    CheckCircle2,
     AlertCircle,
-    ChevronRight,
+    User,
     Sparkles,
-    User
+    LayoutGrid,
+    List,
+    RefreshCw
 } from 'lucide-react'
+import WelcomeHero from '@/components/WelcomeHero'
+import ApplicationStatusChart from '@/components/ApplicationStatusChart'
+import ApplicationCard from '@/components/ApplicationCard'
+import RecentActivity from '@/components/RecentActivity'
 
 interface CaseData {
     id: string
@@ -27,6 +30,7 @@ interface CaseData {
     current_stage: {
         name: string
         slug: string
+        id: string
     }
     metadata: Record<string, any>
 }
@@ -38,11 +42,22 @@ interface PersonData {
     email: string
 }
 
+interface PipelineStage {
+    id: string
+    name: string
+    slug: string
+    order_index: number
+    pipeline_id: string
+}
+
 export default function Dashboard() {
     const [person, setPerson] = useState<PersonData | null>(null)
     const [cases, setCases] = useState<CaseData[]>([])
+    const [pipelineStages, setPipelineStages] = useState<Record<string, PipelineStage[]>>({})
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+    const [refreshing, setRefreshing] = useState(false)
 
     useEffect(() => {
         loadClientData()
@@ -70,21 +85,45 @@ export default function Dashboard() {
             const { data: casesData, error: casesError } = await supabase
                 .from('cases')
                 .select(`
-          id,
-          case_reference,
-          status,
-          priority,
-          created_at,
-          updated_at,
-          metadata,
-          pipeline:pipelines(name, slug),
-          current_stage:pipeline_stages!cases_current_stage_id_fkey(name, slug)
-        `)
+                    id,
+                    case_reference,
+                    status,
+                    priority,
+                    created_at,
+                    updated_at,
+                    metadata,
+                    pipeline:pipelines(id, name, slug),
+                    current_stage:pipeline_stages!cases_current_stage_id_fkey(id, name, slug)
+                `)
                 .eq('person_id', personData.id)
                 .order('created_at', { ascending: false })
 
             if (casesError) throw casesError
-            setCases((casesData || []) as unknown as CaseData[])
+
+            const typedCases = (casesData || []) as unknown as CaseData[]
+            setCases(typedCases)
+
+            // Load pipeline stages for each unique pipeline
+            const pipelineIds = [...new Set(typedCases.map(c => (c.pipeline as any)?.id).filter(Boolean))]
+
+            if (pipelineIds.length > 0) {
+                const { data: stagesData } = await supabase
+                    .from('pipeline_stages')
+                    .select('id, name, slug, order_index, pipeline_id')
+                    .in('pipeline_id', pipelineIds)
+                    .order('order_index', { ascending: true })
+
+                if (stagesData) {
+                    const stagesByPipeline: Record<string, PipelineStage[]> = {}
+                    stagesData.forEach(stage => {
+                        if (!stagesByPipeline[stage.pipeline_id]) {
+                            stagesByPipeline[stage.pipeline_id] = []
+                        }
+                        stagesByPipeline[stage.pipeline_id].push(stage)
+                    })
+                    setPipelineStages(stagesByPipeline)
+                }
+            }
 
         } catch (err: any) {
             setError(err.message)
@@ -93,40 +132,38 @@ export default function Dashboard() {
         }
     }
 
+    const handleRefresh = async () => {
+        setRefreshing(true)
+        await loadClientData()
+        setRefreshing(false)
+    }
+
     const handleSignOut = async () => {
         await signOut()
         window.location.href = '/login'
     }
 
-    const getStatusIcon = (status: string) => {
-        switch (status) {
-            case 'completed':
-                return <CheckCircle2 className="w-5 h-5 text-success-500" />
-            case 'active':
-                return <Clock className="w-5 h-5 text-primary-500" />
-            case 'on_hold':
-                return <AlertCircle className="w-5 h-5 text-warning-500" />
-            default:
-                return <FileText className="w-5 h-5 text-slate-400" />
-        }
-    }
-
-    const getStatusBadge = (status: string) => {
-        const styles: Record<string, string> = {
-            active: 'bg-primary-100 text-primary-700',
-            completed: 'bg-success-100 text-success-700',
-            on_hold: 'bg-warning-100 text-warning-700',
-            cancelled: 'bg-red-100 text-red-700',
-        }
-        return styles[status] || 'bg-slate-100 text-slate-700'
-    }
+    const activeCases = cases.filter(c => c.status === 'active').length
+    const completedCases = cases.filter(c => c.status === 'completed').length
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-                    <p className="text-slate-600">Loading your dashboard...</p>
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    >
+                        <div className="w-16 h-16 rounded-full border-4 border-primary-200 border-t-primary-600" />
+                    </motion.div>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                    >
+                        <p className="text-slate-600 font-medium">Loading your dashboard...</p>
+                        <p className="text-slate-400 text-sm text-center">Preparing your personalized view</p>
+                    </motion.div>
                 </div>
             </div>
         )
@@ -135,7 +172,11 @@ export default function Dashboard() {
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center p-6">
-                <div className="glass-card rounded-2xl p-8 max-w-md text-center">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="glass-card rounded-2xl p-8 max-w-md text-center"
+                >
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
                         <AlertCircle className="w-8 h-8 text-red-600" />
                     </div>
@@ -147,30 +188,42 @@ export default function Dashboard() {
                     >
                         Sign out and try again
                     </button>
-                </div>
+                </motion.div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen pb-12">
             {/* Header */}
-            <header className="bg-white/80 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-10">
-                <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+            <header className="bg-white/80 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-20">
+                <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
+                        <motion.div
+                            whileHover={{ rotate: 180 }}
+                            transition={{ duration: 0.3 }}
+                            className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center"
+                        >
                             <Sparkles className="w-5 h-5 text-white" />
-                        </div>
+                        </motion.div>
                         <span className="font-semibold text-slate-800">ELAB Portal</span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-slate-600">
+                        <button
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors disabled:opacity-50"
+                            title="Refresh data"
+                        >
+                            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                        </button>
+                        <div className="flex items-center gap-2 text-slate-600 bg-slate-100 px-3 py-2 rounded-lg">
                             <User className="w-4 h-4" />
-                            <span className="text-sm">{person?.first_name}</span>
+                            <span className="text-sm font-medium">{person?.first_name} {person?.last_name}</span>
                         </div>
                         <button
                             onClick={handleSignOut}
-                            className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors"
+                            className="p-2 rounded-lg hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors"
                             title="Sign out"
                         >
                             <LogOut className="w-5 h-5" />
@@ -180,112 +233,109 @@ export default function Dashboard() {
             </header>
 
             {/* Main Content */}
-            <main className="max-w-5xl mx-auto px-6 py-8">
-                {/* Welcome Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-8"
-                >
-                    <h1 className="text-3xl font-bold text-slate-800 mb-2">
-                        Welcome back, {person?.first_name}! 👋
-                    </h1>
-                    <p className="text-slate-600">
-                        Here's an overview of your applications.
-                    </p>
-                </motion.div>
+            <main className="max-w-6xl mx-auto px-6 py-8">
+                {/* Welcome Hero */}
+                <WelcomeHero
+                    firstName={person?.first_name || 'there'}
+                    totalApplications={cases.length}
+                    activeApplications={activeCases}
+                    completedApplications={completedCases}
+                />
 
-                {/* Stats Cards */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
-                >
-                    <div className="glass-card rounded-xl p-5">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center">
-                                <FileText className="w-5 h-5 text-primary-600" />
-                            </div>
-                            <span className="text-2xl font-bold text-slate-800">{cases.length}</span>
-                        </div>
-                        <p className="text-slate-600 text-sm">Total Applications</p>
-                    </div>
-                    <div className="glass-card rounded-xl p-5">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-lg bg-success-100 flex items-center justify-center">
-                                <CheckCircle2 className="w-5 h-5 text-success-600" />
-                            </div>
-                            <span className="text-2xl font-bold text-slate-800">
-                                {cases.filter(c => c.status === 'completed').length}
-                            </span>
-                        </div>
-                        <p className="text-slate-600 text-sm">Completed</p>
-                    </div>
-                    <div className="glass-card rounded-xl p-5">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-lg bg-warning-100 flex items-center justify-center">
-                                <Clock className="w-5 h-5 text-warning-600" />
-                            </div>
-                            <span className="text-2xl font-bold text-slate-800">
-                                {cases.filter(c => c.status === 'active').length}
-                            </span>
-                        </div>
-                        <p className="text-slate-600 text-sm">In Progress</p>
-                    </div>
-                </motion.div>
+                {/* Charts and Activity Row */}
+                {cases.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
+                    >
+                        <ApplicationStatusChart cases={cases} />
+                        <RecentActivity cases={cases} />
+                    </motion.div>
+                )}
 
-                {/* Cases List */}
+                {/* Applications Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
+                    transition={{ delay: 0.3 }}
                 >
-                    <h2 className="text-xl font-semibold text-slate-800 mb-4">Your Applications</h2>
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-800">Your Applications</h2>
+                            <p className="text-slate-500 text-sm mt-1">
+                                Track the progress of all your applications
+                            </p>
+                        </div>
+
+                        {/* View Toggle */}
+                        <div className="flex items-center gap-2 bg-slate-100 rounded-lg p-1">
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`p-2 rounded-md transition-colors ${viewMode === 'list'
+                                    ? 'bg-white shadow text-primary-600'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                                title="List view"
+                            >
+                                <List className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`p-2 rounded-md transition-colors ${viewMode === 'grid'
+                                    ? 'bg-white shadow text-primary-600'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                                title="Grid view"
+                            >
+                                <LayoutGrid className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
 
                     {cases.length === 0 ? (
-                        <div className="glass-card rounded-xl p-8 text-center">
-                            <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                            <p className="text-slate-600">No applications found.</p>
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="glass-card rounded-2xl p-12 text-center"
+                        >
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mx-auto mb-6">
+                                <FileText className="w-10 h-10 text-slate-400" />
+                            </div>
+                            <h3 className="text-xl font-semibold text-slate-700 mb-2">No Applications Yet</h3>
+                            <p className="text-slate-500 max-w-md mx-auto">
+                                Your applications will appear here once they're created. Contact our team if you need assistance getting started.
+                            </p>
+                        </motion.div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className={viewMode === 'grid'
+                            ? 'grid grid-cols-1 md:grid-cols-2 gap-6'
+                            : 'space-y-4'
+                        }>
                             {cases.map((caseItem, index) => (
-                                <motion.div
+                                <ApplicationCard
                                     key={caseItem.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 * index }}
-                                >
-                                    <Link
-                                        to={`/case/${caseItem.id}`}
-                                        className="glass-card rounded-xl p-5 block hover:shadow-lg transition-all group"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                {getStatusIcon(caseItem.status)}
-                                                <div>
-                                                    <h3 className="font-semibold text-slate-800 group-hover:text-primary-600 transition-colors">
-                                                        {caseItem.pipeline?.name || 'Application'}
-                                                    </h3>
-                                                    <p className="text-slate-500 text-sm">
-                                                        {caseItem.current_stage?.name || 'Processing'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(caseItem.status)}`}>
-                                                    {caseItem.status.replace('_', ' ')}
-                                                </span>
-                                                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-primary-500 transition-colors" />
-                                            </div>
-                                        </div>
-                                    </Link>
-                                </motion.div>
+                                    caseItem={caseItem}
+                                    index={index}
+                                    stages={pipelineStages[(caseItem.pipeline as any)?.id]}
+                                />
                             ))}
                         </div>
                     )}
                 </motion.div>
+
+                {/* Footer */}
+                <motion.footer
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-center mt-12 pt-8 border-t border-slate-100"
+                >
+                    <p className="text-slate-400 text-sm">
+                        Need help? Contact our support team for assistance.
+                    </p>
+                </motion.footer>
             </main>
         </div>
     )
