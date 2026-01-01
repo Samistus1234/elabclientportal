@@ -5,16 +5,24 @@ import {
     LogOut,
     FileText,
     AlertCircle,
-    User,
     Sparkles,
     LayoutGrid,
     List,
-    RefreshCw
+    RefreshCw,
+    Bell
 } from 'lucide-react'
 import WelcomeHero from '@/components/WelcomeHero'
 import ApplicationStatusChart from '@/components/ApplicationStatusChart'
 import ApplicationCard from '@/components/ApplicationCard'
 import RecentActivity from '@/components/RecentActivity'
+import ServicesShowcase from '@/components/ServicesShowcase'
+import QuickActions from '@/components/QuickActions'
+import TestimonialsCarousel from '@/components/TestimonialsCarousel'
+import MilestoneAchievements from '@/components/MilestoneAchievements'
+import UpcomingDeadlines from '@/components/UpcomingDeadlines'
+import DocumentChecklist from '@/components/DocumentChecklist'
+import SupportHelpSection from '@/components/SupportHelpSection'
+import AnimatedBackground from '@/components/AnimatedBackground'
 
 interface CaseData {
     id: string
@@ -148,7 +156,7 @@ export default function Dashboard() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
                 <div className="flex flex-col items-center gap-4">
                     <motion.div
                         animate={{ rotate: 360 }}
@@ -160,9 +168,10 @@ export default function Dashboard() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.5 }}
+                        className="text-center"
                     >
                         <p className="text-slate-600 font-medium">Loading your dashboard...</p>
-                        <p className="text-slate-400 text-sm text-center">Preparing your personalized view</p>
+                        <p className="text-slate-400 text-sm">Preparing your personalized view</p>
                     </motion.div>
                 </div>
             </div>
@@ -171,7 +180,7 @@ export default function Dashboard() {
 
     if (error) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-6">
+            <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -194,46 +203,68 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="min-h-screen pb-12">
+        <div className="min-h-screen pb-12 relative">
+            {/* Animated Background */}
+            <AnimatedBackground />
+
             {/* Header */}
-            <header className="bg-white/80 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-20">
-                <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <motion.div
-                            whileHover={{ rotate: 180 }}
-                            transition={{ duration: 0.3 }}
-                            className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center"
-                        >
-                            <Sparkles className="w-5 h-5 text-white" />
-                        </motion.div>
-                        <span className="font-semibold text-slate-800">ELAB Portal</span>
-                    </div>
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={handleRefresh}
-                            disabled={refreshing}
-                            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors disabled:opacity-50"
-                            title="Refresh data"
-                        >
-                            <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                        </button>
-                        <div className="flex items-center gap-2 text-slate-600 bg-slate-100 px-3 py-2 rounded-lg">
-                            <User className="w-4 h-4" />
-                            <span className="text-sm font-medium">{person?.first_name} {person?.last_name}</span>
+            <header className="bg-white/80 backdrop-blur-md border-b border-slate-100/50 sticky top-0 z-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <motion.div
+                                whileHover={{ rotate: 180 }}
+                                transition={{ duration: 0.3 }}
+                                className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-200"
+                            >
+                                <Sparkles className="w-5 h-5 text-white" />
+                            </motion.div>
+                            <div>
+                                <span className="font-bold text-slate-800">ELAB Portal</span>
+                                <p className="text-xs text-slate-400 hidden sm:block">Healthcare Professional Services</p>
+                            </div>
                         </div>
-                        <button
-                            onClick={handleSignOut}
-                            className="p-2 rounded-lg hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors"
-                            title="Sign out"
-                        >
-                            <LogOut className="w-5 h-5" />
-                        </button>
+                        <div className="flex items-center gap-2 sm:gap-4">
+                            {/* Notification Bell */}
+                            <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+                            >
+                                <Bell className="w-5 h-5" />
+                                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                            </motion.button>
+
+                            <button
+                                onClick={handleRefresh}
+                                disabled={refreshing}
+                                className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors disabled:opacity-50"
+                                title="Refresh data"
+                            >
+                                <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                            </button>
+
+                            <div className="hidden sm:flex items-center gap-2 text-slate-600 bg-slate-100 px-3 py-2 rounded-xl">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-accent-400 flex items-center justify-center text-white font-bold text-sm">
+                                    {person?.first_name?.charAt(0)}{person?.last_name?.charAt(0)}
+                                </div>
+                                <span className="text-sm font-medium">{person?.first_name}</span>
+                            </div>
+
+                            <button
+                                onClick={handleSignOut}
+                                className="p-2 rounded-lg hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors"
+                                title="Sign out"
+                            >
+                                <LogOut className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
 
             {/* Main Content */}
-            <main className="max-w-6xl mx-auto px-6 py-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
                 {/* Welcome Hero */}
                 <WelcomeHero
                     firstName={person?.first_name || 'there'}
@@ -242,24 +273,42 @@ export default function Dashboard() {
                     completedApplications={completedCases}
                 />
 
-                {/* Charts and Activity Row */}
-                {cases.length > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"
-                    >
-                        <ApplicationStatusChart cases={cases} />
+                {/* Quick Actions */}
+                <QuickActions />
+
+                {/* Services Cross-sell */}
+                <ServicesShowcase />
+
+                {/* Main Grid - Charts and Stats */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    {/* Left Column - 2/3 width */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {cases.length > 0 && (
+                            <ApplicationStatusChart cases={cases} />
+                        )}
                         <RecentActivity cases={cases} />
-                    </motion.div>
-                )}
+                        <TestimonialsCarousel />
+                    </div>
+
+                    {/* Right Column - 1/3 width */}
+                    <div className="space-y-6">
+                        <MilestoneAchievements
+                            completedStages={completedCases}
+                            totalStages={cases.length || 5}
+                            daysActive={14}
+                            documentsUploaded={3}
+                        />
+                        <UpcomingDeadlines />
+                        <DocumentChecklist />
+                    </div>
+                </div>
 
                 {/* Applications Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
+                    className="mb-8"
                 >
                     <div className="flex items-center justify-between mb-6">
                         <div>
@@ -270,11 +319,11 @@ export default function Dashboard() {
                         </div>
 
                         {/* View Toggle */}
-                        <div className="flex items-center gap-2 bg-slate-100 rounded-lg p-1">
+                        <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-lg p-1 shadow-sm">
                             <button
                                 onClick={() => setViewMode('list')}
                                 className={`p-2 rounded-md transition-colors ${viewMode === 'list'
-                                    ? 'bg-white shadow text-primary-600'
+                                    ? 'bg-primary-500 text-white shadow'
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                                 title="List view"
@@ -284,7 +333,7 @@ export default function Dashboard() {
                             <button
                                 onClick={() => setViewMode('grid')}
                                 className={`p-2 rounded-md transition-colors ${viewMode === 'grid'
-                                    ? 'bg-white shadow text-primary-600'
+                                    ? 'bg-primary-500 text-white shadow'
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                                 title="Grid view"
@@ -325,6 +374,31 @@ export default function Dashboard() {
                     )}
                 </motion.div>
 
+                {/* Support Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <SupportHelpSection />
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="glass-card rounded-2xl p-6 flex flex-col justify-center items-center text-center"
+                    >
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mb-4 shadow-lg">
+                            <Sparkles className="w-8 h-8 text-white" />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">Ready to Excel?</h3>
+                        <p className="text-slate-500 text-sm mb-4 max-w-sm">
+                            Join thousands of healthcare professionals who have achieved their career goals with ELAB.
+                        </p>
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="px-6 py-3 bg-gradient-to-r from-primary-500 to-accent-500 text-white rounded-xl font-semibold shadow-lg shadow-primary-200 hover:shadow-xl transition-shadow"
+                        >
+                            Explore Our Services
+                        </motion.button>
+                    </motion.div>
+                </div>
+
                 {/* Footer */}
                 <motion.footer
                     initial={{ opacity: 0 }}
@@ -333,8 +407,15 @@ export default function Dashboard() {
                     className="text-center mt-12 pt-8 border-t border-slate-100"
                 >
                     <p className="text-slate-400 text-sm">
-                        Need help? Contact our support team for assistance.
+                        © 2025 ELAB Services. Empowering Healthcare Professionals Worldwide.
                     </p>
+                    <div className="flex items-center justify-center gap-4 mt-3 text-xs text-slate-400">
+                        <a href="#" className="hover:text-primary-500 transition-colors">Privacy Policy</a>
+                        <span>•</span>
+                        <a href="#" className="hover:text-primary-500 transition-colors">Terms of Service</a>
+                        <span>•</span>
+                        <a href="#" className="hover:text-primary-500 transition-colors">Contact Us</a>
+                    </div>
                 </motion.footer>
             </main>
         </div>
