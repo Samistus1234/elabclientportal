@@ -49,25 +49,30 @@ interface CaseDetails {
 // Normalize the flat RPC response to match the expected interface
 const normalizeCase = (c: any): CaseDetails | null => {
     // Handle null, undefined, or error responses from RPC
-    if (!c || c.error || !c.id) return null
+    if (!c || c.error) return null
+
+    // Handle both prefixed (out_) and non-prefixed column names
+    const id = c.out_id || c.id
+    if (!id) return null
+
     return {
-        id: c.id,
-        case_reference: c.case_reference || '',
-        status: c.status || 'active',
-        priority: c.priority || 'normal',
-        created_at: c.created_at || new Date().toISOString(),
-        updated_at: c.updated_at || new Date().toISOString(),
-        start_date: c.start_date || null,
-        metadata: c.metadata || {},
-        pipeline: c.pipeline_name ? {
-            id: c.pipeline_id,
-            name: c.pipeline_name,
-            slug: c.pipeline_slug || ''
+        id: id,
+        case_reference: c.out_case_reference || c.case_reference || '',
+        status: c.out_status || c.status || 'active',
+        priority: c.out_priority || c.priority || 'normal',
+        created_at: c.out_created_at || c.created_at || new Date().toISOString(),
+        updated_at: c.out_updated_at || c.updated_at || new Date().toISOString(),
+        start_date: c.out_start_date || c.start_date || null,
+        metadata: c.out_metadata || c.metadata || {},
+        pipeline: (c.out_pipeline_name || c.pipeline_name) ? {
+            id: c.out_pipeline_id || c.pipeline_id,
+            name: c.out_pipeline_name || c.pipeline_name,
+            slug: c.out_pipeline_slug || c.pipeline_slug || ''
         } : null,
-        current_stage: c.current_stage_name ? {
-            id: c.current_stage_id,
-            name: c.current_stage_name,
-            slug: c.current_stage_slug || ''
+        current_stage: (c.out_current_stage_name || c.current_stage_name) ? {
+            id: c.out_current_stage_id || c.current_stage_id,
+            name: c.out_current_stage_name || c.current_stage_name,
+            slug: c.out_current_stage_slug || c.current_stage_slug || ''
         } : null,
     }
 }

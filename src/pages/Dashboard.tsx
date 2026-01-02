@@ -53,24 +53,25 @@ interface CaseData {
 
 // Helper to normalize case data from RPC
 const normalizeCase = (c: any): CaseData => {
+    // Handle both prefixed (out_) and non-prefixed column names
     return {
-        id: c.id,
-        case_reference: c.case_reference || c.caseReference || '',
-        status: c.status || 'active',
-        priority: c.priority || 'normal',
-        created_at: c.created_at || c.createdAt || new Date().toISOString(),
-        updated_at: c.updated_at || c.updatedAt || new Date().toISOString(),
-        metadata: c.metadata || {},
-        pipeline: c.pipeline || (c.pipeline_name ? {
-            id: c.pipeline_id,
-            name: c.pipeline_name,
-            slug: c.pipeline_slug || ''
-        } : null),
-        current_stage: c.current_stage || (c.current_stage_name ? {
-            id: c.current_stage_id,
-            name: c.current_stage_name,
-            slug: c.current_stage_slug || ''
-        } : null),
+        id: c.out_id || c.id,
+        case_reference: c.out_case_reference || c.case_reference || c.caseReference || '',
+        status: c.out_status || c.status || 'active',
+        priority: c.out_priority || c.priority || 'normal',
+        created_at: c.out_created_at || c.created_at || c.createdAt || new Date().toISOString(),
+        updated_at: c.out_updated_at || c.updated_at || c.updatedAt || new Date().toISOString(),
+        metadata: c.out_metadata || c.metadata || {},
+        pipeline: c.pipeline || (c.out_pipeline_name || c.pipeline_name) ? {
+            id: c.out_pipeline_id || c.pipeline_id,
+            name: c.out_pipeline_name || c.pipeline_name,
+            slug: c.out_pipeline_slug || c.pipeline_slug || ''
+        } : null,
+        current_stage: c.current_stage || (c.out_current_stage_name || c.current_stage_name) ? {
+            id: c.out_current_stage_id || c.current_stage_id,
+            name: c.out_current_stage_name || c.current_stage_name,
+            slug: c.out_current_stage_slug || c.current_stage_slug || ''
+        } : null,
     }
 }
 
