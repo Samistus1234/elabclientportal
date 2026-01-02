@@ -37,6 +37,7 @@ interface CaseData {
   priority: string
   pipeline_id: string
   current_stage_id: string
+  org_id?: string
   start_date?: string
   metadata?: Record<string, any>
 }
@@ -177,13 +178,40 @@ serve(async (req) => {
         .eq('id', personId)
     }
 
-    // Step 5: Upsert case
+    // Step 5: Get or create default org
+    let orgId = case_data.org_id
+    if (!orgId) {
+      // Try to get an existing org or create a default one
+      const { data: existingOrg } = await supabase
+        .from('organizations')
+        .select('id')
+        .limit(1)
+        .single()
+
+      if (existingOrg) {
+        orgId = existingOrg.id
+      } else {
+        // Create a default organization
+        const { data: newOrg, error: orgError } = await supabase
+          .from('organizations')
+          .insert({ name: 'Default Organization', slug: 'default' })
+          .select('id')
+          .single()
+
+        if (newOrg) {
+          orgId = newOrg.id
+        }
+      }
+    }
+
+    // Step 6: Upsert case
     const { error: caseError } = await supabase
       .from('cases')
       .upsert({
         id: case_data.id,
         case_reference: case_data.case_reference,
         person_id: personId,
+        org_id: orgId,
         pipeline_id: case_data.pipeline_id,
         current_stage_id: case_data.current_stage_id,
         status: case_data.status,
