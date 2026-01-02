@@ -112,6 +112,11 @@ serve(async (req) => {
     let syncedPipeline = null
     const targetPipelineId = pipeline?.id || case_data.pipeline_id
 
+    console.log('=== PIPELINE SYNC DEBUG ===')
+    console.log('pipeline object:', JSON.stringify(pipeline))
+    console.log('case_data.pipeline_id:', case_data.pipeline_id)
+    console.log('targetPipelineId:', targetPipelineId)
+
     if (targetPipelineId) {
       // Check if pipeline already exists
       const { data: existingPipeline } = await supabase
@@ -162,8 +167,17 @@ serve(async (req) => {
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           )
         }
+
+        if (!newPipeline) {
+          console.error('Pipeline insert returned no data!')
+          return new Response(
+            JSON.stringify({ error: 'Failed to create pipeline', details: 'Insert returned no data' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+
         syncedPipeline = newPipeline
-        console.log('Pipeline created:', syncedPipeline)
+        console.log('Pipeline created successfully:', JSON.stringify(syncedPipeline))
       } else {
         // No pipeline data provided and pipeline doesn't exist
         return new Response(
@@ -176,19 +190,22 @@ serve(async (req) => {
       }
 
       // Verify pipeline exists before proceeding
-      const { data: verifyPipeline } = await supabase
+      console.log('Verifying pipeline exists with ID:', targetPipelineId)
+      const { data: verifyPipeline, error: verifyError } = await supabase
         .from('pipelines')
-        .select('id')
+        .select('id, name')
         .eq('id', targetPipelineId)
         .single()
 
+      console.log('Verification result:', JSON.stringify(verifyPipeline), 'error:', JSON.stringify(verifyError))
+
       if (!verifyPipeline) {
         return new Response(
-          JSON.stringify({ error: 'Pipeline verification failed', details: `Pipeline ${targetPipelineId} still does not exist after sync attempt` }),
+          JSON.stringify({ error: 'Pipeline verification failed', details: `Pipeline ${targetPipelineId} still does not exist after sync attempt`, verifyError }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
-      console.log('Pipeline verified:', verifyPipeline.id)
+      console.log('Pipeline VERIFIED:', verifyPipeline.id, verifyPipeline.name)
     }
 
     // Step 2: Upsert stages if provided
