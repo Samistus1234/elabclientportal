@@ -135,15 +135,14 @@ export default function CaseView() {
     const loadCaseDetails = async () => {
         try {
             // Load case details using RPC function (bypasses RLS)
-            const { data: caseInfo, error: caseError } = await supabase
+            // Returns array, so we take first result
+            const { data: caseResults, error: caseError } = await supabase
                 .rpc('get_my_synced_case', { p_case_id: caseId })
 
             if (caseError) throw caseError
 
-            // Check for error response from RPC function
-            if (caseInfo?.error) {
-                throw new Error(caseInfo.error)
-            }
+            // RPC returns array - get first result
+            const caseInfo = Array.isArray(caseResults) ? caseResults[0] : caseResults
 
             const typedCaseData = normalizeCase(caseInfo)
             if (!typedCaseData) {
