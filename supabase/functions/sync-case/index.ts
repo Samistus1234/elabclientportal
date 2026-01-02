@@ -7,6 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+// Version 2 - Force redeploy
+
 interface PersonData {
   id?: string
   email: string
