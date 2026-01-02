@@ -9,7 +9,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Auth helper functions for magic link
+// Auth helper functions for password-based login
+export async function signInWithPassword(email: string, password: string) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+    })
+    return { session: data.session, user: data.user, error }
+}
+
+// Legacy magic link function (kept for backwards compatibility)
 export async function sendMagicLink(email: string) {
     const { error } = await supabase.auth.signInWithOtp({
         email,
