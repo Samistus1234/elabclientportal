@@ -127,7 +127,7 @@ serve(async (req) => {
           const { data: updated, error: updateError } = await supabase
             .from('pipelines')
             .update({ name: pipeline.name, slug: pipeline.slug })
-            .eq('id', pipeline.id)
+            .eq('id', targetPipelineId)
             .select()
             .single()
 
@@ -142,11 +142,12 @@ serve(async (req) => {
         }
       } else if (pipeline) {
         // Pipeline doesn't exist, insert it
-        console.log('Creating new pipeline:', pipeline.id, pipeline.name)
+        // IMPORTANT: Use targetPipelineId (not pipeline.id) to ensure consistency
+        console.log('Creating new pipeline with ID:', targetPipelineId, 'name:', pipeline.name)
         const { data: newPipeline, error: insertError } = await supabase
           .from('pipelines')
           .insert({
-            id: pipeline.id,
+            id: targetPipelineId,
             name: pipeline.name,
             slug: pipeline.slug,
             org_id: orgId,
