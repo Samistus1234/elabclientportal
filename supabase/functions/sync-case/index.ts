@@ -83,13 +83,38 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Step 1: Upsert pipeline if provided
+    // Step 0: Get or create default org FIRST (needed for pipeline)
+    let orgId = case_data.org_id
+    if (!orgId) {
+      const { data: existingOrg } = await supabase
+        .from('organizations')
+        .select('id')
+        .limit(1)
+        .single()
+
+      if (existingOrg) {
+        orgId = existingOrg.id
+      } else {
+        const { data: newOrg } = await supabase
+          .from('organizations')
+          .insert({ name: 'Default Organization', slug: 'default' })
+          .select('id')
+          .single()
+
+        if (newOrg) {
+          orgId = newOrg.id
+        }
+      }
+    }
+    console.log('Using org_id:', orgId)
+
+    // Step 1: Upsert pipeline if provided (with org_id)
     let syncedPipeline = null
     if (pipeline) {
       // First check if pipeline exists
       const { data: existingPipeline } = await supabase
         .from('pipelines')
-        .select('id, name, slug')
+        .select('id, name, slug, org_id')
         .eq('id', pipeline.id)
         .single()
 
@@ -104,6 +129,7 @@ serve(async (req) => {
           id: pipeline.id,
           name: pipeline.name,
           slug: pipeline.slug,
+          org_id: orgId, // Include org_id for new pipelines
         }, { onConflict: 'id' })
         .select()
         .single()
@@ -201,33 +227,7 @@ serve(async (req) => {
         .eq('id', personId)
     }
 
-    // Step 5: Get or create default org
-    let orgId = case_data.org_id
-    if (!orgId) {
-      // Try to get an existing org or create a default one
-      const { data: existingOrg } = await supabase
-        .from('organizations')
-        .select('id')
-        .limit(1)
-        .single()
-
-      if (existingOrg) {
-        orgId = existingOrg.id
-      } else {
-        // Create a default organization
-        const { data: newOrg, error: orgError } = await supabase
-          .from('organizations')
-          .insert({ name: 'Default Organization', slug: 'default' })
-          .select('id')
-          .single()
-
-        if (newOrg) {
-          orgId = newOrg.id
-        }
-      }
-    }
-
-    // Step 6: Upsert case
+    // Step 5: Upsert case (org_id already obtained in Step 0)
     const { error: caseError } = await supabase
       .from('cases')
       .upsert({
