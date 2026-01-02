@@ -55,9 +55,9 @@ serve(async (req) => {
   }
 
   try {
-    // Verify API key from Command Center
+    // Verify API key from Command Center (check both possible secret names)
     const apiKey = req.headers.get('x-api-key')
-    const expectedApiKey = Deno.env.get('SYNC_API_KEY')
+    const expectedApiKey = Deno.env.get('SYNC_API_KEY') || Deno.env.get('SYNC_SECRET_KEY')
 
     if (!expectedApiKey || apiKey !== expectedApiKey) {
       return new Response(

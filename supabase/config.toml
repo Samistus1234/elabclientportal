@@ -1,0 +1,7 @@
+# Supabase Configuration
+
+[project]
+id = "pvhwofaduoxirkroiblk"
+
+[functions.sync-case]
+verify_jwt = false
