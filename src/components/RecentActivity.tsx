@@ -10,6 +10,17 @@ import {
     TrendingUp
 } from 'lucide-react'
 
+// Safe date parsing helper
+const safeParseDate = (dateString: string | null | undefined): Date | null => {
+    if (!dateString) return null
+    try {
+        const date = new Date(dateString)
+        return isNaN(date.getTime()) ? null : date
+    } catch {
+        return null
+    }
+}
+
 interface CaseData {
     id: string
     case_reference: string
@@ -30,9 +41,13 @@ interface RecentActivityProps {
 }
 
 export default function RecentActivity({ cases }: RecentActivityProps) {
-    // Sort by most recently updated
+    // Sort by most recently updated (with safe date parsing)
     const recentCases = [...cases]
-        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+        .sort((a, b) => {
+            const dateA = safeParseDate(a.updated_at)
+            const dateB = safeParseDate(b.updated_at)
+            return (dateB?.getTime() || 0) - (dateA?.getTime() || 0)
+        })
         .slice(0, 5)
 
     const getActivityIcon = (status: string) => {
@@ -134,7 +149,9 @@ export default function RecentActivity({ cases }: RecentActivityProps) {
                                             {caseItem.pipeline?.name}
                                         </h4>
                                         <span className="text-xs text-slate-400">
-                                            {formatDistanceToNow(new Date(caseItem.updated_at), { addSuffix: true })}
+                                            {safeParseDate(caseItem.updated_at)
+                                                ? formatDistanceToNow(safeParseDate(caseItem.updated_at)!, { addSuffix: true })
+                                                : 'Recently'}
                                         </span>
                                     </div>
 

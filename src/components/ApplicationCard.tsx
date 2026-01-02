@@ -11,6 +11,17 @@ import {
     Zap
 } from 'lucide-react'
 
+// Safe date parsing helper
+const safeParseDate = (dateString: string | null | undefined): Date | null => {
+    if (!dateString) return null
+    try {
+        const date = new Date(dateString)
+        return isNaN(date.getTime()) ? null : date
+    } catch {
+        return null
+    }
+}
+
 interface Stage {
     id: string
     name: string
@@ -107,7 +118,9 @@ export default function ApplicationCard({ caseItem, index, stages }: Application
     }
 
     const progress = calculateProgress()
-    const lastUpdated = formatDistanceToNow(new Date(caseItem.updated_at), { addSuffix: true })
+    const updatedDate = safeParseDate(caseItem.updated_at)
+    const createdDate = safeParseDate(caseItem.created_at)
+    const lastUpdated = updatedDate ? formatDistanceToNow(updatedDate, { addSuffix: true }) : 'Recently'
 
     return (
         <motion.div
@@ -214,7 +227,7 @@ export default function ApplicationCard({ caseItem, index, stages }: Application
                         <div className="flex items-center gap-4 text-slate-400">
                             <span className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
-                                Started {format(new Date(caseItem.created_at), 'MMM d, yyyy')}
+                                Started {createdDate ? format(createdDate, 'MMM d, yyyy') : 'N/A'}
                             </span>
                             <span className="flex items-center gap-1">
                                 <Clock className="w-4 h-4" />
