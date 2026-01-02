@@ -48,7 +48,8 @@ interface CaseDetails {
 
 // Normalize the flat RPC response to match the expected interface
 const normalizeCase = (c: any): CaseDetails | null => {
-    if (!c) return null
+    // Handle null, undefined, or error responses from RPC
+    if (!c || c.error || !c.id) return null
     return {
         id: c.id,
         case_reference: c.case_reference || '',
@@ -138,6 +139,11 @@ export default function CaseView() {
                 .rpc('get_my_synced_case', { p_case_id: caseId })
 
             if (caseError) throw caseError
+
+            // Check for error response from RPC function
+            if (caseInfo?.error) {
+                throw new Error(caseInfo.error)
+            }
 
             const typedCaseData = normalizeCase(caseInfo)
             if (!typedCaseData) {
