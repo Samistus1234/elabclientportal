@@ -31,25 +31,28 @@ const supportChannels = [
         icon: MessageCircle,
         color: 'from-green-400 to-emerald-500',
         available: true,
-        responseTime: 'Instant'
+        responseTime: 'Instant',
+        href: 'https://www.elab.academy/chat'
     },
     {
         id: 'call',
         title: 'Phone Support',
-        description: '+1 (800) 123-4567',
+        description: '+1 (929) 419-2327',
         icon: Phone,
         color: 'from-blue-400 to-cyan-500',
         available: true,
-        responseTime: '< 2 min'
+        responseTime: '< 2 min',
+        href: 'tel:+19294192327'
     },
     {
         id: 'email',
         title: 'Email Us',
-        description: 'support@elab.com',
+        description: 'info@elab.academy',
         icon: Mail,
         color: 'from-purple-400 to-pink-500',
         available: true,
-        responseTime: '< 24 hrs'
+        responseTime: '< 24 hrs',
+        href: 'mailto:info@elab.academy'
     },
     {
         id: 'video',
@@ -58,7 +61,8 @@ const supportChannels = [
         icon: Video,
         color: 'from-amber-400 to-orange-500',
         available: true,
-        responseTime: 'Book slot'
+        responseTime: 'Book slot',
+        href: 'https://www.elab.academy/schedule'
     }
 ]
 
@@ -83,14 +87,17 @@ export default function SupportHelpSection() {
             {/* Support Channels Grid */}
             <div className="grid grid-cols-2 gap-3 mb-6">
                 {supportChannels.map((channel, index) => (
-                    <motion.button
+                    <motion.a
                         key={channel.id}
+                        href={(channel as any).href}
+                        target={(channel as any).href?.startsWith('http') ? '_blank' : undefined}
+                        rel={(channel as any).href?.startsWith('http') ? 'noopener noreferrer' : undefined}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
                         whileHover={{ scale: 1.03, y: -2 }}
                         whileTap={{ scale: 0.97 }}
-                        className="relative overflow-hidden rounded-xl p-4 text-left group"
+                        className="relative overflow-hidden rounded-xl p-4 text-left group cursor-pointer"
                     >
                         {/* Background gradient */}
                         <div className={`absolute inset-0 bg-gradient-to-br ${channel.color} opacity-10 group-hover:opacity-20 transition-opacity`} />
@@ -117,7 +124,7 @@ export default function SupportHelpSection() {
                                 <span className="text-slate-500">{channel.responseTime}</span>
                             </div>
                         </div>
-                    </motion.button>
+                    </motion.a>
                 ))}
             </div>
 
@@ -128,10 +135,15 @@ export default function SupportHelpSection() {
                         <FileQuestion className="w-4 h-4 text-slate-400" />
                         Quick Answers
                     </h4>
-                    <button className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1">
+                    <a
+                        href="https://www.elab.academy/faq"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+                    >
                         View all FAQs
                         <ArrowRight className="w-3 h-3" />
-                    </button>
+                    </a>
                 </div>
                 <div className="space-y-2">
                     {faqs.map((faq, index) => (

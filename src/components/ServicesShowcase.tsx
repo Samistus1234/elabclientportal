@@ -25,6 +25,7 @@ interface Service {
     badge?: string
     price?: string
     popular?: boolean
+    href?: string
 }
 
 const services: Service[] = [
@@ -37,7 +38,8 @@ const services: Service[] = [
         gradient: 'from-rose-500 via-pink-500 to-purple-500',
         features: ['Expert instructors', 'Practice tests', 'Study materials', '95% pass rate'],
         badge: 'Most Popular',
-        popular: true
+        popular: true,
+        href: 'https://www.elab.academy/prometric'
     },
     {
         id: 'oet-prep',
@@ -47,7 +49,8 @@ const services: Service[] = [
         icon: Globe,
         gradient: 'from-blue-500 via-cyan-500 to-teal-500',
         features: ['All 4 modules covered', 'Role-play practice', 'Writing feedback', 'Mock tests'],
-        badge: 'Healthcare Focused'
+        badge: 'Healthcare Focused',
+        href: 'https://www.elab.academy/oet'
     },
     {
         id: 'ielts-prep',
@@ -56,7 +59,8 @@ const services: Service[] = [
         description: 'Achieve your target band score with our proven IELTS preparation program.',
         icon: BookOpen,
         gradient: 'from-amber-500 via-orange-500 to-red-500',
-        features: ['Band 7+ strategies', 'Speaking practice', 'Writing templates', 'Flexible schedule']
+        features: ['Band 7+ strategies', 'Speaking practice', 'Writing templates', 'Flexible schedule'],
+        href: 'https://www.elab.academy/ielts'
     },
     {
         id: 'lab-tech-prep',
@@ -65,7 +69,8 @@ const services: Service[] = [
         description: 'Specialized preparation for medical laboratory scientist licensing exams.',
         icon: FlaskConical,
         gradient: 'from-emerald-500 via-green-500 to-teal-500',
-        features: ['Theory review', 'Practical guidance', 'Exam strategies', 'Expert support']
+        features: ['Theory review', 'Practical guidance', 'Exam strategies', 'Expert support'],
+        href: 'https://www.elab.academy/lab-technician'
     }
 ]
 
@@ -95,14 +100,17 @@ export default function ServicesShowcase() {
                     <h2 className="text-2xl font-bold text-slate-800">Boost Your Career</h2>
                     <p className="text-slate-500 text-sm mt-1">Professional training programs for healthcare professionals</p>
                 </div>
-                <motion.button
+                <motion.a
+                    href="https://www.elab.academy"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-accent-500 text-white rounded-xl font-medium text-sm shadow-lg shadow-primary-200 hover:shadow-xl transition-shadow"
                 >
                     View All Courses
                     <ArrowRight className="w-4 h-4" />
-                </motion.button>
+                </motion.a>
             </div>
 
             {/* Stats Bar */}
@@ -184,14 +192,17 @@ export default function ServicesShowcase() {
                                 </div>
 
                                 {/* CTA Button */}
-                                <motion.button
+                                <motion.a
+                                    href={service.href || 'https://www.elab.academy'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     className="w-full py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
                                 >
                                     Learn More
                                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                </motion.button>
+                                </motion.a>
                             </div>
                         </div>
                     </motion.div>
@@ -199,7 +210,10 @@ export default function ServicesShowcase() {
             </div>
 
             {/* Mobile View All Button */}
-            <motion.button
+            <motion.a
+                href="https://www.elab.academy"
+                target="_blank"
+                rel="noopener noreferrer"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
@@ -207,7 +221,7 @@ export default function ServicesShowcase() {
             >
                 View All Courses
                 <ArrowRight className="w-4 h-4" />
-            </motion.button>
+            </motion.a>
         </motion.div>
     )
 }

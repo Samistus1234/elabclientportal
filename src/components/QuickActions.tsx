@@ -27,7 +27,8 @@ const quickActions: QuickAction[] = [
         description: 'Submit required files',
         icon: Upload,
         color: 'text-blue-600',
-        bgColor: 'bg-blue-100 hover:bg-blue-200'
+        bgColor: 'bg-blue-100 hover:bg-blue-200',
+        href: '/documents'
     },
     {
         id: 'message',
@@ -35,7 +36,8 @@ const quickActions: QuickAction[] = [
         description: 'Contact your advisor',
         icon: MessageCircle,
         color: 'text-green-600',
-        bgColor: 'bg-green-100 hover:bg-green-200'
+        bgColor: 'bg-green-100 hover:bg-green-200',
+        href: 'mailto:info@elab.academy?subject=Client%20Portal%20Inquiry'
     },
     {
         id: 'schedule',
@@ -43,7 +45,8 @@ const quickActions: QuickAction[] = [
         description: 'Book a consultation',
         icon: Calendar,
         color: 'text-purple-600',
-        bgColor: 'bg-purple-100 hover:bg-purple-200'
+        bgColor: 'bg-purple-100 hover:bg-purple-200',
+        href: 'https://www.elab.academy/schedule'
     },
     {
         id: 'faq',
@@ -51,7 +54,8 @@ const quickActions: QuickAction[] = [
         description: 'Find answers fast',
         icon: HelpCircle,
         color: 'text-amber-600',
-        bgColor: 'bg-amber-100 hover:bg-amber-200'
+        bgColor: 'bg-amber-100 hover:bg-amber-200',
+        href: 'https://www.elab.academy/faq'
     }
 ]
 
@@ -59,16 +63,18 @@ const contactOptions = [
     {
         id: 'phone',
         label: 'Call Us',
-        value: '+1 (800) 123-4567',
+        value: '+1 (929) 419-2327',
         icon: Phone,
-        color: 'text-emerald-600'
+        color: 'text-emerald-600',
+        href: 'tel:+19294192327'
     },
     {
         id: 'email',
         label: 'Email',
-        value: 'support@elab.com',
+        value: 'info@elab.academy',
         icon: Mail,
-        color: 'text-blue-600'
+        color: 'text-blue-600',
+        href: 'mailto:info@elab.academy'
     }
 ]
 
@@ -87,8 +93,11 @@ export default function QuickActions() {
             {/* Action Buttons Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
                 {quickActions.map((action, index) => (
-                    <motion.button
+                    <motion.a
                         key={action.id}
+                        href={action.href}
+                        target={action.href?.startsWith('http') ? '_blank' : undefined}
+                        rel={action.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
@@ -96,7 +105,7 @@ export default function QuickActions() {
                         whileTap={{ scale: 0.95 }}
                         className={`
                             ${action.bgColor} rounded-xl p-4 text-left
-                            transition-all duration-200 group
+                            transition-all duration-200 group cursor-pointer
                         `}
                     >
                         <div className={`w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
@@ -104,7 +113,7 @@ export default function QuickActions() {
                         </div>
                         <h4 className="font-medium text-slate-800 text-sm">{action.title}</h4>
                         <p className="text-xs text-slate-500 mt-0.5">{action.description}</p>
-                    </motion.button>
+                    </motion.a>
                 ))}
             </div>
 
@@ -113,7 +122,7 @@ export default function QuickActions() {
                 {contactOptions.map((option) => (
                     <motion.a
                         key={option.id}
-                        href={option.id === 'phone' ? `tel:${option.value}` : `mailto:${option.value}`}
+                        href={(option as any).href || (option.id === 'phone' ? `tel:${option.value}` : `mailto:${option.value}`)}
                         whileHover={{ scale: 1.02 }}
                         className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors flex-1"
                     >
