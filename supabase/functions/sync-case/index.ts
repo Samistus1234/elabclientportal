@@ -108,43 +108,86 @@ serve(async (req) => {
     }
     console.log('Using org_id:', orgId)
 
-    // Step 1: Upsert pipeline if provided (with org_id)
+    // Step 1: Ensure pipeline exists (with org_id)
     let syncedPipeline = null
-    if (pipeline) {
-      // First check if pipeline exists
+    const targetPipelineId = pipeline?.id || case_data.pipeline_id
+
+    if (targetPipelineId) {
+      // Check if pipeline already exists
       const { data: existingPipeline } = await supabase
         .from('pipelines')
         .select('id, name, slug, org_id')
-        .eq('id', pipeline.id)
+        .eq('id', targetPipelineId)
         .single()
 
       if (existingPipeline) {
         console.log('Existing pipeline found:', existingPipeline)
-        console.log('Updating to:', { name: pipeline.name, slug: pipeline.slug })
-      }
+        // Update if we have new pipeline data
+        if (pipeline) {
+          const { data: updated, error: updateError } = await supabase
+            .from('pipelines')
+            .update({ name: pipeline.name, slug: pipeline.slug })
+            .eq('id', pipeline.id)
+            .select()
+            .single()
 
-      const { data: upsertedPipeline, error: pipelineError } = await supabase
-        .from('pipelines')
-        .upsert({
-          id: pipeline.id,
-          name: pipeline.name,
-          slug: pipeline.slug,
-          org_id: orgId, // Include org_id for new pipelines
-        }, { onConflict: 'id' })
-        .select()
-        .single()
+          if (updateError) {
+            console.error('Pipeline update error:', updateError)
+          } else {
+            syncedPipeline = updated
+            console.log('Pipeline updated:', syncedPipeline)
+          }
+        } else {
+          syncedPipeline = existingPipeline
+        }
+      } else if (pipeline) {
+        // Pipeline doesn't exist, insert it
+        console.log('Creating new pipeline:', pipeline.id, pipeline.name)
+        const { data: newPipeline, error: insertError } = await supabase
+          .from('pipelines')
+          .insert({
+            id: pipeline.id,
+            name: pipeline.name,
+            slug: pipeline.slug,
+            org_id: orgId,
+          })
+          .select()
+          .single()
 
-      if (pipelineError) {
-        console.error('Pipeline upsert error:', pipelineError)
-        // Return error instead of silently continuing
+        if (insertError) {
+          console.error('Pipeline insert error:', insertError)
+          return new Response(
+            JSON.stringify({ error: 'Failed to create pipeline', details: insertError }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        syncedPipeline = newPipeline
+        console.log('Pipeline created:', syncedPipeline)
+      } else {
+        // No pipeline data provided and pipeline doesn't exist
         return new Response(
-          JSON.stringify({ error: 'Failed to sync pipeline', details: pipelineError }),
+          JSON.stringify({
+            error: 'Pipeline not found',
+            details: `Pipeline ${targetPipelineId} does not exist and no pipeline data was provided to create it`
+          }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
-      syncedPipeline = upsertedPipeline
-      console.log('Pipeline synced successfully:', syncedPipeline)
+      // Verify pipeline exists before proceeding
+      const { data: verifyPipeline } = await supabase
+        .from('pipelines')
+        .select('id')
+        .eq('id', targetPipelineId)
+        .single()
+
+      if (!verifyPipeline) {
+        return new Response(
+          JSON.stringify({ error: 'Pipeline verification failed', details: `Pipeline ${targetPipelineId} still does not exist after sync attempt` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      console.log('Pipeline verified:', verifyPipeline.id)
     }
 
     // Step 2: Upsert stages if provided
