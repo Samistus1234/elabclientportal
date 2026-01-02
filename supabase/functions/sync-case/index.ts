@@ -85,28 +85,53 @@ serve(async (req) => {
 
     // Step 0: Get or create default org FIRST (needed for pipeline)
     let orgId = case_data.org_id
+    console.log('=== ORG_ID DEBUG ===')
+    console.log('case_data.org_id:', case_data.org_id)
+
     if (!orgId) {
-      const { data: existingOrg } = await supabase
+      // Try to get existing org - use maybeSingle() to avoid error on no rows
+      const { data: existingOrg, error: orgError } = await supabase
         .from('organizations')
         .select('id')
         .limit(1)
-        .single()
+        .maybeSingle()
+
+      console.log('Existing org query result:', existingOrg, 'error:', orgError)
 
       if (existingOrg) {
         orgId = existingOrg.id
+        console.log('Using existing org:', orgId)
       } else {
-        const { data: newOrg } = await supabase
+        // Try to create a new org
+        console.log('No existing org found, creating new one...')
+        const { data: newOrg, error: createOrgError } = await supabase
           .from('organizations')
           .insert({ name: 'Default Organization', slug: 'default' })
           .select('id')
           .single()
 
+        console.log('Create org result:', newOrg, 'error:', createOrgError)
+
         if (newOrg) {
           orgId = newOrg.id
+          console.log('Created new org:', orgId)
+        } else {
+          // FALLBACK: Use a standard UUID for org_id if all else fails
+          // This matches the pattern seen in existing Client Portal data
+          orgId = '00000000-0000-0000-0000-000000000000'
+          console.log('Using fallback org_id:', orgId)
         }
       }
     }
-    console.log('Using org_id:', orgId)
+
+    // Final check - org_id MUST be set
+    if (!orgId) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to get or create organization', details: 'org_id is null' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    console.log('Final org_id:', orgId)
 
     // Step 1: Ensure pipeline exists (with org_id)
     let syncedPipeline = null
