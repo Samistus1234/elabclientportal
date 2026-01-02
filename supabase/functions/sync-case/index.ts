@@ -271,6 +271,12 @@ serve(async (req) => {
     }
 
     // Step 5: Upsert case (org_id already obtained in Step 0)
+    // Use targetPipelineId (the one we verified exists) instead of case_data.pipeline_id
+    const finalPipelineId = targetPipelineId || case_data.pipeline_id
+    console.log('Case upsert - using pipeline_id:', finalPipelineId)
+    console.log('case_data.pipeline_id was:', case_data.pipeline_id)
+    console.log('targetPipelineId was:', targetPipelineId)
+
     const { error: caseError } = await supabase
       .from('cases')
       .upsert({
@@ -278,7 +284,7 @@ serve(async (req) => {
         case_reference: case_data.case_reference,
         person_id: personId,
         org_id: orgId,
-        pipeline_id: case_data.pipeline_id,
+        pipeline_id: finalPipelineId,
         current_stage_id: case_data.current_stage_id,
         status: case_data.status,
         priority: case_data.priority,
