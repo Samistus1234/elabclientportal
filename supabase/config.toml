@@ -1,7 +1,6 @@
 # Supabase Configuration
-
-[project]
-id = "pvhwofaduoxirkroiblk"
+[api]
+enabled = true
 
 [functions.sync-case]
 verify_jwt = false
