@@ -32,15 +32,46 @@ interface CaseData {
     created_at: string
     updated_at: string
     pipeline: {
+        id?: string
         name: string
         slug: string
-    }
+    } | null
     current_stage: {
+        id?: string
         name: string
         slug: string
-        id: string
-    }
+    } | null
     metadata: Record<string, any>
+    // Flat fields from RPC (if returned that way)
+    pipeline_id?: string
+    pipeline_name?: string
+    pipeline_slug?: string
+    current_stage_id?: string
+    current_stage_name?: string
+    current_stage_slug?: string
+}
+
+// Helper to normalize case data from RPC
+const normalizeCase = (c: any): CaseData => {
+    return {
+        id: c.id,
+        case_reference: c.case_reference || c.caseReference || '',
+        status: c.status || 'active',
+        priority: c.priority || 'normal',
+        created_at: c.created_at || c.createdAt || new Date().toISOString(),
+        updated_at: c.updated_at || c.updatedAt || new Date().toISOString(),
+        metadata: c.metadata || {},
+        pipeline: c.pipeline || (c.pipeline_name ? {
+            id: c.pipeline_id,
+            name: c.pipeline_name,
+            slug: c.pipeline_slug || ''
+        } : null),
+        current_stage: c.current_stage || (c.current_stage_name ? {
+            id: c.current_stage_id,
+            name: c.current_stage_name,
+            slug: c.current_stage_slug || ''
+        } : null),
+    }
 }
 
 interface PersonData {
@@ -95,11 +126,12 @@ export default function Dashboard() {
 
             if (casesError) throw casesError
 
-            const typedCases = (casesData || []) as unknown as CaseData[]
+            // Normalize the data from RPC to match expected structure
+            const typedCases = (casesData || []).map(normalizeCase)
             setCases(typedCases)
 
             // Load pipeline stages for each unique pipeline
-            const pipelineIds = [...new Set(typedCases.map(c => (c.pipeline as any)?.id).filter(Boolean))]
+            const pipelineIds = [...new Set(typedCases.map((c: CaseData) => c.pipeline?.id || c.pipeline_id).filter(Boolean))]
 
             if (pipelineIds.length > 0) {
                 const { data: stagesData } = await supabase

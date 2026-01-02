@@ -36,14 +36,16 @@ interface CaseData {
     priority: string
     created_at: string
     updated_at: string
-    pipeline: {
+    pipeline?: {
+        id?: string
         name: string
-        slug: string
-    }
-    current_stage: {
+        slug?: string
+    } | null
+    current_stage?: {
+        id?: string
         name: string
-        slug: string
-    }
+        slug?: string
+    } | null
     metadata?: Record<string, any>
 }
 

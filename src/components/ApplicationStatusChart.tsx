@@ -5,8 +5,8 @@ import { TrendingUp, Activity, CheckCircle2, Clock, AlertCircle, XCircle } from 
 interface CaseData {
     id: string
     status: string
-    pipeline?: { name: string }
-    current_stage?: { name: string }
+    pipeline?: { name: string } | null
+    current_stage?: { name: string } | null
 }
 
 interface ApplicationStatusChartProps {
