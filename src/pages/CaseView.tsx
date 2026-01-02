@@ -28,22 +28,70 @@ interface CaseDetails {
     priority: string
     created_at: string
     updated_at: string
-    start_date: string
+    start_date: string | null
     metadata: Record<string, any>
     pipeline: {
         id: string
         name: string
         slug: string
-    }
+    } | null
     current_stage: {
         id: string
         name: string
         slug: string
-    }
-    person: {
+    } | null
+    person?: {
         first_name: string
         last_name: string
     }
+}
+
+// Normalize the flat RPC response to match the expected interface
+const normalizeCase = (c: any): CaseDetails | null => {
+    if (!c) return null
+    return {
+        id: c.id,
+        case_reference: c.case_reference || '',
+        status: c.status || 'active',
+        priority: c.priority || 'normal',
+        created_at: c.created_at || new Date().toISOString(),
+        updated_at: c.updated_at || new Date().toISOString(),
+        start_date: c.start_date || null,
+        metadata: c.metadata || {},
+        pipeline: c.pipeline_name ? {
+            id: c.pipeline_id,
+            name: c.pipeline_name,
+            slug: c.pipeline_slug || ''
+        } : null,
+        current_stage: c.current_stage_name ? {
+            id: c.current_stage_id,
+            name: c.current_stage_name,
+            slug: c.current_stage_slug || ''
+        } : null,
+    }
+}
+
+// Safe date parsing to prevent RangeError with invalid dates
+const safeParseDate = (dateString: string | null | undefined): Date | null => {
+    if (!dateString) return null
+    try {
+        const date = new Date(dateString)
+        return isNaN(date.getTime()) ? null : date
+    } catch {
+        return null
+    }
+}
+
+const safeFormatDate = (dateString: string | null | undefined, formatStr: string): string => {
+    const date = safeParseDate(dateString)
+    if (!date) return 'N/A'
+    return format(date, formatStr)
+}
+
+const safeFormatDistanceToNow = (dateString: string | null | undefined): string => {
+    const date = safeParseDate(dateString)
+    if (!date) return 'recently'
+    return formatDistanceToNow(date, { addSuffix: true })
 }
 
 interface StageHistoryItem {
@@ -85,27 +133,16 @@ export default function CaseView() {
 
     const loadCaseDetails = async () => {
         try {
-            // Load case details
+            // Load case details using RPC function (bypasses RLS)
             const { data: caseInfo, error: caseError } = await supabase
-                .from('cases')
-                .select(`
-                    id,
-                    case_reference,
-                    status,
-                    priority,
-                    created_at,
-                    updated_at,
-                    start_date,
-                    metadata,
-                    pipeline:pipelines(id, name, slug),
-                    current_stage:pipeline_stages!cases_current_stage_id_fkey(id, name, slug),
-                    person:persons(first_name, last_name)
-                `)
-                .eq('id', caseId)
-                .single()
+                .rpc('get_my_synced_case', { p_case_id: caseId })
 
             if (caseError) throw caseError
-            const typedCaseData = caseInfo as unknown as CaseDetails
+
+            const typedCaseData = normalizeCase(caseInfo)
+            if (!typedCaseData) {
+                throw new Error('Case not found or you do not have access to this case.')
+            }
             setCaseData(typedCaseData)
 
             // Load pipeline stages
@@ -121,33 +158,36 @@ export default function CaseView() {
                 }
             }
 
-            // Load stage history
-            const { data: historyData, error: historyError } = await supabase
-                .from('case_stage_history')
-                .select(`
-                    id,
-                    created_at,
-                    notes,
-                    from_stage:pipeline_stages!case_stage_history_from_stage_id_fkey(name),
-                    to_stage:pipeline_stages!case_stage_history_to_stage_id_fkey(name)
-                `)
-                .eq('case_id', caseId)
-                .order('created_at', { ascending: false })
+            // Load stage history using RPC to bypass RLS
+            try {
+                const { data: historyData, error: historyError } = await supabase
+                    .rpc('get_my_case_stage_history', { p_case_id: caseId })
 
-            if (!historyError) {
-                setStageHistory((historyData || []) as unknown as StageHistoryItem[])
+                if (!historyError && historyData) {
+                    // Normalize history data from flat to nested format
+                    const normalizedHistory = historyData.map((h: any) => ({
+                        id: h.id,
+                        created_at: h.created_at,
+                        notes: h.notes,
+                        from_stage: h.from_stage_name ? { name: h.from_stage_name } : null,
+                        to_stage: { name: h.to_stage_name || 'Unknown' }
+                    }))
+                    setStageHistory(normalizedHistory)
+                }
+            } catch (historyErr) {
+                console.log('Stage history not available:', historyErr)
             }
 
-            // Load client-visible notes
-            const { data: notesData, error: notesError } = await supabase
-                .from('case_notes')
-                .select('id, content, created_at')
-                .eq('case_id', caseId)
-                .eq('is_client_visible', true)
-                .order('created_at', { ascending: false })
+            // Load client-visible notes using RPC to bypass RLS
+            try {
+                const { data: notesData, error: notesError } = await supabase
+                    .rpc('get_my_case_notes', { p_case_id: caseId })
 
-            if (!notesError) {
-                setClientNotes(notesData || [])
+                if (!notesError && notesData) {
+                    setClientNotes(notesData || [])
+                }
+            } catch (notesErr) {
+                console.log('Client notes not available:', notesErr)
             }
 
         } catch (err: any) {
@@ -200,18 +240,22 @@ export default function CaseView() {
     // Calculate days in current stage
     const getDaysInStage = () => {
         if (stageHistory.length > 0) {
-            const lastTransition = new Date(stageHistory[0].created_at)
-            const now = new Date()
-            const diffTime = Math.abs(now.getTime() - lastTransition.getTime())
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-            return diffDays
+            const lastTransition = safeParseDate(stageHistory[0].created_at)
+            if (lastTransition) {
+                const now = new Date()
+                const diffTime = Math.abs(now.getTime() - lastTransition.getTime())
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                return diffDays
+            }
         }
         if (caseData?.created_at) {
-            const created = new Date(caseData.created_at)
-            const now = new Date()
-            const diffTime = Math.abs(now.getTime() - created.getTime())
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-            return diffDays
+            const created = safeParseDate(caseData.created_at)
+            if (created) {
+                const now = new Date()
+                const diffTime = Math.abs(now.getTime() - created.getTime())
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                return diffDays
+            }
         }
         return 0
     }
@@ -297,9 +341,7 @@ export default function CaseView() {
                                 </h1>
                                 <p className="text-slate-500 text-sm flex items-center gap-2">
                                     <Calendar className="w-4 h-4" />
-                                    Started {caseData.start_date
-                                        ? format(new Date(caseData.start_date), 'MMMM d, yyyy')
-                                        : format(new Date(caseData.created_at), 'MMMM d, yyyy')}
+                                    Started {safeFormatDate(caseData.start_date || caseData.created_at, 'MMMM d, yyyy')}
                                 </p>
                             </div>
                         </div>
@@ -331,7 +373,7 @@ export default function CaseView() {
                         </div>
                         <StageProgressVisualization
                             stages={pipelineStages}
-                            currentStageId={caseData.current_stage?.id}
+                            currentStageId={caseData.current_stage?.id || ''}
                             size="md"
                         />
                     </motion.div>
@@ -357,7 +399,7 @@ export default function CaseView() {
                                         {caseData.current_stage?.name || 'Processing'}
                                     </h2>
                                     <p className="text-slate-400 text-sm mt-1">
-                                        Last updated {formatDistanceToNow(new Date(caseData.updated_at), { addSuffix: true })}
+                                        Last updated {safeFormatDistanceToNow(caseData.updated_at)}
                                     </p>
                                 </div>
                             </div>
@@ -392,7 +434,15 @@ export default function CaseView() {
                     transition={{ delay: 0.2 }}
                     className="mb-6"
                 >
-                    <AISummaryCard caseId={caseId!} caseData={caseData} />
+                    <AISummaryCard
+                        caseId={caseId!}
+                        caseData={{
+                            status: caseData.status,
+                            pipeline: caseData.pipeline || undefined,
+                            current_stage: caseData.current_stage || undefined,
+                            metadata: caseData.metadata
+                        }}
+                    />
                 </motion.div>
 
                 {/* Two Column Layout */}
@@ -455,7 +505,7 @@ export default function CaseView() {
                                             <p className="text-slate-700 text-sm mb-3 leading-relaxed">{note.content}</p>
                                             <div className="flex items-center gap-2 text-slate-400 text-xs">
                                                 <Calendar className="w-3 h-3" />
-                                                {format(new Date(note.created_at), 'MMM d, yyyy • h:mm a')}
+                                                {safeFormatDate(note.created_at, 'MMM d, yyyy • h:mm a')}
                                             </div>
                                         </motion.div>
                                     ))}
@@ -479,11 +529,11 @@ export default function CaseView() {
                         </span>
                         <span className="flex items-center gap-2">
                             <Calendar className="w-4 h-4" />
-                            Created: {format(new Date(caseData.created_at), 'MMM d, yyyy')}
+                            Created: {safeFormatDate(caseData.created_at, 'MMM d, yyyy')}
                         </span>
                         <span className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
-                            Updated: {format(new Date(caseData.updated_at), 'MMM d, yyyy')}
+                            Updated: {safeFormatDate(caseData.updated_at, 'MMM d, yyyy')}
                         </span>
                     </div>
                 </motion.div>
