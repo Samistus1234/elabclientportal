@@ -89,22 +89,9 @@ export default function Dashboard() {
 
             setPerson(personData)
 
-            // Load cases for this person
+            // Load cases for this person using RPC function
             const { data: casesData, error: casesError } = await supabase
-                .from('cases')
-                .select(`
-                    id,
-                    case_reference,
-                    status,
-                    priority,
-                    created_at,
-                    updated_at,
-                    metadata,
-                    pipeline:pipelines(id, name, slug),
-                    current_stage:pipeline_stages!cases_current_stage_id_fkey(id, name, slug)
-                `)
-                .eq('person_id', personData.id)
-                .order('created_at', { ascending: false })
+                .rpc('get_my_synced_cases')
 
             if (casesError) throw casesError
 
