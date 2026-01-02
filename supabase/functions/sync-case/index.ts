@@ -84,18 +84,41 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Step 1: Upsert pipeline if provided
+    let syncedPipeline = null
     if (pipeline) {
-      const { error: pipelineError } = await supabase
+      // First check if pipeline exists
+      const { data: existingPipeline } = await supabase
+        .from('pipelines')
+        .select('id, name, slug')
+        .eq('id', pipeline.id)
+        .single()
+
+      if (existingPipeline) {
+        console.log('Existing pipeline found:', existingPipeline)
+        console.log('Updating to:', { name: pipeline.name, slug: pipeline.slug })
+      }
+
+      const { data: upsertedPipeline, error: pipelineError } = await supabase
         .from('pipelines')
         .upsert({
           id: pipeline.id,
           name: pipeline.name,
           slug: pipeline.slug,
         }, { onConflict: 'id' })
+        .select()
+        .single()
 
       if (pipelineError) {
         console.error('Pipeline upsert error:', pipelineError)
+        // Return error instead of silently continuing
+        return new Response(
+          JSON.stringify({ error: 'Failed to sync pipeline', details: pipelineError }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       }
+
+      syncedPipeline = upsertedPipeline
+      console.log('Pipeline synced successfully:', syncedPipeline)
     }
 
     // Step 2: Upsert stages if provided
@@ -232,7 +255,9 @@ serve(async (req) => {
         success: true,
         message: 'Case synced successfully',
         person_id: personId,
-        case_id: case_data.id
+        case_id: case_data.id,
+        pipeline: syncedPipeline,
+        org_id: orgId
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
