@@ -41,16 +41,35 @@ The app will run on `http://localhost:5174` (different port from command centre)
 
 ## Connecting to Supabase
 
-This portal shares the same Supabase backend as `elabcommandcentre`. Use the same project credentials in your `.env` file.
+> **Security Note:** This client portal uses a **separate Supabase project** from the command centre. This ensures complete isolation between client users and admin users — separate databases, separate authentication, and no cross-portal data access.
 
-### Required Edge Function
+### Setting Up Your Supabase Project
 
-Deploy the `client-case-summary` edge function to enable AI summaries:
+1. Create a new Supabase project for the client portal
+2. Copy the project URL and anon key to your `.env` file
+3. Set up the required database schema (see Database Schema section)
+4. Deploy the edge functions
+
+### Required Edge Functions
+
+Deploy the edge functions to your client portal's Supabase project:
 
 ```bash
-cd ../elabcommandcentre
+# Link to your client portal Supabase project
+supabase link --project-ref your-project-ref
+
+# Deploy edge functions
+supabase functions deploy sync-case
 supabase functions deploy client-case-summary
+
+# Set required secrets
+supabase secrets set SYNC_API_KEY=your-sync-api-key
+supabase secrets set GEMINI_API_KEY=your-gemini-api-key
 ```
+
+### Data Synchronization
+
+Case data is pushed from the command centre to this portal via the `sync-case` edge function. The command centre calls this function's API endpoint with the sync API key to create/update cases for clients to view.
 
 ## Environment Variables
 
