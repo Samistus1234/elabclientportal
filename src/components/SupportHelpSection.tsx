@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import {
     HelpCircle,
     MessageCircle,
@@ -13,13 +14,14 @@ import {
 interface FAQItem {
     question: string
     category: string
+    hash: string
 }
 
 const faqs: FAQItem[] = [
-    { question: 'How long does DataFlow verification take?', category: 'Verification' },
-    { question: 'What documents do I need for my application?', category: 'Documents' },
-    { question: 'How do I track my application status?', category: 'Application' },
-    { question: 'Can I expedite my verification process?', category: 'Verification' }
+    { question: 'How long does DataFlow verification take?', category: 'Verification', hash: 'dataflow' },
+    { question: 'What documents do I need for my application?', category: 'Documents', hash: 'documents' },
+    { question: 'How do I track my application status?', category: 'Application', hash: 'general' },
+    { question: 'Can I expedite my verification process?', category: 'Verification', hash: 'dataflow' }
 ]
 
 const supportChannels = [
@@ -134,29 +136,31 @@ export default function SupportHelpSection() {
                         <FileQuestion className="w-4 h-4 text-slate-400" />
                         Quick Answers
                     </h4>
-                    <a
-                        href="https://www.elab.academy/faq"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <Link
+                        to="/faq"
                         className="text-xs text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
                     >
                         View all FAQs
                         <ArrowRight className="w-3 h-3" />
-                    </a>
+                    </Link>
                 </div>
                 <div className="space-y-2">
                     {faqs.map((faq, index) => (
-                        <motion.button
+                        <Link
                             key={index}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.2 + index * 0.05 }}
-                            whileHover={{ x: 4 }}
-                            className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 text-left transition-colors group"
+                            to={`/faq#${faq.hash}`}
                         >
-                            <span className="text-sm text-slate-600 group-hover:text-slate-800">{faq.question}</span>
-                            <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary-500 transition-colors" />
-                        </motion.button>
+                            <motion.div
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.2 + index * 0.05 }}
+                                whileHover={{ x: 4 }}
+                                className="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-slate-50 text-left transition-colors group"
+                            >
+                                <span className="text-sm text-slate-600 group-hover:text-slate-800">{faq.question}</span>
+                                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary-500 transition-colors" />
+                            </motion.div>
+                        </Link>
                     ))}
                 </div>
             </div>
