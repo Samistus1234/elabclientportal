@@ -1,17 +1,17 @@
 import { motion } from 'framer-motion'
 import {
-    GraduationCap,
     BookOpen,
     Award,
     ArrowRight,
     Star,
     Users,
-    Clock,
     CheckCircle,
     Sparkles,
     Globe,
     Stethoscope,
-    FlaskConical
+    FlaskConical,
+    HelpCircle,
+    Headphones
 } from 'lucide-react'
 
 interface Service {
@@ -75,10 +75,10 @@ const services: Service[] = [
 ]
 
 const stats = [
-    { label: 'Students Trained', value: '5,000+', icon: Users },
+    { label: 'Students Trained', value: '50,000+', icon: Users },
     { label: 'Pass Rate', value: '95%', icon: Award },
-    { label: 'Expert Tutors', value: '50+', icon: GraduationCap },
-    { label: 'Hours of Content', value: '500+', icon: Clock }
+    { label: 'Questions', value: '10,000+', icon: HelpCircle },
+    { label: 'Expert Support', value: '24/7', icon: Headphones }
 ]
 
 export default function ServicesShowcase() {
