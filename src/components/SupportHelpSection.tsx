@@ -33,7 +33,7 @@ const supportChannels = [
         color: 'from-blue-400 to-blue-600',
         available: true,
         responseTime: 'Instant',
-        href: 'https://www.elab.academy/chat'
+        href: 'https://wa.me/2348165634195'
     },
     {
         id: 'call-ng',
@@ -53,17 +53,17 @@ const supportChannels = [
         color: 'from-blue-500 to-cyan-500',
         available: true,
         responseTime: '< 2 min',
-        href: 'tel:+19294192327'
+        href: 'https://wa.me/19294192327'
     },
     {
         id: 'email',
         title: 'Email Us',
-        description: 'info@elab.academy',
+        description: 'support@elabsolution.org',
         icon: Mail,
         color: 'from-blue-400 to-blue-600',
         available: true,
         responseTime: '< 24 hrs',
-        href: 'mailto:info@elab.academy'
+        href: 'mailto:support@elabsolution.org'
     }
 ]
 
