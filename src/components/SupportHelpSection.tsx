@@ -5,7 +5,6 @@ import {
     Phone,
     Mail,
     FileQuestion,
-    Video,
     ArrowRight,
     Clock,
     CheckCircle
@@ -29,17 +28,27 @@ const supportChannels = [
         title: 'Live Chat',
         description: 'Chat with us now',
         icon: MessageCircle,
-        color: 'from-green-400 to-emerald-500',
+        color: 'from-blue-400 to-blue-600',
         available: true,
         responseTime: 'Instant',
         href: 'https://www.elab.academy/chat'
     },
     {
-        id: 'call',
-        title: 'Phone Support',
+        id: 'call-ng',
+        title: 'Nigeria Support',
+        description: '+234 816 563 4195',
+        icon: Phone,
+        color: 'from-blue-500 to-cyan-500',
+        available: true,
+        responseTime: '< 2 min',
+        href: 'tel:+2348165634195'
+    },
+    {
+        id: 'call-us',
+        title: 'USA Support',
         description: '+1 (929) 419-2327',
         icon: Phone,
-        color: 'from-blue-400 to-cyan-500',
+        color: 'from-blue-500 to-cyan-500',
         available: true,
         responseTime: '< 2 min',
         href: 'tel:+19294192327'
@@ -49,20 +58,10 @@ const supportChannels = [
         title: 'Email Us',
         description: 'info@elab.academy',
         icon: Mail,
-        color: 'from-purple-400 to-pink-500',
+        color: 'from-blue-400 to-blue-600',
         available: true,
         responseTime: '< 24 hrs',
         href: 'mailto:info@elab.academy'
-    },
-    {
-        id: 'video',
-        title: 'Video Call',
-        description: 'Schedule a meeting',
-        icon: Video,
-        color: 'from-amber-400 to-orange-500',
-        available: true,
-        responseTime: 'Book slot',
-        href: 'https://www.elab.academy/schedule'
     }
 ]
 

@@ -4,7 +4,7 @@ export default function AnimatedBackground() {
     return (
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
             {/* Gradient base */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" />
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50" />
 
             {/* Animated orbs */}
             <motion.div
@@ -32,7 +32,7 @@ export default function AnimatedBackground() {
                     repeat: Infinity,
                     ease: 'easeInOut'
                 }}
-                className="absolute top-40 right-20 w-96 h-96 bg-gradient-to-br from-purple-200/40 to-pink-200/40 rounded-full blur-3xl"
+                className="absolute top-40 right-20 w-96 h-96 bg-gradient-to-br from-blue-200/40 to-sky-200/40 rounded-full blur-3xl"
             />
 
             <motion.div
@@ -60,7 +60,7 @@ export default function AnimatedBackground() {
                     repeat: Infinity,
                     ease: 'easeInOut'
                 }}
-                className="absolute bottom-40 right-10 w-64 h-64 bg-gradient-to-br from-amber-200/30 to-orange-200/30 rounded-full blur-3xl"
+                className="absolute bottom-40 right-10 w-64 h-64 bg-gradient-to-br from-sky-200/30 to-blue-200/30 rounded-full blur-3xl"
             />
 
             {/* Grid pattern overlay */}
