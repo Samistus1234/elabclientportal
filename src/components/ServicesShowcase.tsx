@@ -69,7 +69,7 @@ const services: Service[] = [
         icon: Award,
         gradient: 'from-emerald-500 via-green-500 to-teal-500',
         features: ['NGN format prep', 'CAT simulation', 'Question bank', 'Pass guarantee'],
-        href: 'https://www.elab.academy/nclex'
+        href: 'https://elab.academy/'
     }
 ]
 
