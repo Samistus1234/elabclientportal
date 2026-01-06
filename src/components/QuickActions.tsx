@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import {
     Upload,
     MessageCircle,
@@ -55,7 +56,7 @@ const quickActions: QuickAction[] = [
         icon: HelpCircle,
         color: 'text-amber-600',
         bgColor: 'bg-amber-100 hover:bg-amber-200',
-        href: 'https://www.elab.academy/faq'
+        href: '/faq'
     }
 ]
 
@@ -92,29 +93,61 @@ export default function QuickActions() {
 
             {/* Action Buttons Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-                {quickActions.map((action, index) => (
-                    <motion.a
-                        key={action.id}
-                        href={action.href}
-                        target={action.href?.startsWith('http') ? '_blank' : undefined}
-                        rel={action.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.05 }}
-                        whileHover={{ scale: 1.05, y: -2 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`
-                            ${action.bgColor} rounded-xl p-4 text-left
-                            transition-all duration-200 group cursor-pointer
-                        `}
-                    >
-                        <div className={`w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                            <action.icon className={`w-5 h-5 ${action.color}`} />
-                        </div>
-                        <h4 className="font-medium text-slate-800 text-sm">{action.title}</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">{action.description}</p>
-                    </motion.a>
-                ))}
+                {quickActions.map((action, index) => {
+                    const isInternal = action.href?.startsWith('/')
+                    const content = (
+                        <>
+                            <div className={`w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                                <action.icon className={`w-5 h-5 ${action.color}`} />
+                            </div>
+                            <h4 className="font-medium text-slate-800 text-sm">{action.title}</h4>
+                            <p className="text-xs text-slate-500 mt-0.5">{action.description}</p>
+                        </>
+                    )
+
+                    if (isInternal) {
+                        return (
+                            <motion.div
+                                key={action.id}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: index * 0.05 }}
+                                whileHover={{ scale: 1.05, y: -2 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                <Link
+                                    to={action.href || '/'}
+                                    className={`
+                                        ${action.bgColor} rounded-xl p-4 text-left block
+                                        transition-all duration-200 group cursor-pointer
+                                    `}
+                                >
+                                    {content}
+                                </Link>
+                            </motion.div>
+                        )
+                    }
+
+                    return (
+                        <motion.a
+                            key={action.id}
+                            href={action.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.05 }}
+                            whileHover={{ scale: 1.05, y: -2 }}
+                            whileTap={{ scale: 0.95 }}
+                            className={`
+                                ${action.bgColor} rounded-xl p-4 text-left
+                                transition-all duration-200 group cursor-pointer
+                            `}
+                        >
+                            {content}
+                        </motion.a>
+                    )
+                })}
             </div>
 
             {/* Contact Strip */}

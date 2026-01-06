@@ -10,6 +10,8 @@ import AuthCallback from '@/pages/AuthCallback'
 import Dashboard from '@/pages/Dashboard'
 import CaseView from '@/pages/CaseView'
 import AcceptInvite from '@/pages/AcceptInvite'
+import FAQ from '@/pages/FAQ'
+import Documents from '@/pages/Documents'
 
 // Layout wrapper for authenticated pages
 function ProtectedRoute({ children, session }: { children: React.ReactNode; session: Session | null }) {
@@ -99,6 +101,7 @@ export default function App() {
                 <Route path="/register" element={session ? <Navigate to="/dashboard" replace /> : <Register />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
+                <Route path="/faq" element={<FAQ />} />
 
                 {/* Protected routes */}
                 <Route
@@ -114,6 +117,14 @@ export default function App() {
                     element={
                         <ProtectedRoute session={session}>
                             <CaseView />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/documents"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <Documents />
                         </ProtectedRoute>
                     }
                 />
