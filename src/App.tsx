@@ -5,6 +5,7 @@ import { Session } from '@supabase/supabase-js'
 
 // Pages
 import Login from '@/pages/Login'
+import Register from '@/pages/Register'
 import AuthCallback from '@/pages/AuthCallback'
 import Dashboard from '@/pages/Dashboard'
 import CaseView from '@/pages/CaseView'
@@ -95,6 +96,7 @@ export default function App() {
             <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <Login />} />
+                <Route path="/register" element={session ? <Navigate to="/dashboard" replace /> : <Register />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
 
