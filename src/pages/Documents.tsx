@@ -23,13 +23,17 @@ import {
 interface Document {
     id: string
     name: string
-    file_name: string
-    file_path: string
-    file_size: number
-    file_type: string
-    status: 'pending' | 'approved' | 'rejected' | 'reviewing'
+    document_type?: string
+    storage_path: string
+    mime_type?: string
+    size_bytes?: number
+    status: 'pending' | 'approved' | 'rejected' | 'needs_revision'
     uploaded_at: string
     notes?: string
+    case_reference?: string
+    reviewed_by?: string
+    reviewed_at?: string
+    review_notes?: string
 }
 
 interface UploadingFile {
@@ -69,11 +73,11 @@ const statusConfig = {
         bg: 'bg-amber-100',
         label: 'Pending Review'
     },
-    reviewing: {
+    needs_revision: {
         icon: Eye,
         color: 'text-blue-600',
         bg: 'bg-blue-100',
-        label: 'Under Review'
+        label: 'Needs Revision'
     },
     approved: {
         icon: CheckCircle,
@@ -85,7 +89,7 @@ const statusConfig = {
         icon: AlertCircle,
         color: 'text-red-600',
         bg: 'bg-red-100',
-        label: 'Needs Resubmission'
+        label: 'Rejected'
     }
 }
 
@@ -119,26 +123,24 @@ export default function Documents() {
     const loadDocuments = async () => {
         try {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user?.email) throw new Error('Not authenticated')
+            if (!user?.id) throw new Error('Not authenticated')
 
-            // Get person ID
-            const { data: personData, error: personError } = await supabase
+            // Get person ID for linking
+            const { data: personData } = await supabase
                 .from('persons')
                 .select('id')
                 .or(`email.eq.${user.email},primary_email.eq.${user.email}`)
                 .single()
 
-            if (personError || !personData) {
-                throw new Error('Could not find your profile')
+            if (personData) {
+                setPersonId(personData.id)
             }
 
-            setPersonId(personData.id)
-
-            // Load documents for this person
+            // Load documents for this user
             const { data: docs, error: docsError } = await supabase
                 .from('client_documents')
                 .select('*')
-                .eq('person_id', personData.id)
+                .eq('uploaded_by_user_id', user.id)
                 .order('uploaded_at', { ascending: false })
 
             if (docsError) {
@@ -225,18 +227,20 @@ export default function Documents() {
                     f.id === uploadId ? { ...f, progress: 50 } : f
                 ))
 
+                // Get current user ID for uploaded_by_user_id
+                const { data: { user } } = await supabase.auth.getUser()
+
                 // Save document record to database
                 const { data: docData, error: docError } = await supabase
                     .from('client_documents')
                     .insert({
                         person_id: personId,
+                        uploaded_by_user_id: user?.id,
                         name: file.name.replace(/\.[^/.]+$/, ''), // Remove extension
-                        file_name: file.name,
-                        file_path: uploadData.path,
-                        file_size: file.size,
-                        file_type: file.type,
-                        status: 'pending',
-                        uploaded_at: new Date().toISOString()
+                        storage_path: uploadData.path,
+                        mime_type: file.type,
+                        size_bytes: file.size,
+                        status: 'pending'
                     })
                     .select()
                     .single()
@@ -271,7 +275,7 @@ export default function Documents() {
         try {
             const { data, error } = await supabase.storage
                 .from('client-documents')
-                .download(doc.file_path)
+                .download(doc.storage_path)
 
             if (error) throw error
 
@@ -279,7 +283,7 @@ export default function Documents() {
             const url = URL.createObjectURL(data)
             const a = document.createElement('a')
             a.href = url
-            a.download = doc.file_name
+            a.download = doc.name + (doc.mime_type?.includes('pdf') ? '.pdf' : '')
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
@@ -296,7 +300,7 @@ export default function Documents() {
             // Delete from storage
             const { error: storageError } = await supabase.storage
                 .from('client-documents')
-                .remove([doc.file_path])
+                .remove([doc.storage_path])
 
             if (storageError) throw storageError
 
@@ -558,8 +562,8 @@ export default function Documents() {
                     ) : (
                         <div className="divide-y divide-slate-100">
                             {filteredDocuments.map((doc, index) => {
-                                const FileIcon = getFileIcon(doc.file_type)
-                                const status = statusConfig[doc.status]
+                                const FileIcon = getFileIcon(doc.mime_type || '')
+                                const status = statusConfig[doc.status] || statusConfig.pending
                                 const StatusIcon = status.icon
 
                                 return (
@@ -580,7 +584,7 @@ export default function Documents() {
                                                 </h4>
                                                 <div className="flex items-center gap-3 mt-1">
                                                     <span className="text-xs text-slate-400">
-                                                        {formatFileSize(doc.file_size)}
+                                                        {formatFileSize(doc.size_bytes || 0)}
                                                     </span>
                                                     <span className="text-xs text-slate-300">•</span>
                                                     <span className="text-xs text-slate-400">
