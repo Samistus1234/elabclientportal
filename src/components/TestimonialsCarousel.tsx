@@ -27,7 +27,7 @@ const testimonials: Testimonial[] = [
     },
     {
         id: '2',
-        name: 'Michael Okonkwo',
+        name: 'Mubarak Orio',
         role: 'Medical Laboratory Scientist',
         country: 'Ghana',
         content: 'The Prometric exam prep course was exactly what I needed. The tutors were knowledgeable and the practice tests were very similar to the actual exam. Passed on my first attempt!',
