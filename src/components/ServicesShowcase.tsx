@@ -1,17 +1,16 @@
 import { motion } from 'framer-motion'
 import {
-    GraduationCap,
     BookOpen,
     Award,
     ArrowRight,
     Star,
     Users,
-    Clock,
     CheckCircle,
     Sparkles,
     Globe,
     Stethoscope,
-    FlaskConical
+    HelpCircle,
+    Headphones
 } from 'lucide-react'
 
 interface Service {
@@ -39,7 +38,7 @@ const services: Service[] = [
         features: ['Expert instructors', 'Practice tests', 'Study materials', '95% pass rate'],
         badge: 'Most Popular',
         popular: true,
-        href: 'https://www.elab.academy/prometric'
+        href: 'https://www.elab.academy/classroom-snle/landing'
     },
     {
         id: 'oet-prep',
@@ -50,7 +49,7 @@ const services: Service[] = [
         gradient: 'from-blue-500 via-cyan-500 to-teal-500',
         features: ['All 4 modules covered', 'Role-play practice', 'Writing feedback', 'Mock tests'],
         badge: 'Healthcare Focused',
-        href: 'https://www.elab.academy/oet'
+        href: 'https://www.elab.academy/english-proficiency'
     },
     {
         id: 'ielts-prep',
@@ -60,25 +59,25 @@ const services: Service[] = [
         icon: BookOpen,
         gradient: 'from-amber-500 via-orange-500 to-red-500',
         features: ['Band 7+ strategies', 'Speaking practice', 'Writing templates', 'Flexible schedule'],
-        href: 'https://www.elab.academy/ielts'
+        href: 'https://www.elab.academy/english-proficiency'
     },
     {
-        id: 'lab-tech-prep',
-        title: 'Lab Technician Prep',
-        subtitle: 'Medical Laboratory',
-        description: 'Specialized preparation for medical laboratory scientist licensing exams.',
-        icon: FlaskConical,
+        id: 'nclex-prep',
+        title: 'NCLEX Preparation',
+        subtitle: 'US Nursing License',
+        description: 'Comprehensive NCLEX-RN & NCLEX-PN preparation for US nursing licensure.',
+        icon: Award,
         gradient: 'from-emerald-500 via-green-500 to-teal-500',
-        features: ['Theory review', 'Practical guidance', 'Exam strategies', 'Expert support'],
-        href: 'https://www.elab.academy/lab-technician'
+        features: ['NGN format prep', 'CAT simulation', 'Question bank', 'Pass guarantee'],
+        href: 'https://elab.academy/'
     }
 ]
 
 const stats = [
-    { label: 'Students Trained', value: '5,000+', icon: Users },
+    { label: 'Students Trained', value: '50,000+', icon: Users },
     { label: 'Pass Rate', value: '95%', icon: Award },
-    { label: 'Expert Tutors', value: '50+', icon: GraduationCap },
-    { label: 'Hours of Content', value: '500+', icon: Clock }
+    { label: 'Questions', value: '10,000+', icon: HelpCircle },
+    { label: 'Expert Support', value: '24/7', icon: Headphones }
 ]
 
 export default function ServicesShowcase() {
