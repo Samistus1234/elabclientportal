@@ -38,7 +38,7 @@ const services: Service[] = [
         features: ['Expert instructors', 'Practice tests', 'Study materials', '95% pass rate'],
         badge: 'Most Popular',
         popular: true,
-        href: 'https://www.elab.academy/prometric'
+        href: 'https://www.elab.academy/classroom-snle/landing'
     },
     {
         id: 'oet-prep',
@@ -49,7 +49,7 @@ const services: Service[] = [
         gradient: 'from-blue-500 via-cyan-500 to-teal-500',
         features: ['All 4 modules covered', 'Role-play practice', 'Writing feedback', 'Mock tests'],
         badge: 'Healthcare Focused',
-        href: 'https://www.elab.academy/oet'
+        href: 'https://www.elab.academy/english-proficiency'
     },
     {
         id: 'ielts-prep',
@@ -59,7 +59,7 @@ const services: Service[] = [
         icon: BookOpen,
         gradient: 'from-amber-500 via-orange-500 to-red-500',
         features: ['Band 7+ strategies', 'Speaking practice', 'Writing templates', 'Flexible schedule'],
-        href: 'https://www.elab.academy/ielts'
+        href: 'https://www.elab.academy/english-proficiency'
     },
     {
         id: 'nclex-prep',
