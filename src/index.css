@@ -14,7 +14,7 @@ html {
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background: linear-gradient(135deg, #f0f9ff 0%, #fdf4ff 50%, #f0fdf4 100%);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #eff6ff 100%);
   min-height: 100vh;
   color: #1e293b;
 }
@@ -112,7 +112,7 @@ body {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #0ea5e9 0%, #d946ef 100%);
+  background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -152,7 +152,7 @@ body {
 }
 
 .glow-accent {
-  box-shadow: 0 0 20px rgba(217, 70, 239, 0.3);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
 /* Card hover effects */
@@ -176,7 +176,7 @@ body {
   inset: 0;
   border-radius: inherit;
   padding: 2px;
-  background: linear-gradient(135deg, #0ea5e9, #d946ef);
+  background: linear-gradient(135deg, #0ea5e9, #3b82f6);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;

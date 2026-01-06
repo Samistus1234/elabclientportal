@@ -235,7 +235,7 @@ export default function Dashboard() {
                             <motion.div
                                 whileHover={{ rotate: 180 }}
                                 transition={{ duration: 0.3 }}
-                                className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-200"
+                                className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-200"
                             >
                                 <Sparkles className="w-5 h-5 text-white" />
                             </motion.div>
@@ -432,15 +432,20 @@ export default function Dashboard() {
                     <p className="text-slate-400 text-sm">
                         © 2025 ELAB Services. Empowering Healthcare Professionals Worldwide.
                     </p>
-                    <p className="text-slate-400 text-xs mt-2">
-                        828 Lane Allen Road 219, Lexington, Kentucky, USA
-                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-3 text-slate-400 text-xs">
+                        <p>4, Addo Road, Suite 10, Stephen Taiwo Shopping Complex, Ajah, Lagos, Nigeria</p>
+                        <span className="hidden sm:inline">|</span>
+                        <p>828 Lane Allen Road 219, Lexington, Kentucky, USA</p>
+                    </div>
                     <div className="flex items-center justify-center gap-4 mt-3 text-xs text-slate-400">
                         <a href="https://www.elab.academy/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500 transition-colors">Privacy Policy</a>
                         <span>•</span>
                         <a href="https://www.elab.academy/terms" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500 transition-colors">Terms of Service</a>
                         <span>•</span>
                         <a href="mailto:info@elab.academy" className="hover:text-primary-500 transition-colors">Contact Us</a>
+                    </div>
+                    <div className="flex items-center justify-center gap-4 mt-2 text-xs text-slate-400">
+                        <a href="tel:+2348165634195" className="hover:text-primary-500 transition-colors">+234 816 563 4195</a>
                         <span>•</span>
                         <a href="tel:+19294192327" className="hover:text-primary-500 transition-colors">+1 (929) 419-2327</a>
                     </div>

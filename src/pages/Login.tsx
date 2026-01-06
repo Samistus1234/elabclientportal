@@ -31,7 +31,7 @@ export default function Login() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -40,7 +40,7 @@ export default function Login() {
             >
                 {/* Logo and Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 mb-4 shadow-lg">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 mb-4 shadow-lg shadow-primary-200">
                         <Sparkles className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-3xl font-bold text-slate-800 mb-2">
@@ -152,11 +152,15 @@ export default function Login() {
                         info@elab.academy
                     </a>
                 </p>
-                <p className="text-center text-slate-400 text-xs mt-2">
+                <div className="flex items-center justify-center gap-3 mt-2 text-xs text-slate-400">
+                    <a href="tel:+2348165634195" className="hover:text-primary-500">
+                        +234 816 563 4195
+                    </a>
+                    <span>•</span>
                     <a href="tel:+19294192327" className="hover:text-primary-500">
                         +1 (929) 419-2327
                     </a>
-                </p>
+                </div>
             </motion.div>
         </div>
     )
