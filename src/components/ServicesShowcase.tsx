@@ -9,7 +9,6 @@ import {
     Sparkles,
     Globe,
     Stethoscope,
-    FlaskConical,
     HelpCircle,
     Headphones
 } from 'lucide-react'
@@ -63,14 +62,14 @@ const services: Service[] = [
         href: 'https://www.elab.academy/ielts'
     },
     {
-        id: 'lab-tech-prep',
-        title: 'Lab Technician Prep',
-        subtitle: 'Medical Laboratory',
-        description: 'Specialized preparation for medical laboratory scientist licensing exams.',
-        icon: FlaskConical,
+        id: 'nclex-prep',
+        title: 'NCLEX Preparation',
+        subtitle: 'US Nursing License',
+        description: 'Comprehensive NCLEX-RN & NCLEX-PN preparation for US nursing licensure.',
+        icon: Award,
         gradient: 'from-emerald-500 via-green-500 to-teal-500',
-        features: ['Theory review', 'Practical guidance', 'Exam strategies', 'Expert support'],
-        href: 'https://www.elab.academy/lab-technician'
+        features: ['NGN format prep', 'CAT simulation', 'Question bank', 'Pass guarantee'],
+        href: 'https://www.elab.academy/nclex'
     }
 ]
 
