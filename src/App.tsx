@@ -11,6 +11,7 @@ import Dashboard from '@/pages/Dashboard'
 import CaseView from '@/pages/CaseView'
 import AcceptInvite from '@/pages/AcceptInvite'
 import FAQ from '@/pages/FAQ'
+import Documents from '@/pages/Documents'
 
 // Layout wrapper for authenticated pages
 function ProtectedRoute({ children, session }: { children: React.ReactNode; session: Session | null }) {
@@ -116,6 +117,14 @@ export default function App() {
                     element={
                         <ProtectedRoute session={session}>
                             <CaseView />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/documents"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <Documents />
                         </ProtectedRoute>
                     }
                 />
