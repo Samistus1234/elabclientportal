@@ -127,8 +127,8 @@ export default function AISummaryCard({ caseId, caseData }: AISummaryCardProps) 
                             <Sparkles className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <h3 className="font-semibold text-slate-800">AI Summary</h3>
-                            <p className="text-slate-500 text-xs">Powered by Gemini</p>
+                            <h3 className="font-semibold text-slate-800">Case Summary</h3>
+                            <p className="text-slate-500 text-xs">Your application overview</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
