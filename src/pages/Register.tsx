@@ -17,8 +17,8 @@ import {
 } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 
-// Verification API endpoint (Command Centre)
-const VERIFY_API_URL = 'https://fwmhfwprvqaovidykaqt.supabase.co/functions/v1/verify-case-access'
+// Verification API endpoint (Client Portal proxy to Command Centre)
+const VERIFY_API_URL = 'https://pvhwofaduoxirkroiblk.supabase.co/functions/v1/verify-registration'
 
 interface VerificationData {
     person: {
