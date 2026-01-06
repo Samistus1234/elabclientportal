@@ -5,7 +5,6 @@ import {
     LogOut,
     FileText,
     AlertCircle,
-    Sparkles,
     LayoutGrid,
     List,
     RefreshCw,
@@ -232,17 +231,11 @@ export default function Dashboard() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <motion.div
-                                whileHover={{ rotate: 180 }}
-                                transition={{ duration: 0.3 }}
-                                className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-200"
-                            >
-                                <Sparkles className="w-5 h-5 text-white" />
-                            </motion.div>
-                            <div>
-                                <span className="font-bold text-slate-800">ELAB Portal</span>
-                                <p className="text-xs text-slate-400 hidden sm:block">Healthcare Professional Services</p>
-                            </div>
+                            <img
+                                src="/elab-logo.png"
+                                alt="ELAB Solutions International"
+                                className="h-10 sm:h-12"
+                            />
                         </div>
                         <div className="flex items-center gap-2 sm:gap-4">
                             {/* Notification Bell */}

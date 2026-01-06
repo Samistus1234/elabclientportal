@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { signInWithPassword } from '@/lib/supabase'
-import { Mail, Lock, ArrowRight, Sparkles, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 
@@ -40,11 +40,13 @@ export default function Login() {
             >
                 {/* Logo and Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 mb-4 shadow-lg shadow-primary-200">
-                        <Sparkles className="w-8 h-8 text-white" />
-                    </div>
-                    <h1 className="text-3xl font-bold text-slate-800 mb-2">
-                        ELAB Client Portal
+                    <img
+                        src="/elab-logo.png"
+                        alt="ELAB Solutions International"
+                        className="h-16 mx-auto mb-4"
+                    />
+                    <h1 className="text-2xl font-bold text-slate-800 mb-2">
+                        Client Portal
                     </h1>
                     <p className="text-slate-600">
                         Track your application status in real-time
