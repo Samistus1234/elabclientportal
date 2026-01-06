@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import {
     CheckCircle2,
     Upload,
@@ -143,14 +144,16 @@ export default function DocumentChecklist({ documents = defaultDocuments }: Docu
             </div>
 
             {/* Upload Button */}
-            <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full mt-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-medium flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 hover:shadow-xl transition-shadow"
-            >
-                <Upload className="w-4 h-4" />
-                Upload Documents
-            </motion.button>
+            <Link to="/documents">
+                <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full mt-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-xl font-medium flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 hover:shadow-xl transition-shadow"
+                >
+                    <Upload className="w-4 h-4" />
+                    Upload Documents
+                </motion.button>
+            </Link>
         </motion.div>
     )
 }
