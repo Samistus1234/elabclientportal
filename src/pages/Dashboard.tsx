@@ -436,7 +436,7 @@ export default function Dashboard() {
                         <span>•</span>
                         <a href="https://www.elab.academy/terms" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500 transition-colors">Terms of Service</a>
                         <span>•</span>
-                        <a href="mailto:info@elab.academy" className="hover:text-primary-500 transition-colors">Contact Us</a>
+                        <a href="mailto:support@elabsolution.org" className="hover:text-primary-500 transition-colors">Contact Us</a>
                     </div>
                     <div className="flex items-center justify-center gap-4 mt-2 text-xs text-slate-400">
                         <a href="tel:+2348165634195" className="hover:text-primary-500 transition-colors">+234 816 563 4195</a>
