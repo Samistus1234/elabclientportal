@@ -173,38 +173,56 @@ serve(async (req) => {
           syncedPipeline = existingPipeline
         }
       } else if (pipeline) {
-        // Pipeline doesn't exist, insert it
+        // Pipeline doesn't exist by ID, try to find by slug or create
         // IMPORTANT: Use targetPipelineId (not pipeline.id) to ensure consistency
-        console.log('Creating new pipeline with ID:', targetPipelineId, 'name:', pipeline.name)
-        const { data: newPipeline, error: insertError } = await supabase
+        console.log('Creating new pipeline with ID:', targetPipelineId, 'name:', pipeline.name, 'slug:', pipeline.slug)
+
+        // First check if a pipeline with this slug already exists (different ID)
+        const { data: existingBySlug } = await supabase
           .from('pipelines')
-          .insert({
-            id: targetPipelineId,
-            name: pipeline.name,
-            slug: pipeline.slug,
-            org_id: orgId,
-          })
-          .select()
-          .single()
+          .select('id, name, slug, org_id')
+          .eq('slug', pipeline.slug)
+          .eq('org_id', orgId)
+          .maybeSingle()
 
-        if (insertError) {
-          console.error('Pipeline insert error:', insertError)
-          return new Response(
-            JSON.stringify({ error: 'Failed to create pipeline', details: insertError }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
+        if (existingBySlug) {
+          // Use the existing pipeline instead of creating a new one
+          console.log('Found existing pipeline with same slug:', existingBySlug)
+          syncedPipeline = existingBySlug
+          // Update targetPipelineId to use the existing pipeline's ID
+          // This is a workaround - we'll use this ID for the case
+        } else {
+          // No existing pipeline, create new one
+          const { data: newPipeline, error: insertError } = await supabase
+            .from('pipelines')
+            .insert({
+              id: targetPipelineId,
+              name: pipeline.name,
+              slug: pipeline.slug,
+              org_id: orgId,
+            })
+            .select()
+            .single()
+
+          if (insertError) {
+            console.error('Pipeline insert error:', insertError)
+            return new Response(
+              JSON.stringify({ error: 'Failed to create pipeline', details: insertError }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
+
+          if (!newPipeline) {
+            console.error('Pipeline insert returned no data!')
+            return new Response(
+              JSON.stringify({ error: 'Failed to create pipeline', details: 'Insert returned no data' }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
+
+          syncedPipeline = newPipeline
+          console.log('Pipeline created successfully:', JSON.stringify(syncedPipeline))
         }
-
-        if (!newPipeline) {
-          console.error('Pipeline insert returned no data!')
-          return new Response(
-            JSON.stringify({ error: 'Failed to create pipeline', details: 'Insert returned no data' }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          )
-        }
-
-        syncedPipeline = newPipeline
-        console.log('Pipeline created successfully:', JSON.stringify(syncedPipeline))
       } else {
         // No pipeline data provided and pipeline doesn't exist
         return new Response(
@@ -216,27 +234,35 @@ serve(async (req) => {
         )
       }
 
+      // Use the synced pipeline's ID (might be different if we found existing by slug)
+      const finalPipelineIdForCase = syncedPipeline?.id || targetPipelineId
+
       // Verify pipeline exists before proceeding
-      console.log('Verifying pipeline exists with ID:', targetPipelineId)
+      console.log('Verifying pipeline exists with ID:', finalPipelineIdForCase)
       const { data: verifyPipeline, error: verifyError } = await supabase
         .from('pipelines')
         .select('id, name')
-        .eq('id', targetPipelineId)
+        .eq('id', finalPipelineIdForCase)
         .single()
 
       console.log('Verification result:', JSON.stringify(verifyPipeline), 'error:', JSON.stringify(verifyError))
 
       if (!verifyPipeline) {
         return new Response(
-          JSON.stringify({ error: 'Pipeline verification failed', details: `Pipeline ${targetPipelineId} still does not exist after sync attempt`, verifyError }),
+          JSON.stringify({ error: 'Pipeline verification failed', details: `Pipeline ${finalPipelineIdForCase} still does not exist after sync attempt`, verifyError }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
       console.log('Pipeline VERIFIED:', verifyPipeline.id, verifyPipeline.name)
     }
 
+    // Determine final pipeline ID (might be from existing pipeline found by slug)
+    const resolvedPipelineId = syncedPipeline?.id || targetPipelineId
+
     // Step 2: Upsert stages if provided
+    // Use resolvedPipelineId to ensure stages reference the correct pipeline
     if (stages && stages.length > 0) {
+      console.log('Upserting stages with pipeline_id:', resolvedPipelineId)
       const { error: stagesError } = await supabase
         .from('pipeline_stages')
         .upsert(stages.map(s => ({
@@ -244,7 +270,7 @@ serve(async (req) => {
           name: s.name,
           slug: s.slug,
           order_index: s.order_index,
-          pipeline_id: s.pipeline_id,
+          pipeline_id: resolvedPipelineId, // Use resolved ID, not the one from Command Center
         })), { onConflict: 'id' })
 
       if (stagesError) {
@@ -316,11 +342,11 @@ serve(async (req) => {
     }
 
     // Step 5: Upsert case (org_id already obtained in Step 0)
-    // Use targetPipelineId (the one we verified exists) instead of case_data.pipeline_id
-    const finalPipelineId = targetPipelineId || case_data.pipeline_id
+    // Use resolvedPipelineId (the one we verified exists, might be from existing pipeline found by slug)
+    const finalPipelineId = resolvedPipelineId || case_data.pipeline_id
     console.log('Case upsert - using pipeline_id:', finalPipelineId)
     console.log('case_data.pipeline_id was:', case_data.pipeline_id)
-    console.log('targetPipelineId was:', targetPipelineId)
+    console.log('resolvedPipelineId was:', resolvedPipelineId)
 
     const { error: caseError } = await supabase
       .from('cases')
