@@ -37,7 +37,7 @@ const quickActions: QuickAction[] = [
         icon: MessageCircle,
         color: 'text-green-600',
         bgColor: 'bg-green-100 hover:bg-green-200',
-        href: 'mailto:info@elab.academy?subject=Client%20Portal%20Inquiry'
+        href: 'https://wa.me/2348165634195'
     },
     {
         id: 'schedule',
@@ -46,7 +46,7 @@ const quickActions: QuickAction[] = [
         icon: Calendar,
         color: 'text-purple-600',
         bgColor: 'bg-purple-100 hover:bg-purple-200',
-        href: 'https://www.elab.academy/schedule'
+        href: 'https://calendar.app.google/ZD4U6SwmwGCvsfJT8'
     },
     {
         id: 'faq',
@@ -71,10 +71,10 @@ const contactOptions = [
     {
         id: 'email',
         label: 'Email',
-        value: 'info@elab.academy',
+        value: 'support@elabsolution.org',
         icon: Mail,
         color: 'text-blue-600',
-        href: 'mailto:info@elab.academy'
+        href: 'mailto:support@elabsolution.org'
     }
 ]
 
