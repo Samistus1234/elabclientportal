@@ -72,6 +72,7 @@ export default function Register() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
                 },
                 body: JSON.stringify({
                     case_reference: caseReference.trim().toUpperCase(),
