@@ -5,7 +5,6 @@ import {
     ChevronDown,
     ArrowLeft,
     HelpCircle,
-    Shield,
     FileCheck,
     Building2,
     GraduationCap,
