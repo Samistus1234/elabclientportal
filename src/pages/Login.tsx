@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { signInWithPassword } from '@/lib/supabase'
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 export default function Login() {
     const navigate = useNavigate()
@@ -144,6 +144,14 @@ export default function Login() {
                                 </>
                             )}
                         </button>
+
+                        {/* Register Link */}
+                        <p className="text-center text-slate-600 text-sm pt-2">
+                            Don't have an account?{' '}
+                            <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+                                Create one
+                            </Link>
+                        </p>
                     </form>
                 </div>
 
