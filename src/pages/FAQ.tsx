@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import {
     ChevronDown,
     ArrowLeft,
@@ -268,6 +268,22 @@ function FAQAccordion({ item, isOpen, onToggle }: { item: FAQItem; isOpen: boole
 export default function FAQ() {
     const [openItems, setOpenItems] = useState<Record<string, boolean>>({})
     const [activeCategory, setActiveCategory] = useState<string | null>(null)
+    const location = useLocation()
+
+    // Handle hash navigation
+    useEffect(() => {
+        const hash = location.hash.replace('#', '')
+        if (hash && faqCategories.some(c => c.id === hash)) {
+            setActiveCategory(hash)
+            // Scroll to the section after a short delay to allow render
+            setTimeout(() => {
+                const element = document.getElementById(hash)
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+            }, 100)
+        }
+    }, [location.hash])
 
     const toggleItem = (categoryId: string, questionIndex: number) => {
         const key = `${categoryId}-${questionIndex}`
@@ -372,10 +388,11 @@ export default function FAQ() {
                     {filteredCategories.map((category, categoryIndex) => (
                         <motion.div
                             key={category.id}
+                            id={category.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 * categoryIndex }}
-                            className="bg-white rounded-2xl shadow-sm overflow-hidden"
+                            className="bg-white rounded-2xl shadow-sm overflow-hidden scroll-mt-24"
                         >
                             {/* Category Header */}
                             <div className={`${category.bgColor} px-6 py-4 flex items-center gap-3`}>
