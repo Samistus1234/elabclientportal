@@ -8,7 +8,8 @@ import {
     LayoutGrid,
     List,
     RefreshCw,
-    Bell
+    Bell,
+    Sparkles
 } from 'lucide-react'
 import WelcomeHero from '@/components/WelcomeHero'
 import ApplicationStatusChart from '@/components/ApplicationStatusChart'

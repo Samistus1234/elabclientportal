@@ -5,7 +5,6 @@ import {
     Phone,
     Mail,
     FileQuestion,
-    Video,
     ArrowRight,
     Clock,
     CheckCircle
