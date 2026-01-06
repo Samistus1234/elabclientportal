@@ -531,7 +531,7 @@ export default function Dashboard() {
                             Join thousands of healthcare professionals who have achieved their career goals with ELAB.
                         </p>
                         <motion.a
-                            href="https://www.elab.academy"
+                            href="https://www.elabsolution.org"
                             target="_blank"
                             rel="noopener noreferrer"
                             whileHover={{ scale: 1.05 }}
