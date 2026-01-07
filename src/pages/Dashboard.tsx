@@ -9,7 +9,11 @@ import {
     List,
     RefreshCw,
     Bell,
-    Sparkles
+    Sparkles,
+    X,
+    CheckCircle,
+    Clock,
+    MessageCircle
 } from 'lucide-react'
 import WelcomeHero from '@/components/WelcomeHero'
 import ApplicationStatusChart from '@/components/ApplicationStatusChart'
@@ -98,6 +102,37 @@ export default function Dashboard() {
     const [error, setError] = useState<string | null>(null)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
     const [refreshing, setRefreshing] = useState(false)
+    const [showNotifications, setShowNotifications] = useState(false)
+
+    // Demo notifications - these would come from real data in production
+    const notifications = [
+        {
+            id: '1',
+            type: 'success',
+            title: 'Welcome to ELAB Client Portal!',
+            message: 'Your account has been set up successfully.',
+            time: 'Just now',
+            read: false
+        },
+        {
+            id: '2',
+            type: 'info',
+            title: 'Document Upload Available',
+            message: 'You can now upload documents for your application.',
+            time: '1 hour ago',
+            read: false
+        },
+        {
+            id: '3',
+            type: 'reminder',
+            title: 'Complete Your Profile',
+            message: 'Add your contact details to stay updated.',
+            time: '2 hours ago',
+            read: true
+        }
+    ]
+
+    const unreadCount = notifications.filter(n => !n.read).length
 
     useEffect(() => {
         loadClientData()
@@ -240,14 +275,106 @@ export default function Dashboard() {
                         </div>
                         <div className="flex items-center gap-2 sm:gap-4">
                             {/* Notification Bell */}
-                            <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
-                            >
-                                <Bell className="w-5 h-5" />
-                                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-                            </motion.button>
+                            <div className="relative">
+                                <motion.button
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={() => setShowNotifications(!showNotifications)}
+                                    className="relative p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
+                                >
+                                    <Bell className="w-5 h-5" />
+                                    {unreadCount > 0 && (
+                                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                                    )}
+                                </motion.button>
+
+                                {/* Notification Dropdown */}
+                                {showNotifications && (
+                                    <>
+                                        {/* Backdrop */}
+                                        <div
+                                            className="fixed inset-0 z-30"
+                                            onClick={() => setShowNotifications(false)}
+                                        />
+
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden z-40"
+                                        >
+                                            {/* Header */}
+                                            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
+                                                <h3 className="font-semibold text-slate-800">Notifications</h3>
+                                                <button
+                                                    onClick={() => setShowNotifications(false)}
+                                                    className="p-1 rounded-lg hover:bg-slate-200 text-slate-400 transition-colors"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+
+                                            {/* Notifications List */}
+                                            <div className="max-h-80 overflow-y-auto">
+                                                {notifications.length === 0 ? (
+                                                    <div className="py-8 text-center">
+                                                        <Bell className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+                                                        <p className="text-slate-500 text-sm">No notifications</p>
+                                                    </div>
+                                                ) : (
+                                                    notifications.map((notification) => (
+                                                        <div
+                                                            key={notification.id}
+                                                            className={`px-4 py-3 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer ${
+                                                                !notification.read ? 'bg-blue-50/50' : ''
+                                                            }`}
+                                                        >
+                                                            <div className="flex gap-3">
+                                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                                                                    notification.type === 'success' ? 'bg-green-100' :
+                                                                    notification.type === 'info' ? 'bg-blue-100' :
+                                                                    'bg-amber-100'
+                                                                }`}>
+                                                                    {notification.type === 'success' ? (
+                                                                        <CheckCircle className="w-4 h-4 text-green-600" />
+                                                                    ) : notification.type === 'info' ? (
+                                                                        <MessageCircle className="w-4 h-4 text-blue-600" />
+                                                                    ) : (
+                                                                        <Clock className="w-4 h-4 text-amber-600" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className={`text-sm ${!notification.read ? 'font-medium text-slate-800' : 'text-slate-700'}`}>
+                                                                        {notification.title}
+                                                                    </p>
+                                                                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                                                                        {notification.message}
+                                                                    </p>
+                                                                    <p className="text-xs text-slate-400 mt-1">
+                                                                        {notification.time}
+                                                                    </p>
+                                                                </div>
+                                                                {!notification.read && (
+                                                                    <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2" />
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+
+                                            {/* Footer */}
+                                            {notifications.length > 0 && (
+                                                <div className="px-4 py-2 border-t border-slate-100 bg-slate-50">
+                                                    <button className="w-full text-center text-sm text-primary-600 hover:text-primary-700 font-medium py-1">
+                                                        Mark all as read
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    </>
+                                )}
+                            </div>
 
                             <button
                                 onClick={handleRefresh}
@@ -404,7 +531,7 @@ export default function Dashboard() {
                             Join thousands of healthcare professionals who have achieved their career goals with ELAB.
                         </p>
                         <motion.a
-                            href="https://www.elab.academy"
+                            href="https://www.elabsolution.org"
                             target="_blank"
                             rel="noopener noreferrer"
                             whileHover={{ scale: 1.05 }}
