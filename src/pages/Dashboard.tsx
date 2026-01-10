@@ -420,7 +420,7 @@ export default function Dashboard() {
 
                 {/* Smart Cross-sell Recommendations based on user's cases */}
                 {cases.length > 0 ? (
-                    <SmartCrossSellRecommendations cases={cases} recruiterDiscount={10} />
+                    <SmartCrossSellRecommendations cases={cases} recruiterDiscount={5} />
                 ) : (
                     <ServicesShowcase />
                 )}

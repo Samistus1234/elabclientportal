@@ -12,7 +12,6 @@ import {
     Globe,
     BookOpen,
     Award,
-    FlaskConical,
     BadgePercent
 } from 'lucide-react'
 
@@ -47,19 +46,19 @@ interface Recommendation {
 
 // Define cross-sell mappings based on pipeline types
 const PIPELINE_RECOMMENDATIONS: Record<string, string[]> = {
-    // DataFlow customers should consider Mumaris, Tutorial, CDFNS
-    'dataflow': ['mumaris', 'prometric-tutorial', 'cdfns', 'oet-prep'],
-    'dataflow_verification': ['mumaris', 'prometric-tutorial', 'cdfns', 'oet-prep'],
+    // DataFlow customers should consider Mumaris, Tutorial, Trumerit, OET, IELTS
+    'dataflow': ['mumaris', 'prometric-tutorial', 'trumerit', 'oet-prep', 'ielts-prep'],
+    'dataflow_verification': ['mumaris', 'prometric-tutorial', 'trumerit', 'oet-prep', 'ielts-prep'],
 
-    // Mumaris customers might need DataFlow or exam prep
-    'mumaris': ['dataflow', 'prometric-tutorial', 'cdfns', 'oet-prep'],
-    'mumaris_registration': ['dataflow', 'prometric-tutorial', 'cdfns', 'oet-prep'],
+    // Mumaris customers should see ELAB Academy, Prometric Tutorial, Trumerit, OET, IELTS
+    'mumaris': ['elab-academy', 'prometric-tutorial', 'trumerit', 'oet-prep', 'ielts-prep'],
+    'mumaris_registration': ['elab-academy', 'prometric-tutorial', 'trumerit', 'oet-prep', 'ielts-prep'],
 
-    // Exam booking customers need tutorials
+    // Exam booking customers need tutorials and language prep
     'exam_booking': ['prometric-tutorial', 'oet-prep', 'ielts-prep'],
 
     // Academic customers
-    'academia': ['prometric-tutorial', 'oet-prep', 'ielts-prep', 'cdfns'],
+    'academia': ['prometric-tutorial', 'oet-prep', 'ielts-prep', 'trumerit'],
 
     // General/default recommendations
     'default': ['dataflow', 'mumaris', 'prometric-tutorial', 'oet-prep']
@@ -106,18 +105,31 @@ const ALL_RECOMMENDATIONS: Record<string, Omit<Recommendation, 'priority'>> = {
         badge: 'Best Value',
         href: 'https://www.elab.academy/prometric'
     },
-    'cdfns': {
-        id: 'cdfns',
-        title: 'CDFNS Exam Prep',
-        subtitle: 'Dialysis Technician',
-        description: 'Specialized preparation for Certified Dialysis Technician exams.',
-        icon: FlaskConical,
-        gradient: 'from-amber-500 via-orange-500 to-red-500',
-        features: ['Theory review', 'Practical guidance', 'Exam strategies', 'Expert support'],
-        originalPrice: '$199',
-        discountedPrice: '$179',
-        badge: 'Specialized',
-        href: 'https://www.elab.academy/cdfns'
+    'trumerit': {
+        id: 'trumerit',
+        title: 'Trumerit Certification',
+        subtitle: 'Formerly CGFNS',
+        description: 'Complete Trumerit (formerly CGFNS) certification for international nurses seeking US licensure.',
+        icon: Award,
+        gradient: 'from-violet-500 via-purple-500 to-indigo-500',
+        features: ['Credential evaluation', 'Exam preparation', 'Application support', 'Expert guidance'],
+        originalPrice: '$299',
+        discountedPrice: '$284',
+        badge: 'US Pathway',
+        href: 'https://www.elab.academy/trumerit'
+    },
+    'elab-academy': {
+        id: 'elab-academy',
+        title: 'ELAB Academy',
+        subtitle: 'Full Course Access',
+        description: 'Access all ELAB Academy courses and resources for comprehensive healthcare education.',
+        icon: GraduationCap,
+        gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
+        features: ['All courses included', 'Lifetime access', 'Certificate programs', 'Expert instructors'],
+        originalPrice: '$499',
+        discountedPrice: '$474',
+        badge: 'Best Value',
+        href: 'https://www.elab.academy'
     },
     'oet-prep': {
         id: 'oet-prep',
@@ -146,7 +158,7 @@ const ALL_RECOMMENDATIONS: Record<string, Omit<Recommendation, 'priority'>> = {
     }
 }
 
-export default function SmartCrossSellRecommendations({ cases, recruiterDiscount = 10 }: SmartCrossSellRecommendationsProps) {
+export default function SmartCrossSellRecommendations({ cases, recruiterDiscount = 5 }: SmartCrossSellRecommendationsProps) {
     // Analyze user's current cases to determine relevant recommendations
     const getRecommendations = (): Recommendation[] => {
         // Get all pipeline slugs from user's cases
