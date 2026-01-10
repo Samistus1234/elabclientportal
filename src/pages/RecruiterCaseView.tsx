@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getRecruiterCase, getRecruiterCaseStageHistory, getPortalUserInfo } from '@/lib/supabase'
 import { motion } from 'framer-motion'
+import { jsPDF } from 'jspdf'
 import {
     ArrowLeft,
     Clock,
@@ -436,27 +437,96 @@ export default function RecruiterCaseView() {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <button
                             onClick={() => {
-                                // Generate and download invoice
-                                const invoiceData = `
-ELAB SOLUTIONS INTERNATIONAL
-Invoice for Case: ${caseData.out_case_reference}
-================================
-Candidate: ${caseData.out_person_first_name} ${caseData.out_person_last_name}
-Service: ${caseData.out_pipeline_name}
-Reference: ${caseData.out_external_case_number || caseData.out_case_reference}
-Date: ${format(new Date(), 'MMMM d, yyyy')}
-Status: ${caseData.out_status}
-================================
-For payment inquiries, contact:
-headoffice@elabsolution.org
-                                `.trim()
-                                const blob = new Blob([invoiceData], { type: 'text/plain' })
-                                const url = URL.createObjectURL(blob)
-                                const a = document.createElement('a')
-                                a.href = url
-                                a.download = `Invoice-${caseData.out_case_reference}.txt`
-                                a.click()
-                                URL.revokeObjectURL(url)
+                                // Generate professional PDF invoice
+                                const doc = new jsPDF()
+                                const pageWidth = doc.internal.pageSize.getWidth()
+
+                                // Header - Company Name
+                                doc.setFillColor(79, 70, 229) // Indigo
+                                doc.rect(0, 0, pageWidth, 40, 'F')
+                                doc.setTextColor(255, 255, 255)
+                                doc.setFontSize(24)
+                                doc.setFont('helvetica', 'bold')
+                                doc.text('ELAB SOLUTIONS INTERNATIONAL', pageWidth / 2, 20, { align: 'center' })
+                                doc.setFontSize(12)
+                                doc.setFont('helvetica', 'normal')
+                                doc.text('Healthcare Credential Verification Services', pageWidth / 2, 30, { align: 'center' })
+
+                                // Invoice Title
+                                doc.setTextColor(79, 70, 229)
+                                doc.setFontSize(20)
+                                doc.setFont('helvetica', 'bold')
+                                doc.text('INVOICE', pageWidth / 2, 55, { align: 'center' })
+
+                                // Invoice details box
+                                doc.setDrawColor(200, 200, 200)
+                                doc.setFillColor(249, 250, 251)
+                                doc.roundedRect(15, 65, pageWidth - 30, 25, 3, 3, 'FD')
+                                doc.setTextColor(100, 100, 100)
+                                doc.setFontSize(10)
+                                doc.setFont('helvetica', 'normal')
+                                doc.text(`Invoice No: INV-${caseData.out_case_reference}`, 20, 75)
+                                doc.text(`Date: ${format(new Date(), 'MMMM d, yyyy')}`, 20, 82)
+                                doc.text(`Reference: ${caseData.out_external_case_number || caseData.out_case_reference}`, pageWidth - 20, 75, { align: 'right' })
+                                doc.text(`Status: ${caseData.out_status.toUpperCase()}`, pageWidth - 20, 82, { align: 'right' })
+
+                                // Candidate Information Section
+                                doc.setTextColor(79, 70, 229)
+                                doc.setFontSize(14)
+                                doc.setFont('helvetica', 'bold')
+                                doc.text('CANDIDATE INFORMATION', 15, 105)
+                                doc.setDrawColor(79, 70, 229)
+                                doc.line(15, 108, pageWidth - 15, 108)
+
+                                doc.setTextColor(60, 60, 60)
+                                doc.setFontSize(11)
+                                doc.setFont('helvetica', 'normal')
+                                doc.text(`Name: ${caseData.out_person_first_name} ${caseData.out_person_last_name}`, 15, 118)
+                                doc.text(`Email: ${caseData.out_person_email || 'N/A'}`, 15, 126)
+                                doc.text(`Phone: ${caseData.out_person_phone || 'N/A'}`, 15, 134)
+
+                                // Service Details Section
+                                doc.setTextColor(79, 70, 229)
+                                doc.setFontSize(14)
+                                doc.setFont('helvetica', 'bold')
+                                doc.text('SERVICE DETAILS', 15, 155)
+                                doc.line(15, 158, pageWidth - 15, 158)
+
+                                doc.setTextColor(60, 60, 60)
+                                doc.setFontSize(11)
+                                doc.setFont('helvetica', 'normal')
+                                doc.text(`Service: ${caseData.out_pipeline_name}`, 15, 168)
+                                doc.text(`Current Stage: ${caseData.out_current_stage_name || 'Processing'}`, 15, 176)
+                                doc.text(`Started: ${format(new Date(caseData.out_start_date || caseData.out_created_at), 'MMMM d, yyyy')}`, 15, 184)
+
+                                // Payment Information
+                                doc.setTextColor(79, 70, 229)
+                                doc.setFontSize(14)
+                                doc.setFont('helvetica', 'bold')
+                                doc.text('PAYMENT INFORMATION', 15, 205)
+                                doc.line(15, 208, pageWidth - 15, 208)
+
+                                doc.setFillColor(243, 244, 246)
+                                doc.roundedRect(15, 215, pageWidth - 30, 30, 3, 3, 'F')
+                                doc.setTextColor(60, 60, 60)
+                                doc.setFontSize(10)
+                                doc.text('For payment inquiries and pricing, please contact:', 20, 225)
+                                doc.setFont('helvetica', 'bold')
+                                doc.setTextColor(79, 70, 229)
+                                doc.text('headoffice@elabsolution.org', 20, 235)
+                                doc.text('+234 816 563 4195 | +1 (929) 419-2327', pageWidth - 20, 235, { align: 'right' })
+
+                                // Footer
+                                doc.setFillColor(79, 70, 229)
+                                doc.rect(0, 270, pageWidth, 27, 'F')
+                                doc.setTextColor(255, 255, 255)
+                                doc.setFontSize(9)
+                                doc.setFont('helvetica', 'normal')
+                                doc.text('ELAB Solutions International | www.elabsolution.org', pageWidth / 2, 280, { align: 'center' })
+                                doc.text('Thank you for choosing ELAB Solutions!', pageWidth / 2, 288, { align: 'center' })
+
+                                // Save PDF
+                                doc.save(`Invoice-${caseData.out_case_reference}.pdf`)
                             }}
                             className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-200"
                         >
@@ -465,36 +535,94 @@ headoffice@elabsolution.org
                         </button>
                         <button
                             onClick={() => {
-                                // Download case summary
-                                const summary = `
-CASE SUMMARY
-============
-Reference: ${caseData.out_case_reference}
-External Ref: ${caseData.out_external_case_number || 'N/A'}
+                                // Download case summary as PDF
+                                const doc = new jsPDF()
+                                const pageWidth = doc.internal.pageSize.getWidth()
 
-CANDIDATE INFORMATION
---------------------
-Name: ${caseData.out_person_first_name} ${caseData.out_person_last_name}
-Email: ${caseData.out_person_email}
-Phone: ${caseData.out_person_phone || 'N/A'}
+                                // Header
+                                doc.setFillColor(59, 130, 246) // Blue
+                                doc.rect(0, 0, pageWidth, 35, 'F')
+                                doc.setTextColor(255, 255, 255)
+                                doc.setFontSize(20)
+                                doc.setFont('helvetica', 'bold')
+                                doc.text('CASE SUMMARY REPORT', pageWidth / 2, 22, { align: 'center' })
 
-CASE DETAILS
-------------
-Service: ${caseData.out_pipeline_name}
-Current Stage: ${caseData.out_current_stage_name || 'Processing'}
-Status: ${caseData.out_status}
-Started: ${format(new Date(caseData.out_start_date || caseData.out_created_at), 'MMMM d, yyyy')}
-Last Updated: ${format(new Date(caseData.out_updated_at), 'MMMM d, yyyy h:mm a')}
+                                // Reference Box
+                                doc.setFillColor(239, 246, 255)
+                                doc.roundedRect(15, 45, pageWidth - 30, 20, 3, 3, 'F')
+                                doc.setTextColor(59, 130, 246)
+                                doc.setFontSize(12)
+                                doc.text(`Reference: ${caseData.out_case_reference}`, 20, 57)
+                                doc.setTextColor(100, 100, 100)
+                                doc.text(`Generated: ${format(new Date(), 'MMMM d, yyyy h:mm a')}`, pageWidth - 20, 57, { align: 'right' })
 
-Generated by ELAB Client Portal
-                                `.trim()
-                                const blob = new Blob([summary], { type: 'text/plain' })
-                                const url = URL.createObjectURL(blob)
-                                const a = document.createElement('a')
-                                a.href = url
-                                a.download = `CaseSummary-${caseData.out_case_reference}.txt`
-                                a.click()
-                                URL.revokeObjectURL(url)
+                                // Candidate Section
+                                doc.setTextColor(59, 130, 246)
+                                doc.setFontSize(14)
+                                doc.setFont('helvetica', 'bold')
+                                doc.text('CANDIDATE INFORMATION', 15, 80)
+                                doc.setDrawColor(59, 130, 246)
+                                doc.line(15, 83, pageWidth - 15, 83)
+
+                                doc.setTextColor(60, 60, 60)
+                                doc.setFontSize(11)
+                                doc.setFont('helvetica', 'normal')
+                                doc.text(`Full Name: ${caseData.out_person_first_name} ${caseData.out_person_last_name}`, 15, 93)
+                                doc.text(`Email: ${caseData.out_person_email || 'N/A'}`, 15, 101)
+                                doc.text(`Phone: ${caseData.out_person_phone || 'N/A'}`, 15, 109)
+
+                                // Case Details Section
+                                doc.setTextColor(59, 130, 246)
+                                doc.setFontSize(14)
+                                doc.setFont('helvetica', 'bold')
+                                doc.text('CASE DETAILS', 15, 130)
+                                doc.line(15, 133, pageWidth - 15, 133)
+
+                                doc.setTextColor(60, 60, 60)
+                                doc.setFontSize(11)
+                                doc.setFont('helvetica', 'normal')
+                                doc.text(`Service: ${caseData.out_pipeline_name}`, 15, 143)
+                                doc.text(`External Reference: ${caseData.out_external_case_number || 'N/A'}`, 15, 151)
+                                doc.text(`Current Stage: ${caseData.out_current_stage_name || 'Processing'}`, 15, 159)
+                                doc.text(`Status: ${caseData.out_status.toUpperCase()}`, 15, 167)
+                                doc.text(`Started: ${format(new Date(caseData.out_start_date || caseData.out_created_at), 'MMMM d, yyyy')}`, 15, 175)
+                                doc.text(`Last Updated: ${format(new Date(caseData.out_updated_at), 'MMMM d, yyyy h:mm a')}`, 15, 183)
+
+                                // Stage History Section
+                                doc.setTextColor(59, 130, 246)
+                                doc.setFontSize(14)
+                                doc.setFont('helvetica', 'bold')
+                                doc.text('PROGRESS TIMELINE', 15, 204)
+                                doc.line(15, 207, pageWidth - 15, 207)
+
+                                if (stageHistory.length > 0) {
+                                    let yPos = 217
+                                    stageHistory.slice(0, 5).forEach((stage, index) => {
+                                        doc.setFillColor(index === 0 ? 59 : 200, index === 0 ? 130 : 200, index === 0 ? 246 : 200)
+                                        doc.circle(20, yPos - 2, 3, 'F')
+                                        doc.setTextColor(60, 60, 60)
+                                        doc.setFontSize(10)
+                                        doc.setFont('helvetica', 'bold')
+                                        doc.text(stage.to_stage_name, 28, yPos)
+                                        doc.setFont('helvetica', 'normal')
+                                        doc.setTextColor(120, 120, 120)
+                                        doc.text(format(new Date(stage.created_at), 'MMM d, yyyy h:mm a'), pageWidth - 20, yPos, { align: 'right' })
+                                        yPos += 10
+                                    })
+                                } else {
+                                    doc.setTextColor(150, 150, 150)
+                                    doc.setFontSize(10)
+                                    doc.text('No stage transitions recorded yet', 15, 217)
+                                }
+
+                                // Footer
+                                doc.setFillColor(59, 130, 246)
+                                doc.rect(0, 275, pageWidth, 22, 'F')
+                                doc.setTextColor(255, 255, 255)
+                                doc.setFontSize(9)
+                                doc.text('ELAB Solutions International | www.elabsolution.org | headoffice@elabsolution.org', pageWidth / 2, 287, { align: 'center' })
+
+                                doc.save(`CaseSummary-${caseData.out_case_reference}.pdf`)
                             }}
                             className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg shadow-blue-200"
                         >
