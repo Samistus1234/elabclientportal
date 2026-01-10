@@ -23,7 +23,6 @@ import { supabase } from '@/lib/supabase'
 export default function Settings() {
     const navigate = useNavigate()
     const { preferences, setTheme, updatePreferences, isDark } = useTheme()
-    const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
