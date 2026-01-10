@@ -1,9 +1,10 @@
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, getPortalUserInfo } from '@/lib/supabase'
 import { Session } from '@supabase/supabase-js'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
-// Pages
+// Pages - Applicant
 import Login from '@/pages/Login'
 import Register from '@/pages/Register'
 import AuthCallback from '@/pages/AuthCallback'
@@ -12,6 +13,12 @@ import CaseView from '@/pages/CaseView'
 import AcceptInvite from '@/pages/AcceptInvite'
 import FAQ from '@/pages/FAQ'
 import Documents from '@/pages/Documents'
+import Settings from '@/pages/Settings'
+
+// Pages - Recruiter
+import RecruiterRegister from '@/pages/RecruiterRegister'
+import RecruiterDashboard from '@/pages/RecruiterDashboard'
+import RecruiterCaseView from '@/pages/RecruiterCaseView'
 
 // Layout wrapper for authenticated pages
 function ProtectedRoute({ children, session }: { children: React.ReactNode; session: Session | null }) {
@@ -19,6 +26,39 @@ function ProtectedRoute({ children, session }: { children: React.ReactNode; sess
         return <Navigate to="/login" replace />
     }
     return <>{children}</>
+}
+
+// Role-based redirect component - redirects to correct dashboard based on user type
+function RoleBasedRedirect() {
+    const [redirectPath, setRedirectPath] = useState<string | null>(null)
+    const [checking, setChecking] = useState(true)
+
+    useEffect(() => {
+        const checkUserType = async () => {
+            try {
+                const { data: userInfo } = await getPortalUserInfo()
+                if (userInfo?.user_type === 'recruiter') {
+                    setRedirectPath('/recruiter/dashboard')
+                } else {
+                    setRedirectPath('/dashboard')
+                }
+            } catch {
+                setRedirectPath('/dashboard')
+            }
+            setChecking(false)
+        }
+        checkUserType()
+    }, [])
+
+    if (checking) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+            </div>
+        )
+    }
+
+    return <Navigate to={redirectPath || '/dashboard'} replace />
 }
 
 // Component to handle hash-based auth tokens at any route
@@ -94,16 +134,18 @@ export default function App() {
     }
 
     return (
-        <AuthHashHandler>
-            <Routes>
+        <ThemeProvider>
+            <AuthHashHandler>
+                <Routes>
                 {/* Public routes */}
-                <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <Login />} />
-                <Route path="/register" element={session ? <Navigate to="/dashboard" replace /> : <Register />} />
+                <Route path="/login" element={session ? <RoleBasedRedirect /> : <Login />} />
+                <Route path="/register" element={session ? <RoleBasedRedirect /> : <Register />} />
+                <Route path="/recruiter/register" element={session ? <Navigate to="/recruiter/dashboard" replace /> : <RecruiterRegister />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
                 <Route path="/faq" element={<FAQ />} />
 
-                {/* Protected routes */}
+                {/* Protected routes - Applicant */}
                 <Route
                     path="/dashboard"
                     element={
@@ -128,10 +170,37 @@ export default function App() {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="/settings"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <Settings />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Protected routes - Recruiter */}
+                <Route
+                    path="/recruiter/dashboard"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <RecruiterDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/recruiter/case/:caseId"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <RecruiterCaseView />
+                        </ProtectedRoute>
+                    }
+                />
 
                 {/* Default redirect */}
-                <Route path="*" element={<Navigate to={session ? "/dashboard" : "/login"} replace />} />
-            </Routes>
-        </AuthHashHandler>
+                <Route path="*" element={session ? <RoleBasedRedirect /> : <Navigate to="/login" replace />} />
+                </Routes>
+            </AuthHashHandler>
+        </ThemeProvider>
     )
 }

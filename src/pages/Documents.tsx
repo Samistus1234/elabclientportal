@@ -635,8 +635,8 @@ export default function Documents() {
                     className="text-center text-sm text-slate-400 mt-8"
                 >
                     Need help? Contact us at{' '}
-                    <a href="mailto:support@elabsolution.org" className="text-primary-600 hover:underline">
-                        support@elabsolution.org
+                    <a href="mailto:headoffice@elabsolution.org" className="text-primary-600 hover:underline">
+                        headoffice@elabsolution.org
                     </a>
                 </motion.p>
             </div>

@@ -471,8 +471,8 @@ export default function Register() {
                 </p>
                 <p className="text-center text-slate-400 text-xs mt-3">
                     Need help? Contact{' '}
-                    <a href="mailto:info@elab.academy" className="hover:text-primary-500">
-                        info@elab.academy
+                    <a href="mailto:headoffice@elabsolution.org" className="hover:text-primary-500">
+                        headoffice@elabsolution.org
                     </a>
                 </p>
             </motion.div>

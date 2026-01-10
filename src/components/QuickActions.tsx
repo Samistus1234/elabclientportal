@@ -72,10 +72,10 @@ const contactOptions = [
     {
         id: 'email',
         label: 'Email',
-        value: 'support@elabsolution.org',
+        value: 'headoffice@elabsolution.org',
         icon: Mail,
         color: 'text-blue-600',
-        href: 'mailto:support@elabsolution.org'
+        href: 'mailto:headoffice@elabsolution.org'
     }
 ]
 
