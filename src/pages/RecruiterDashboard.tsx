@@ -4,8 +4,6 @@ import { supabase, getRecruiterCases, getRecruiterStats, getPortalUserInfo, type
 import { motion } from 'framer-motion'
 import {
     Users,
-    Briefcase,
-    TrendingUp,
     Clock,
     CheckCircle2,
     ChevronRight,
@@ -16,7 +14,7 @@ import {
     Building2,
     RefreshCw
 } from 'lucide-react'
-import { format, formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow } from 'date-fns'
 
 interface RecruiterCase {
     out_id: string
@@ -111,16 +109,6 @@ export default function RecruiterDashboard() {
             case 'on_hold': return 'bg-amber-100 text-amber-700'
             case 'cancelled': return 'bg-red-100 text-red-700'
             default: return 'bg-slate-100 text-slate-700'
-        }
-    }
-
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case 'urgent': return 'text-red-600'
-            case 'high': return 'text-orange-600'
-            case 'normal': return 'text-blue-600'
-            case 'low': return 'text-slate-500'
-            default: return 'text-slate-500'
         }
     }
 

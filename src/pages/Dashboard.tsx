@@ -168,7 +168,7 @@ export default function Dashboard() {
             setCases(typedCases)
 
             // Load pipeline stages for each unique pipeline using RPC
-            const pipelineIds = [...new Set(typedCases.map((c: CaseData) => c.pipeline?.id || c.pipeline_id).filter(Boolean))]
+            const pipelineIds = [...new Set(typedCases.map((c: CaseData) => c.pipeline?.id || c.pipeline_id).filter(Boolean))] as string[]
 
             if (pipelineIds.length > 0) {
                 const stagesByPipeline: Record<string, PipelineStage[]> = {}

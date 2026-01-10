@@ -7,7 +7,6 @@ import {
     TrendingUp,
     Gift,
     FileCheck,
-    Stethoscope,
     GraduationCap,
     Building2,
     Globe,

@@ -1,0 +1,418 @@
+import { useEffect, useState } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { getRecruiterCase, getRecruiterCaseStageHistory, getPortalUserInfo } from '@/lib/supabase'
+import { motion } from 'framer-motion'
+import {
+    ArrowLeft,
+    Clock,
+    CheckCircle2,
+    AlertCircle,
+    Calendar,
+    User,
+    Briefcase,
+    Shield,
+    RefreshCw,
+    Mail,
+    Phone,
+    TrendingUp,
+    FileText
+} from 'lucide-react'
+import { format, formatDistanceToNow } from 'date-fns'
+
+interface CaseDetails {
+    out_id: string
+    out_case_reference: string
+    out_external_case_number: string | null
+    out_status: string
+    out_priority: string
+    out_created_at: string
+    out_updated_at: string
+    out_start_date: string | null
+    out_share_updates_with_candidate: boolean
+    out_person_id: string
+    out_person_first_name: string
+    out_person_last_name: string
+    out_person_email: string
+    out_person_phone: string | null
+    out_pipeline_id: string
+    out_pipeline_name: string
+    out_current_stage_id: string
+    out_current_stage_name: string
+}
+
+interface StageHistoryItem {
+    id: string
+    created_at: string
+    notes: string | null
+    from_stage_name: string | null
+    to_stage_name: string
+}
+
+export default function RecruiterCaseView() {
+    const { caseId } = useParams<{ caseId: string }>()
+    const navigate = useNavigate()
+    const [caseData, setCaseData] = useState<CaseDetails | null>(null)
+    const [stageHistory, setStageHistory] = useState<StageHistoryItem[]>([])
+    const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        loadData()
+    }, [caseId])
+
+    const loadData = async () => {
+        try {
+            // Verify user is a recruiter
+            const { data: userInfo } = await getPortalUserInfo()
+            if (!userInfo || userInfo.user_type !== 'recruiter') {
+                navigate('/dashboard')
+                return
+            }
+
+            if (!caseId) {
+                setError('Case ID is required')
+                setLoading(false)
+                return
+            }
+
+            // Load case details
+            const { data: caseResult, error: caseError } = await getRecruiterCase(caseId)
+            if (caseError) throw caseError
+            if (!caseResult) {
+                setError('Case not found or you do not have access')
+                setLoading(false)
+                return
+            }
+            setCaseData(caseResult)
+
+            // Load stage history
+            const { data: historyResult } = await getRecruiterCaseStageHistory(caseId)
+            setStageHistory(historyResult || [])
+
+        } catch (err: any) {
+            console.error('Error loading case:', err)
+            setError(err.message || 'Failed to load case details')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleRefresh = async () => {
+        setRefreshing(true)
+        await loadData()
+        setRefreshing(false)
+    }
+
+    const getStatusConfig = (status: string) => {
+        const configs: Record<string, { icon: React.ReactNode; bg: string; text: string; label: string }> = {
+            active: {
+                icon: <Clock className="w-5 h-5" />,
+                bg: 'bg-blue-100',
+                text: 'text-blue-700',
+                label: 'In Progress'
+            },
+            completed: {
+                icon: <CheckCircle2 className="w-5 h-5" />,
+                bg: 'bg-green-100',
+                text: 'text-green-700',
+                label: 'Completed'
+            },
+            on_hold: {
+                icon: <AlertCircle className="w-5 h-5" />,
+                bg: 'bg-amber-100',
+                text: 'text-amber-700',
+                label: 'On Hold'
+            },
+            cancelled: {
+                icon: <AlertCircle className="w-5 h-5" />,
+                bg: 'bg-red-100',
+                text: 'text-red-700',
+                label: 'Cancelled'
+            }
+        }
+        return configs[status] || configs.active
+    }
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+                <div className="flex flex-col items-center gap-4">
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    >
+                        <div className="w-16 h-16 rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+                    </motion.div>
+                    <p className="text-slate-600 font-medium">Loading case details...</p>
+                </div>
+            </div>
+        )
+    }
+
+    if (error || !caseData) {
+        return (
+            <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-white rounded-2xl p-8 max-w-md text-center shadow-lg"
+                >
+                    <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-semibold text-slate-800 mb-2">Case not found</h2>
+                    <p className="text-slate-600 mb-6">{error || 'Unable to load case details.'}</p>
+                    <Link
+                        to="/recruiter/dashboard"
+                        className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Dashboard
+                    </Link>
+                </motion.div>
+            </div>
+        )
+    }
+
+    const statusConfig = getStatusConfig(caseData.out_status)
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+            {/* Header */}
+            <header className="bg-white/80 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-10">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <Link
+                            to="/recruiter/dashboard"
+                            className="inline-flex items-center gap-2 text-slate-600 hover:text-indigo-600 transition-colors"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            Back to Dashboard
+                        </Link>
+                        <button
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                            className="inline-flex items-center gap-2 text-slate-500 hover:text-indigo-600 transition-colors text-sm disabled:opacity-50"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            {/* Hero Section */}
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-8">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl font-bold">
+                                    {caseData.out_person_first_name?.charAt(0) || '?'}
+                                    {caseData.out_person_last_name?.charAt(0) || ''}
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl sm:text-3xl font-bold">
+                                        {caseData.out_person_first_name} {caseData.out_person_last_name}
+                                    </h1>
+                                    <p className="text-white/80 mt-1">
+                                        {caseData.out_pipeline_name}
+                                    </p>
+                                    <p className="text-white/60 text-sm mt-1">
+                                        Ref: {caseData.out_external_case_number || caseData.out_case_reference}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${statusConfig.bg} ${statusConfig.text}`}>
+                                {statusConfig.icon}
+                                <span className="font-medium">{statusConfig.label}</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+                {/* Privacy Notice */}
+                {!caseData.out_share_updates_with_candidate && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3"
+                    >
+                        <Shield className="w-5 h-5 text-amber-600 mt-0.5" />
+                        <div>
+                            <p className="text-amber-800 font-medium">Private Processing</p>
+                            <p className="text-amber-600 text-sm">
+                                Updates for this candidate are sent to you. The candidate does not receive direct notifications.
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Current Stage Card */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="bg-white rounded-2xl shadow-sm p-6 mb-6"
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                            <TrendingUp className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-sm text-slate-500">Current Stage</p>
+                            <h2 className="text-xl font-bold text-slate-800">
+                                {caseData.out_current_stage_name || 'Processing'}
+                            </h2>
+                        </div>
+                    </div>
+                    <p className="text-sm text-slate-500">
+                        Last updated {formatDistanceToNow(new Date(caseData.out_updated_at), { addSuffix: true })}
+                    </p>
+                </motion.div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Candidate Info */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="bg-white rounded-2xl shadow-sm p-6"
+                    >
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                                <User className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            <h3 className="font-semibold text-slate-800">Candidate Details</h3>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-xs text-slate-400 uppercase tracking-wider">Full Name</p>
+                                <p className="text-slate-800 font-medium">
+                                    {caseData.out_person_first_name} {caseData.out_person_last_name}
+                                </p>
+                            </div>
+                            {caseData.out_person_email && (
+                                <div className="flex items-center gap-2">
+                                    <Mail className="w-4 h-4 text-slate-400" />
+                                    <p className="text-slate-600 text-sm">{caseData.out_person_email}</p>
+                                </div>
+                            )}
+                            {caseData.out_person_phone && (
+                                <div className="flex items-center gap-2">
+                                    <Phone className="w-4 h-4 text-slate-400" />
+                                    <p className="text-slate-600 text-sm">{caseData.out_person_phone}</p>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+
+                    {/* Case Info */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="bg-white rounded-2xl shadow-sm p-6"
+                    >
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                                <Briefcase className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <h3 className="font-semibold text-slate-800">Case Information</h3>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-xs text-slate-400 uppercase tracking-wider">Service</p>
+                                <p className="text-slate-800 font-medium">{caseData.out_pipeline_name}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-slate-400 uppercase tracking-wider">Reference</p>
+                                <p className="text-slate-800 font-medium">
+                                    {caseData.out_external_case_number || caseData.out_case_reference}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-slate-400" />
+                                <p className="text-slate-600 text-sm">
+                                    Started {format(new Date(caseData.out_start_date || caseData.out_created_at), 'MMMM d, yyyy')}
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+
+                {/* Timeline */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="bg-white rounded-2xl shadow-sm p-6 mt-6"
+                >
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                            <Clock className="w-5 h-5 text-green-600" />
+                        </div>
+                        <h3 className="font-semibold text-slate-800">Progress Timeline</h3>
+                    </div>
+
+                    {stageHistory.length === 0 ? (
+                        <div className="text-center py-8">
+                            <FileText className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                            <p className="text-slate-500">No stage transitions yet</p>
+                        </div>
+                    ) : (
+                        <div className="relative">
+                            <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-slate-200" />
+                            <div className="space-y-6">
+                                {stageHistory.map((item, index) => (
+                                    <motion.div
+                                        key={item.id}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.1 }}
+                                        className="relative pl-10"
+                                    >
+                                        <div className={`absolute left-2 w-5 h-5 rounded-full border-2 ${
+                                            index === 0
+                                                ? 'bg-indigo-500 border-indigo-500'
+                                                : 'bg-white border-slate-300'
+                                        }`}>
+                                            {index === 0 && (
+                                                <CheckCircle2 className="w-3 h-3 text-white absolute top-0.5 left-0.5" />
+                                            )}
+                                        </div>
+                                        <div className="bg-slate-50 rounded-xl p-4">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="font-medium text-slate-800">
+                                                    {item.to_stage_name}
+                                                </span>
+                                                <span className="text-xs text-slate-400">
+                                                    {format(new Date(item.created_at), 'MMM d, yyyy • h:mm a')}
+                                                </span>
+                                            </div>
+                                            {item.from_stage_name && (
+                                                <p className="text-sm text-slate-500">
+                                                    From: {item.from_stage_name}
+                                                </p>
+                                            )}
+                                            {item.notes && (
+                                                <p className="text-sm text-slate-600 mt-2 p-3 bg-white rounded-lg">
+                                                    {item.notes}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </motion.div>
+            </main>
+        </div>
+    )
+}

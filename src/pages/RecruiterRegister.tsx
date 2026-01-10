@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate, Link } from 'react-router-dom'
-import { Mail, Lock, Building2, User, ArrowRight, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
+import { Mail, Lock, Building2, ArrowRight, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 
 // API configuration
 const API_URL = import.meta.env.VITE_COMMAND_CENTER_API_URL || 'https://fwmhfwprvqaovidykaqt.supabase.co/functions/v1'
