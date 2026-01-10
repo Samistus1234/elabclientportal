@@ -12,7 +12,9 @@ import {
     LogOut,
     DollarSign,
     Building2,
-    RefreshCw
+    RefreshCw,
+    ArrowRightLeft,
+    TrendingUp
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -40,6 +42,29 @@ interface RecruiterStats {
     total_commission_earned: number
 }
 
+// Exchange rates (approximate rates for conversion)
+const EXCHANGE_RATES: Record<string, number> = {
+    USD: 1,
+    NGN: 1550,
+    SAR: 3.75,
+    AED: 3.67,
+    GBP: 0.79,
+    EUR: 0.92,
+    CAD: 1.36,
+    KWD: 0.31
+}
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+    USD: '$',
+    NGN: '₦',
+    SAR: 'ر.س',
+    AED: 'د.إ',
+    GBP: '£',
+    EUR: '€',
+    CAD: 'C$',
+    KWD: 'د.ك'
+}
+
 export default function RecruiterDashboard() {
     const navigate = useNavigate()
     const [portalUser, setPortalUser] = useState<PortalUserInfo | null>(null)
@@ -49,6 +74,33 @@ export default function RecruiterDashboard() {
     const [refreshing, setRefreshing] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
+
+    // Currency converter state
+    const [fromCurrency, setFromCurrency] = useState('USD')
+    const [toCurrency, setToCurrency] = useState('NGN')
+    const [amount, setAmount] = useState('100')
+    const [convertedAmount, setConvertedAmount] = useState('')
+
+    // Convert currency
+    const convertCurrency = () => {
+        const numAmount = parseFloat(amount) || 0
+        const fromRate = EXCHANGE_RATES[fromCurrency]
+        const toRate = EXCHANGE_RATES[toCurrency]
+        const usdAmount = numAmount / fromRate
+        const result = usdAmount * toRate
+        setConvertedAmount(result.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+    }
+
+    // Swap currencies
+    const swapCurrencies = () => {
+        setFromCurrency(toCurrency)
+        setToCurrency(fromCurrency)
+    }
+
+    // Convert on mount and when values change
+    useEffect(() => {
+        convertCurrency()
+    }, [fromCurrency, toCurrency, amount])
 
     useEffect(() => {
         loadData()
@@ -252,6 +304,98 @@ export default function RecruiterDashboard() {
                         </p>
                     </motion.div>
                 </div>
+            </div>
+
+            {/* Currency Converter */}
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-white rounded-2xl shadow-sm p-6"
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                            <TrendingUp className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-slate-800">Currency Converter</h3>
+                            <p className="text-xs text-slate-500">Quick currency conversion for international payments</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
+                        {/* Amount Input */}
+                        <div className="md:col-span-2">
+                            <label className="block text-xs text-slate-500 mb-1">Amount</label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
+                                    {CURRENCY_SYMBOLS[fromCurrency]}
+                                </span>
+                                <input
+                                    type="text"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all outline-none text-lg font-semibold"
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        </div>
+
+                        {/* From Currency */}
+                        <div>
+                            <label className="block text-xs text-slate-500 mb-1">From</label>
+                            <select
+                                value={fromCurrency}
+                                onChange={(e) => setFromCurrency(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all outline-none bg-white cursor-pointer font-medium"
+                            >
+                                {Object.keys(EXCHANGE_RATES).map(currency => (
+                                    <option key={currency} value={currency}>{currency}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Swap Button */}
+                        <div className="flex justify-center md:col-span-1">
+                            <button
+                                onClick={swapCurrencies}
+                                className="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                                title="Swap currencies"
+                            >
+                                <ArrowRightLeft className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* To Currency */}
+                        <div>
+                            <label className="block text-xs text-slate-500 mb-1">To</label>
+                            <select
+                                value={toCurrency}
+                                onChange={(e) => setToCurrency(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all outline-none bg-white cursor-pointer font-medium"
+                            >
+                                {Object.keys(EXCHANGE_RATES).map(currency => (
+                                    <option key={currency} value={currency}>{currency}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Result */}
+                        <div className="md:col-span-2">
+                            <label className="block text-xs text-slate-500 mb-1">Result</label>
+                            <div className="px-4 py-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
+                                <span className="text-lg font-bold text-green-700">
+                                    {CURRENCY_SYMBOLS[toCurrency]} {convertedAmount}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-slate-400 mt-3 text-center">
+                        Exchange rates are approximate and for reference only. Actual rates may vary.
+                    </p>
+                </motion.div>
             </div>
 
             {/* Main Content */}
