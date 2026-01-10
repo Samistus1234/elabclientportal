@@ -8,8 +8,11 @@ import {
     AlertCircle,
     Calendar,
     ArrowUpRight,
-    Zap
+    Zap,
+    Trophy,
+    Sparkles
 } from 'lucide-react'
+import EnhancedProgressTimeline from './EnhancedProgressTimeline'
 
 // Safe date parsing helper
 const safeParseDate = (dateString: string | null | undefined): Date | null => {
@@ -184,43 +187,38 @@ export default function ApplicationCard({ caseItem, index, stages }: Application
                         </div>
                     </div>
 
-                    {/* Progress Bar */}
+                    {/* Enhanced Progress Timeline */}
                     <div className="mb-4">
-                        <div className="flex items-center justify-between text-sm mb-2">
-                            <span className="text-slate-500">Progress</span>
-                            <span className={`font-semibold ${statusConfig.textColor}`}>{progress}%</span>
-                        </div>
-                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${progress}%` }}
-                                transition={{ duration: 1, delay: 0.2 * index, ease: 'easeOut' }}
-                                className={`h-full rounded-full bg-gradient-to-r ${statusConfig.gradientFrom} ${statusConfig.gradientTo}`}
+                        {stages && stages.length > 0 ? (
+                            <EnhancedProgressTimeline
+                                stages={stages}
+                                currentStageSlug={caseItem.current_stage?.slug}
+                                status={caseItem.status}
+                                animate={true}
                             />
-                        </div>
-
-                        {/* Mini stage indicators */}
-                        {stages && stages.length > 0 && stages.length <= 6 && (
-                            <div className="flex justify-between mt-2">
-                                {[...stages].sort((a, b) => a.order_index - b.order_index).map((stage, i) => {
-                                    const currentIdx = stages.findIndex(s => s.slug === caseItem.current_stage?.slug)
-                                    const isComplete = i < currentIdx
-                                    const isCurrent = stage.slug === caseItem.current_stage?.slug
-
-                                    return (
-                                        <div
-                                            key={stage.id}
-                                            className={`
-                                                w-2 h-2 rounded-full transition-all
-                                                ${isComplete ? `bg-gradient-to-br ${statusConfig.gradientFrom} ${statusConfig.gradientTo}` :
-                                                    isCurrent ? 'bg-primary-400 ring-2 ring-primary-200' :
-                                                        'bg-slate-200'}
-                                            `}
-                                            title={stage.name}
-                                        />
-                                    )
-                                })}
-                            </div>
+                        ) : (
+                            // Fallback simple progress bar
+                            <>
+                                <div className="flex items-center justify-between text-sm mb-2">
+                                    <div className="flex items-center gap-2">
+                                        {caseItem.status === 'completed' ? (
+                                            <Trophy className="w-4 h-4 text-success-500" />
+                                        ) : (
+                                            <Sparkles className="w-4 h-4 text-primary-500" />
+                                        )}
+                                        <span className="text-slate-500">Progress</span>
+                                    </div>
+                                    <span className={`font-semibold ${statusConfig.textColor}`}>{progress}%</span>
+                                </div>
+                                <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${progress}%` }}
+                                        transition={{ duration: 1, delay: 0.2 * index, ease: 'easeOut' }}
+                                        className={`h-full rounded-full bg-gradient-to-r ${statusConfig.gradientFrom} ${statusConfig.gradientTo}`}
+                                    />
+                                </div>
+                            </>
                         )}
                     </div>
 

@@ -58,12 +58,12 @@ const supportChannels = [
     {
         id: 'email',
         title: 'Email Us',
-        description: 'support@elabsolution.org',
+        description: 'headoffice@elabsolution.org',
         icon: Mail,
         color: 'from-blue-400 to-blue-600',
         available: true,
         responseTime: '< 24 hrs',
-        href: 'mailto:support@elabsolution.org'
+        href: 'mailto:headoffice@elabsolution.org'
     }
 ]
 

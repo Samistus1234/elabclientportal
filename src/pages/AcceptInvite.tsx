@@ -222,8 +222,8 @@ export default function AcceptInvite() {
                         {pageState !== 'used' && (
                             <p className="text-slate-500 text-sm">
                                 Need help? Contact{' '}
-                                <a href="mailto:info@elab.academy" className="text-primary-600 hover:underline">
-                                    info@elab.academy
+                                <a href="mailto:headoffice@elabsolution.org" className="text-primary-600 hover:underline">
+                                    headoffice@elabsolution.org
                                 </a>
                             </p>
                         )}

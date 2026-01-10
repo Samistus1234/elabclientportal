@@ -20,6 +20,7 @@ import ApplicationStatusChart from '@/components/ApplicationStatusChart'
 import ApplicationCard from '@/components/ApplicationCard'
 import RecentActivity from '@/components/RecentActivity'
 import ServicesShowcase from '@/components/ServicesShowcase'
+import SmartCrossSellRecommendations from '@/components/SmartCrossSellRecommendations'
 import QuickActions from '@/components/QuickActions'
 import TestimonialsCarousel from '@/components/TestimonialsCarousel'
 import MilestoneAchievements from '@/components/MilestoneAchievements'
@@ -143,18 +144,18 @@ export default function Dashboard() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user?.email) throw new Error('No user found')
 
-            // Find person by email
+            // Get person info using RPC function
             const { data: personData, error: personError } = await supabase
-                .from('persons')
-                .select('id, first_name, last_name, email, primary_email')
-                .or(`email.eq.${user.email},primary_email.eq.${user.email}`)
-                .single()
+                .rpc('get_my_person_info')
 
-            if (personError || !personData) {
+            // RPC returns array, get first item
+            const personInfo = Array.isArray(personData) ? personData[0] : personData
+
+            if (personError || !personInfo) {
                 throw new Error('No account found for this email. Please contact support.')
             }
 
-            setPerson(personData)
+            setPerson(personInfo)
 
             // Load cases for this person using RPC function
             const { data: casesData, error: casesError } = await supabase
@@ -166,26 +167,26 @@ export default function Dashboard() {
             const typedCases = (casesData || []).map(normalizeCase)
             setCases(typedCases)
 
-            // Load pipeline stages for each unique pipeline
+            // Load pipeline stages for each unique pipeline using RPC
             const pipelineIds = [...new Set(typedCases.map((c: CaseData) => c.pipeline?.id || c.pipeline_id).filter(Boolean))]
 
             if (pipelineIds.length > 0) {
-                const { data: stagesData } = await supabase
-                    .from('pipeline_stages')
-                    .select('id, name, slug, order_index, pipeline_id')
-                    .in('pipeline_id', pipelineIds)
-                    .order('order_index', { ascending: true })
+                const stagesByPipeline: Record<string, PipelineStage[]> = {}
 
-                if (stagesData) {
-                    const stagesByPipeline: Record<string, PipelineStage[]> = {}
-                    stagesData.forEach(stage => {
-                        if (!stagesByPipeline[stage.pipeline_id]) {
-                            stagesByPipeline[stage.pipeline_id] = []
-                        }
-                        stagesByPipeline[stage.pipeline_id].push(stage)
-                    })
-                    setPipelineStages(stagesByPipeline)
-                }
+                // Fetch stages for each pipeline using RPC
+                await Promise.all(pipelineIds.map(async (pipelineId) => {
+                    const { data: stagesData } = await supabase
+                        .rpc('get_pipeline_stages', { p_pipeline_id: pipelineId })
+
+                    if (stagesData) {
+                        stagesByPipeline[pipelineId] = stagesData.map((s: any) => ({
+                            ...s,
+                            pipeline_id: pipelineId
+                        }))
+                    }
+                }))
+
+                setPipelineStages(stagesByPipeline)
             }
 
         } catch (err: any) {
@@ -417,8 +418,12 @@ export default function Dashboard() {
                 {/* Quick Actions */}
                 <QuickActions />
 
-                {/* Services Cross-sell */}
-                <ServicesShowcase />
+                {/* Smart Cross-sell Recommendations based on user's cases */}
+                {cases.length > 0 ? (
+                    <SmartCrossSellRecommendations cases={cases} recruiterDiscount={10} />
+                ) : (
+                    <ServicesShowcase />
+                )}
 
                 {/* Main Grid - Charts and Stats */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -563,7 +568,7 @@ export default function Dashboard() {
                         <span>•</span>
                         <a href="https://www.elab.academy/terms" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500 transition-colors">Terms of Service</a>
                         <span>•</span>
-                        <a href="mailto:support@elabsolution.org" className="hover:text-primary-500 transition-colors">Contact Us</a>
+                        <a href="mailto:headoffice@elabsolution.org" className="hover:text-primary-500 transition-colors">Contact Us</a>
                     </div>
                     <div className="flex items-center justify-center gap-4 mt-2 text-xs text-slate-400">
                         <a href="tel:+2348165634195" className="hover:text-primary-500 transition-colors">+234 816 563 4195</a>

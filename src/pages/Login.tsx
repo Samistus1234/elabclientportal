@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { signInWithPassword } from '@/lib/supabase'
+import { signInWithPassword, getPortalUserInfo } from '@/lib/supabase'
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useNavigate, Link } from 'react-router-dom'
@@ -23,7 +23,18 @@ export default function Login() {
             setError(error.message)
             setIsLoading(false)
         } else if (session) {
-            navigate('/dashboard', { replace: true })
+            // Check user type and redirect accordingly
+            try {
+                const { data: userInfo } = await getPortalUserInfo()
+                if (userInfo?.user_type === 'recruiter') {
+                    navigate('/recruiter/dashboard', { replace: true })
+                } else {
+                    navigate('/dashboard', { replace: true })
+                }
+            } catch {
+                // Default to applicant dashboard if we can't determine type
+                navigate('/dashboard', { replace: true })
+            }
         } else {
             setError('Login failed. Please try again.')
             setIsLoading(false)
@@ -111,7 +122,7 @@ export default function Login() {
                         {/* Forgot Password Link */}
                         <div className="flex justify-end">
                             <a
-                                href="mailto:info@elab.academy?subject=Password%20Reset%20Request"
+                                href="mailto:headoffice@elabsolution.org?subject=Password%20Reset%20Request"
                                 className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                             >
                                 Forgot password?
@@ -152,14 +163,20 @@ export default function Login() {
                                 Create one
                             </Link>
                         </p>
+                        <p className="text-center text-slate-500 text-sm pt-2">
+                            Are you a recruiter?{' '}
+                            <Link to="/recruiter/register" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                                Register here
+                            </Link>
+                        </p>
                     </form>
                 </div>
 
                 {/* Footer */}
                 <p className="text-center text-slate-500 text-sm mt-6">
                     Need help? Contact{' '}
-                    <a href="mailto:info@elab.academy" className="text-primary-600 hover:underline">
-                        info@elab.academy
+                    <a href="mailto:headoffice@elabsolution.org" className="text-primary-600 hover:underline">
+                        headoffice@elabsolution.org
                     </a>
                 </p>
                 <div className="flex items-center justify-center gap-3 mt-2 text-xs text-slate-400">

@@ -164,7 +164,7 @@ const faqCategories: FAQCategory[] = [
                 question: 'Can I contact ELAB Solutions directly for inquiries?',
                 answer: [
                     'Yes. You can reach us through:',
-                    '📧 Email: support@elabsolution.org',
+                    '📧 Email: headoffice@elabsolution.org',
                     '🌐 Website: www.elabsolution.org'
                 ]
             }
@@ -430,11 +430,11 @@ export default function FAQ() {
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                         <a
-                            href="mailto:support@elabsolution.org"
+                            href="mailto:headoffice@elabsolution.org"
                             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary-600 rounded-xl font-medium hover:bg-white/90 transition-colors"
                         >
                             <Mail className="w-5 h-5" />
-                            support@elabsolution.org
+                            headoffice@elabsolution.org
                         </a>
                         <a
                             href="https://www.elabsolution.org"
