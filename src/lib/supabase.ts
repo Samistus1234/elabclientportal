@@ -161,7 +161,61 @@ export async function createServiceRequest(params: ServiceRequestParams) {
         p_urgency: params.urgency || 'normal',
         p_notes: params.notes || null
     })
+
+    // If request was created successfully, trigger email notification
+    if (!error && data) {
+        triggerServiceRequestNotification({
+            id: data,
+            ...params
+        }).catch(err => {
+            // Don't fail if notification fails, just log it
+            console.warn('Failed to send service request notification:', err)
+        })
+    }
+
     return { data, error }
+}
+
+// Helper function to trigger email notification for new service requests
+async function triggerServiceRequestNotification(request: ServiceRequestParams & { id: string }) {
+    try {
+        // Get current user info to include recruiter details
+        const { data: userInfo } = await getPortalUserInfo()
+
+        const payload = {
+            type: 'INSERT',
+            table: 'service_requests',
+            record: {
+                id: request.id,
+                candidate_name: request.candidateName,
+                candidate_email: request.candidateEmail || null,
+                candidate_phone: request.candidatePhone || null,
+                requested_service: request.requestedService,
+                service_category: request.serviceCategory || null,
+                related_case_id: request.relatedCaseId || null,
+                related_case_reference: request.relatedCaseReference || null,
+                related_pipeline_name: request.relatedPipelineName || null,
+                urgency: request.urgency || 'normal',
+                notes: request.notes || null,
+                status: 'pending',
+                recruiter_id: userInfo?.recruiter_id || null,
+                recruiter_name: userInfo ? `${userInfo.first_name || ''} ${userInfo.last_name || ''}`.trim() : null,
+                recruiter_company: userInfo?.company_name || null,
+                created_at: new Date().toISOString()
+            }
+        }
+
+        // Call the Edge Function directly
+        const { error } = await supabase.functions.invoke('notify-service-request', {
+            body: payload
+        })
+
+        if (error) {
+            console.warn('Notification function error:', error)
+        }
+    } catch (err) {
+        console.warn('Error triggering notification:', err)
+    }
 }
 
 export interface ServiceRequest {
