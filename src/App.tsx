@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { useEffect, useState } from 'react'
 import { supabase, getPortalUserInfo } from '@/lib/supabase'
 import { Session } from '@supabase/supabase-js'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 // Pages - Applicant
 import Login from '@/pages/Login'
@@ -12,6 +13,7 @@ import CaseView from '@/pages/CaseView'
 import AcceptInvite from '@/pages/AcceptInvite'
 import FAQ from '@/pages/FAQ'
 import Documents from '@/pages/Documents'
+import Settings from '@/pages/Settings'
 
 // Pages - Recruiter
 import RecruiterRegister from '@/pages/RecruiterRegister'
@@ -132,8 +134,9 @@ export default function App() {
     }
 
     return (
-        <AuthHashHandler>
-            <Routes>
+        <ThemeProvider>
+            <AuthHashHandler>
+                <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={session ? <RoleBasedRedirect /> : <Login />} />
                 <Route path="/register" element={session ? <RoleBasedRedirect /> : <Register />} />
@@ -167,6 +170,14 @@ export default function App() {
                         </ProtectedRoute>
                     }
                 />
+                <Route
+                    path="/settings"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <Settings />
+                        </ProtectedRoute>
+                    }
+                />
 
                 {/* Protected routes - Recruiter */}
                 <Route
@@ -188,7 +199,8 @@ export default function App() {
 
                 {/* Default redirect */}
                 <Route path="*" element={session ? <RoleBasedRedirect /> : <Navigate to="/login" replace />} />
-            </Routes>
-        </AuthHashHandler>
+                </Routes>
+            </AuthHashHandler>
+        </ThemeProvider>
     )
 }

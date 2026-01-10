@@ -13,8 +13,10 @@ import {
     X,
     CheckCircle,
     Clock,
-    MessageCircle
+    MessageCircle,
+    Settings
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import WelcomeHero from '@/components/WelcomeHero'
 import ApplicationStatusChart from '@/components/ApplicationStatusChart'
 import ApplicationCard from '@/components/ApplicationCard'
@@ -393,6 +395,13 @@ export default function Dashboard() {
                                 <span className="text-sm font-medium">{person?.first_name}</span>
                             </div>
 
+                            <Link
+                                to="/settings"
+                                className="p-2 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-800 transition-colors"
+                                title="Settings"
+                            >
+                                <Settings className="w-5 h-5" />
+                            </Link>
                             <button
                                 onClick={handleSignOut}
                                 className="p-2 rounded-lg hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors"
