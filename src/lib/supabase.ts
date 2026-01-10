@@ -130,3 +130,58 @@ export async function getPipelineStages(pipelineId: string) {
     const { data, error } = await supabase.rpc('get_pipeline_stages', { p_pipeline_id: pipelineId })
     return { data: data || [], error }
 }
+
+// ============================================================
+// SERVICE REQUESTS FUNCTIONS
+// ============================================================
+
+export interface ServiceRequestParams {
+    candidateName: string
+    candidateEmail?: string
+    candidatePhone?: string
+    requestedService: string
+    serviceCategory?: string
+    relatedCaseId?: string
+    relatedCaseReference?: string
+    relatedPipelineName?: string
+    urgency?: 'low' | 'normal' | 'high' | 'urgent'
+    notes?: string
+}
+
+export async function createServiceRequest(params: ServiceRequestParams) {
+    const { data, error } = await supabase.rpc('create_service_request', {
+        p_candidate_name: params.candidateName,
+        p_candidate_email: params.candidateEmail || null,
+        p_candidate_phone: params.candidatePhone || null,
+        p_requested_service: params.requestedService,
+        p_service_category: params.serviceCategory || null,
+        p_related_case_id: params.relatedCaseId || null,
+        p_related_case_reference: params.relatedCaseReference || null,
+        p_related_pipeline_name: params.relatedPipelineName || null,
+        p_urgency: params.urgency || 'normal',
+        p_notes: params.notes || null
+    })
+    return { data, error }
+}
+
+export interface ServiceRequest {
+    out_id: string
+    out_candidate_name: string
+    out_candidate_email: string | null
+    out_requested_service: string
+    out_service_category: string | null
+    out_related_case_reference: string | null
+    out_related_pipeline_name: string | null
+    out_urgency: string
+    out_status: string
+    out_requester_notes: string | null
+    out_admin_notes: string | null
+    out_assigned_to: string | null
+    out_created_at: string
+    out_updated_at: string
+}
+
+export async function getMyServiceRequests(): Promise<{ data: ServiceRequest[]; error: any }> {
+    const { data, error } = await supabase.rpc('get_my_service_requests')
+    return { data: data || [], error }
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getRecruiterCase, getRecruiterCaseStageHistory, getPortalUserInfo } from '@/lib/supabase'
+import { getRecruiterCase, getRecruiterCaseStageHistory, getPortalUserInfo, createServiceRequest } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import { jsPDF } from 'jspdf'
 import {
@@ -23,7 +23,10 @@ import {
     Sparkles,
     ArrowRight,
     Star,
-    Zap
+    Zap,
+    X,
+    Send,
+    Loader2
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 
@@ -56,6 +59,13 @@ interface StageHistoryItem {
     to_stage_name: string
 }
 
+interface ServiceRequestModal {
+    isOpen: boolean
+    serviceName: string
+    serviceCategory: string
+    notes: string
+}
+
 export default function RecruiterCaseView() {
     const { caseId } = useParams<{ caseId: string }>()
     const navigate = useNavigate()
@@ -64,6 +74,16 @@ export default function RecruiterCaseView() {
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    // Service request modal state
+    const [serviceModal, setServiceModal] = useState<ServiceRequestModal>({
+        isOpen: false,
+        serviceName: '',
+        serviceCategory: '',
+        notes: ''
+    })
+    const [submittingRequest, setSubmittingRequest] = useState(false)
+    const [requestSuccess, setRequestSuccess] = useState(false)
 
     useEffect(() => {
         loadData()
@@ -110,6 +130,59 @@ export default function RecruiterCaseView() {
         setRefreshing(true)
         await loadData()
         setRefreshing(false)
+    }
+
+    const openServiceRequest = (serviceName: string, category: string) => {
+        setServiceModal({
+            isOpen: true,
+            serviceName,
+            serviceCategory: category,
+            notes: ''
+        })
+        setRequestSuccess(false)
+    }
+
+    const closeServiceModal = () => {
+        setServiceModal({
+            isOpen: false,
+            serviceName: '',
+            serviceCategory: '',
+            notes: ''
+        })
+        setRequestSuccess(false)
+    }
+
+    const submitServiceRequest = async () => {
+        if (!caseData) return
+
+        setSubmittingRequest(true)
+        try {
+            const { error } = await createServiceRequest({
+                candidateName: `${caseData.out_person_first_name} ${caseData.out_person_last_name}`,
+                candidateEmail: caseData.out_person_email,
+                candidatePhone: caseData.out_person_phone || undefined,
+                requestedService: serviceModal.serviceName,
+                serviceCategory: serviceModal.serviceCategory,
+                relatedCaseId: caseData.out_id,
+                relatedCaseReference: caseData.out_case_reference,
+                relatedPipelineName: caseData.out_pipeline_name,
+                urgency: 'normal',
+                notes: serviceModal.notes || undefined
+            })
+
+            if (error) throw error
+
+            setRequestSuccess(true)
+            // Auto-close after 2 seconds
+            setTimeout(() => {
+                closeServiceModal()
+            }, 2500)
+        } catch (err: any) {
+            console.error('Error submitting service request:', err)
+            alert('Failed to submit request. Please try again.')
+        } finally {
+            setSubmittingRequest(false)
+        }
     }
 
     const getStatusConfig = (status: string) => {
@@ -679,12 +752,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-600 mb-4">
                                         Book your healthcare licensing exam with guaranteed slots and full support
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=Prometric%20Exam%20Booking%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}&body=Hi,%0A%0AI would like to book a Prometric exam for my candidate:%0A%0AName: ${caseData.out_person_first_name} ${caseData.out_person_last_name}%0AMumaris Ref: ${caseData.out_case_reference}%0A%0APlease advise on available slots and pricing.`}
+                                    <button
+                                        onClick={() => openServiceRequest('Prometric Exam Booking', 'exam')}
                                         className="inline-flex items-center gap-2 w-full justify-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all"
                                     >
                                         Book Exam <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
 
                                 {/* Prometric Tutorial */}
@@ -701,12 +774,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-500 mb-3">
                                         Expert-led exam preparation classes to maximize success
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=Prometric%20Tutorial%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                                    <button
+                                        onClick={() => openServiceRequest('Prometric Tutorial', 'tutorial')}
                                         className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                                     >
                                         Enroll Now <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
 
                                 {/* CGFNS / Trumerit */}
@@ -723,12 +796,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-500 mb-3">
                                         Credential evaluation for US nursing licensure pathway
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=CGFNS%20Trumerit%20Evaluation%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                                    <button
+                                        onClick={() => openServiceRequest('CGFNS / Trumerit Evaluation', 'verification')}
                                         className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                                     >
                                         Request Evaluation <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
 
                                 {/* OET Exam */}
@@ -745,12 +818,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-500 mb-3">
                                         Occupational English Test for healthcare professionals
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=OET%20Registration%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                                    <button
+                                        onClick={() => openServiceRequest('OET Exam Registration', 'exam')}
                                         className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                                     >
                                         Register Now <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
 
                                 {/* DataFlow */}
@@ -767,12 +840,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-500 mb-3">
                                         Primary source verification for Gulf countries
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=DataFlow%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                                    <button
+                                        onClick={() => openServiceRequest('DataFlow Verification', 'verification')}
                                         className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                                     >
                                         Start DataFlow <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
                             </>
                         )}
@@ -797,12 +870,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-600 mb-4">
                                         Register with Saudi Commission for Health Specialties
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=Mumaris%20Registration%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}&body=Hi,%0A%0AI would like to register my candidate for Mumaris:%0A%0AName: ${caseData.out_person_first_name} ${caseData.out_person_last_name}%0ADataFlow Ref: ${caseData.out_case_reference}%0A%0APlease advise on requirements and pricing.`}
+                                    <button
+                                        onClick={() => openServiceRequest('MumarisPlus Registration', 'licensing')}
                                         className="inline-flex items-center gap-2 w-full justify-center px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all"
                                     >
                                         Start Mumaris <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
 
                                 {/* Prometric Exam Booking */}
@@ -819,12 +892,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-500 mb-3">
                                         Book your licensing exam with guaranteed slots
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=Prometric%20Booking%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                                    <button
+                                        onClick={() => openServiceRequest('Prometric Exam Booking', 'exam')}
                                         className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                                     >
                                         Book Exam <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
 
                                 {/* Prometric Tutorial */}
@@ -841,12 +914,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-500 mb-3">
                                         Expert preparation classes for exam success
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=Prometric%20Tutorial%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                                    <button
+                                        onClick={() => openServiceRequest('Prometric Tutorial', 'tutorial')}
                                         className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                                     >
                                         Enroll Now <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
 
                                 {/* HAAD/DHA Licensing */}
@@ -863,12 +936,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-500 mb-3">
                                         Complete UAE healthcare licensing support
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=HAAD%20DHA%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                                    <button
+                                        onClick={() => openServiceRequest('HAAD/DHA Licensing', 'licensing')}
                                         className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                                     >
                                         Start Licensing <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
                             </>
                         )}
@@ -893,12 +966,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-600 mb-4">
                                         Expert-led preparation to maximize exam success
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=Tutorial%20Classes%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                                    <button
+                                        onClick={() => openServiceRequest('Exam Tutorial Classes', 'tutorial')}
                                         className="inline-flex items-center gap-2 w-full justify-center px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-medium rounded-lg hover:from-amber-600 hover:to-orange-700 transition-all"
                                     >
                                         Enroll in Tutorial <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
 
                                 {/* DataFlow */}
@@ -915,12 +988,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-500 mb-3">
                                         Start credential verification process
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=DataFlow%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                                    <button
+                                        onClick={() => openServiceRequest('DataFlow Verification', 'verification')}
                                         className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                                     >
                                         Start DataFlow <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
 
                                 {/* Mumaris */}
@@ -937,12 +1010,12 @@ export default function RecruiterCaseView() {
                                     <p className="text-sm text-slate-500 mb-3">
                                         Saudi healthcare licensing system
                                     </p>
-                                    <a
-                                        href={`mailto:headoffice@elabsolution.org?subject=Mumaris%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                                    <button
+                                        onClick={() => openServiceRequest('MumarisPlus Registration', 'licensing')}
                                         className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
                                     >
                                         Start Mumaris <ArrowRight className="w-4 h-4" />
-                                    </a>
+                                    </button>
                                 </div>
                             </>
                         )}
@@ -953,15 +1026,129 @@ export default function RecruiterCaseView() {
                         <p className="text-slate-600 mb-2">
                             Need a custom package for your candidates?
                         </p>
-                        <a
-                            href={`mailto:headoffice@elabsolution.org?subject=Custom%20Package%20for%20${caseData.out_person_first_name}%20${caseData.out_person_last_name}`}
+                        <button
+                            onClick={() => openServiceRequest('Custom Package Request', 'custom')}
                             className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all"
                         >
-                            Contact Us for Custom Packages
-                        </a>
+                            Request Custom Package
+                        </button>
                     </div>
                 </motion.div>
             </main>
+
+            {/* Service Request Modal */}
+            {serviceModal.isOpen && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+                    >
+                        {/* Modal Header */}
+                        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-lg font-bold text-white">Request Service</h3>
+                                    <p className="text-indigo-100 text-sm">{serviceModal.serviceName}</p>
+                                </div>
+                                <button
+                                    onClick={closeServiceModal}
+                                    className="p-1 rounded-full hover:bg-white/20 transition-colors"
+                                >
+                                    <X className="w-5 h-5 text-white" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6">
+                            {requestSuccess ? (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="text-center py-6"
+                                >
+                                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <CheckCircle2 className="w-8 h-8 text-green-600" />
+                                    </div>
+                                    <h4 className="text-lg font-bold text-slate-800 mb-2">Request Submitted!</h4>
+                                    <p className="text-slate-500 text-sm">
+                                        Our team will review your request and contact you shortly.
+                                    </p>
+                                </motion.div>
+                            ) : (
+                                <>
+                                    {/* Candidate Info */}
+                                    <div className="bg-slate-50 rounded-xl p-4 mb-4">
+                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Candidate</p>
+                                        <p className="font-medium text-slate-800">
+                                            {caseData?.out_person_first_name} {caseData?.out_person_last_name}
+                                        </p>
+                                        <p className="text-sm text-slate-500">
+                                            {caseData?.out_person_email}
+                                        </p>
+                                        <p className="text-xs text-indigo-600 mt-2">
+                                            Current Service: {caseData?.out_pipeline_name}
+                                        </p>
+                                    </div>
+
+                                    {/* Service Info */}
+                                    <div className="mb-4">
+                                        <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Requested Service</p>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                                <Sparkles className="w-5 h-5 text-indigo-600" />
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-slate-800">{serviceModal.serviceName}</p>
+                                                <p className="text-xs text-slate-500 capitalize">{serviceModal.serviceCategory}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Notes */}
+                                    <div className="mb-4">
+                                        <label className="block text-xs text-slate-400 uppercase tracking-wider mb-2">
+                                            Additional Notes (Optional)
+                                        </label>
+                                        <textarea
+                                            value={serviceModal.notes}
+                                            onChange={(e) => setServiceModal({ ...serviceModal, notes: e.target.value })}
+                                            placeholder="Any specific requirements or questions..."
+                                            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                                            rows={3}
+                                        />
+                                    </div>
+
+                                    {/* Submit Button */}
+                                    <button
+                                        onClick={submitServiceRequest}
+                                        disabled={submittingRequest}
+                                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {submittingRequest ? (
+                                            <>
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                Submitting...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send className="w-5 h-5" />
+                                                Submit Request
+                                            </>
+                                        )}
+                                    </button>
+
+                                    <p className="text-xs text-slate-400 text-center mt-3">
+                                        Our team will contact you within 24 hours
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     )
 }
