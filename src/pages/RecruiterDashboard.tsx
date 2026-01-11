@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase, getRecruiterCases, getRecruiterStats, getPortalUserInfo, type PortalUserInfo } from '@/lib/supabase'
+import { supabase, getRecruiterCases, getRecruiterStats, getRecruiterInvoiceStats, getPortalUserInfo, type PortalUserInfo, type RecruiterInvoiceStats } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import {
     Users,
@@ -14,7 +14,9 @@ import {
     Building2,
     RefreshCw,
     ArrowRightLeft,
-    TrendingUp
+    TrendingUp,
+    Receipt,
+    AlertCircle
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -70,6 +72,7 @@ export default function RecruiterDashboard() {
     const [portalUser, setPortalUser] = useState<PortalUserInfo | null>(null)
     const [cases, setCases] = useState<RecruiterCase[]>([])
     const [stats, setStats] = useState<RecruiterStats | null>(null)
+    const [invoiceStats, setInvoiceStats] = useState<RecruiterInvoiceStats | null>(null)
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
@@ -117,14 +120,16 @@ export default function RecruiterDashboard() {
             }
             setPortalUser(userInfo)
 
-            // Load cases and stats in parallel
-            const [casesResult, statsResult] = await Promise.all([
+            // Load cases, stats, and invoice stats in parallel
+            const [casesResult, statsResult, invoiceStatsResult] = await Promise.all([
                 getRecruiterCases(),
-                getRecruiterStats()
+                getRecruiterStats(),
+                getRecruiterInvoiceStats()
             ])
 
             setCases(casesResult.data || [])
             setStats(statsResult.data)
+            setInvoiceStats(invoiceStatsResult.data)
         } catch (err) {
             console.error('Error loading recruiter data:', err)
         } finally {
@@ -314,6 +319,50 @@ export default function RecruiterDashboard() {
                         </p>
                     </motion.div>
                 </div>
+            </div>
+
+            {/* Invoice Quick Action Card */}
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.45 }}
+                >
+                    <Link
+                        to="/recruiter/invoices"
+                        className="block bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl shadow-sm p-6 hover:shadow-lg transition-shadow"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                                    <Receipt className="w-7 h-7 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">Invoices & Payments</h3>
+                                    <p className="text-white/80 mt-1">View and pay your invoices</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                {(invoiceStats?.out_pending_invoices || 0) > 0 && (
+                                    <div className="text-right">
+                                        <div className="flex items-center gap-2 bg-white/20 rounded-full px-3 py-1">
+                                            <AlertCircle className="w-4 h-4 text-white" />
+                                            <span className="text-white font-medium">
+                                                {invoiceStats?.out_pending_invoices} pending
+                                            </span>
+                                        </div>
+                                        {(invoiceStats?.out_amount_due || 0) > 0 && (
+                                            <p className="text-white/80 text-sm mt-1">
+                                                {'\u20A6'}{(invoiceStats?.out_amount_due || 0).toLocaleString()} due
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                                <ChevronRight className="w-6 h-6 text-white/80" />
+                            </div>
+                        </div>
+                    </Link>
+                </motion.div>
             </div>
 
             {/* Currency Converter */}

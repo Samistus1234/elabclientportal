@@ -19,6 +19,8 @@ import Settings from '@/pages/Settings'
 import RecruiterRegister from '@/pages/RecruiterRegister'
 import RecruiterDashboard from '@/pages/RecruiterDashboard'
 import RecruiterCaseView from '@/pages/RecruiterCaseView'
+import RecruiterInvoices from '@/pages/RecruiterInvoices'
+import RecruiterInvoiceDetail from '@/pages/RecruiterInvoiceDetail'
 
 // Layout wrapper for authenticated pages
 function ProtectedRoute({ children, session }: { children: React.ReactNode; session: Session | null }) {
@@ -193,6 +195,22 @@ export default function App() {
                     element={
                         <ProtectedRoute session={session}>
                             <RecruiterCaseView />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/recruiter/invoices"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <RecruiterInvoices />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/recruiter/invoice/:invoiceId"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <RecruiterInvoiceDetail />
                         </ProtectedRoute>
                     }
                 />

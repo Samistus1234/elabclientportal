@@ -239,3 +239,157 @@ export async function getMyServiceRequests(): Promise<{ data: ServiceRequest[]; 
     const { data, error } = await supabase.rpc('get_my_service_requests')
     return { data: data || [], error }
 }
+
+// ============================================================
+// RECRUITER INVOICE FUNCTIONS
+// ============================================================
+
+export interface RecruiterInvoice {
+    out_id: string
+    out_invoice_number: string
+    out_currency: string
+    out_subtotal: number
+    out_discount_amount: number
+    out_tax_amount: number
+    out_total_amount: number
+    out_amount_paid: number
+    out_amount_due: number
+    out_status: 'draft' | 'sent' | 'partial' | 'paid' | 'overdue' | 'cancelled'
+    out_due_date: string | null
+    out_payment_link: string | null
+    out_notes: string | null
+    out_created_at: string
+    out_sent_at: string | null
+    out_paid_at: string | null
+    out_case_reference: string | null
+    out_person_name: string | null
+    out_has_payment_proof: boolean
+}
+
+export interface RecruiterInvoiceDetail extends RecruiterInvoice {
+    out_case_id: string | null
+    out_person_email: string | null
+    out_line_items: InvoiceLineItem[]
+    out_payment_proofs: PaymentProof[]
+}
+
+export interface InvoiceLineItem {
+    id: string
+    description: string
+    quantity: number
+    unit_price: number
+    discount_amount: number
+    tax_amount: number
+    line_total: number
+}
+
+export interface PaymentProof {
+    id: string
+    amount_claimed: number
+    currency: string
+    payment_date: string
+    bank_reference: string | null
+    status: 'pending' | 'verified' | 'rejected' | 'needs_info'
+    reviewer_notes: string | null
+    created_at: string
+}
+
+export interface BankAccount {
+    out_id: string
+    out_bank_name: string
+    out_account_name: string
+    out_account_number: string
+    out_routing_code: string | null
+    out_swift_code: string | null
+    out_currency: string
+    out_is_default: boolean
+    out_notes: string | null
+}
+
+export interface RecruiterInvoiceStats {
+    out_total_invoices: number
+    out_pending_invoices: number
+    out_paid_invoices: number
+    out_overdue_invoices: number
+    out_total_amount: number
+    out_amount_paid: number
+    out_amount_due: number
+    out_pending_proofs: number
+}
+
+// Get all invoices for the authenticated recruiter
+export async function getRecruiterInvoices(): Promise<{ data: RecruiterInvoice[]; error: any }> {
+    const { data, error } = await supabase.rpc('get_recruiter_invoices')
+    return { data: data || [], error }
+}
+
+// Get single invoice detail
+export async function getRecruiterInvoiceDetail(invoiceId: string): Promise<{ data: RecruiterInvoiceDetail | null; error: any }> {
+    const { data, error } = await supabase.rpc('get_recruiter_invoice_detail', { p_invoice_id: invoiceId })
+    const invoiceData = Array.isArray(data) ? data[0] : data
+    return { data: invoiceData || null, error }
+}
+
+// Get bank accounts for payment
+export async function getPaymentBankAccounts(currency?: string): Promise<{ data: BankAccount[]; error: any }> {
+    const { data, error } = await supabase.rpc('get_payment_bank_accounts', { p_currency: currency || null })
+    return { data: data || [], error }
+}
+
+// Get invoice stats
+export async function getRecruiterInvoiceStats(): Promise<{ data: RecruiterInvoiceStats | null; error: any }> {
+    const { data, error } = await supabase.rpc('get_recruiter_invoice_stats')
+    const stats = Array.isArray(data) ? data[0] : data
+    return { data: stats || null, error }
+}
+
+// Submit payment proof for bank transfer
+export interface SubmitPaymentProofParams {
+    invoiceId: string
+    amountClaimed: number
+    currency: string
+    paymentDate: string
+    bankReference?: string
+    payerName?: string
+    payerNotes?: string
+    proofFileUrl: string
+    proofFileName?: string
+    proofFileType?: string
+}
+
+export async function submitPaymentProof(params: SubmitPaymentProofParams): Promise<{ data: string | null; error: any }> {
+    const { data, error } = await supabase.rpc('submit_payment_proof', {
+        p_invoice_id: params.invoiceId,
+        p_amount_claimed: params.amountClaimed,
+        p_currency: params.currency,
+        p_payment_date: params.paymentDate,
+        p_bank_reference: params.bankReference || null,
+        p_payer_name: params.payerName || null,
+        p_payer_notes: params.payerNotes || null,
+        p_proof_file_url: params.proofFileUrl,
+        p_proof_file_name: params.proofFileName || null,
+        p_proof_file_type: params.proofFileType || null
+    })
+    return { data, error }
+}
+
+// Upload payment proof file to storage
+export async function uploadPaymentProof(file: File, invoiceId: string): Promise<{ url: string | null; error: any }> {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${invoiceId}/${Date.now()}.${fileExt}`
+    const filePath = `payment-proofs/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file)
+
+    if (uploadError) {
+        return { url: null, error: uploadError }
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath)
+
+    return { url: publicUrl, error: null }
+}
