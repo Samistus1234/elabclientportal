@@ -26,7 +26,6 @@ import {
     Check,
     Upload,
     X,
-    ExternalLink,
     Calendar,
     User,
     Mail,
@@ -45,8 +44,24 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
     KWD: '\u062F.\u0643'
 }
 
-// Paystack payment link - configure in env or use inline checkout
-const PAYSTACK_PAYMENT_URL = 'https://paystack.com/pay/elab-invoice'
+// Paystack integration
+const PAYSTACK_PUBLIC_KEY = 'pk_live_611141c01b9589d73ff5eff313fc899d7377c534'
+
+// Load Paystack script
+const loadPaystackScript = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        if (document.getElementById('paystack-script')) {
+            resolve()
+            return
+        }
+        const script = document.createElement('script')
+        script.id = 'paystack-script'
+        script.src = 'https://js.paystack.co/v1/inline.js'
+        script.onload = () => resolve()
+        script.onerror = () => reject(new Error('Failed to load Paystack'))
+        document.head.appendChild(script)
+    })
+}
 
 export default function RecruiterInvoiceDetail() {
     const { invoiceId } = useParams<{ invoiceId: string }>()
@@ -218,17 +233,53 @@ export default function RecruiterInvoiceDetail() {
         }
     }
 
-    const handlePayOnline = () => {
+    const [paymentLoading, setPaymentLoading] = useState(false)
+
+    const handlePayOnline = async () => {
+        if (!invoice || !portalUser) return
+
         // If invoice has a direct payment link, use that
-        if (invoice?.out_payment_link) {
+        if (invoice.out_payment_link) {
             window.open(invoice.out_payment_link, '_blank')
             return
         }
 
-        // Otherwise redirect to Paystack with invoice details
-        // You can customize this URL based on your Paystack setup
-        const paymentUrl = `${PAYSTACK_PAYMENT_URL}?reference=${invoice?.out_invoice_number}&email=${portalUser?.email}&amount=${(invoice?.out_amount_due || 0) * 100}`
-        window.open(paymentUrl, '_blank')
+        setPaymentLoading(true)
+
+        try {
+            await loadPaystackScript()
+
+            // @ts-ignore - PaystackPop is loaded from script
+            const handler = window.PaystackPop.setup({
+                key: PAYSTACK_PUBLIC_KEY,
+                email: portalUser.email,
+                amount: Math.round(invoice.out_amount_due * 100), // Paystack expects amount in kobo/cents
+                currency: invoice.out_currency || 'NGN',
+                ref: `${invoice.out_invoice_number}-${Date.now()}`,
+                metadata: {
+                    invoice_id: invoice.out_id,
+                    invoice_number: invoice.out_invoice_number,
+                    customer_name: invoice.out_person_name,
+                    recruiter_company: portalUser.company_name
+                },
+                callback: (response: any) => {
+                    // Payment successful
+                    console.log('Payment successful:', response)
+                    alert(`Payment successful! Reference: ${response.reference}`)
+                    handleRefresh()
+                },
+                onClose: () => {
+                    setPaymentLoading(false)
+                }
+            })
+
+            handler.openIframe()
+        } catch (error) {
+            console.error('Failed to initialize Paystack:', error)
+            alert('Failed to load payment gateway. Please try again.')
+        } finally {
+            setPaymentLoading(false)
+        }
     }
 
     if (loading) {
@@ -485,10 +536,20 @@ export default function RecruiterInvoiceDetail() {
                                     </p>
                                     <button
                                         onClick={handlePayOnline}
-                                        className="w-full bg-white text-indigo-600 font-semibold py-3 px-4 rounded-xl hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
+                                        disabled={paymentLoading}
+                                        className="w-full bg-white text-indigo-600 font-semibold py-3 px-4 rounded-xl hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                                     >
-                                        Pay {formatCurrency(invoice.out_amount_due, invoice.out_currency)}
-                                        <ExternalLink className="w-4 h-4" />
+                                        {paymentLoading ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                Pay {formatCurrency(invoice.out_amount_due, invoice.out_currency)}
+                                                <CreditCard className="w-4 h-4" />
+                                            </>
+                                        )}
                                     </button>
                                 </motion.div>
 
