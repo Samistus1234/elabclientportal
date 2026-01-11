@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getRecruiterCase, getRecruiterCaseStageHistory, getPortalUserInfo, createServiceRequest } from '@/lib/supabase'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { jsPDF } from 'jspdf'
 import {
     ArrowLeft,
@@ -28,9 +28,6 @@ import {
     Send,
     Loader2,
     Timer,
-    Circle,
-    ChevronDown,
-    ChevronUp,
     Award,
     Target
 } from 'lucide-react'
@@ -542,7 +539,6 @@ export default function RecruiterCaseView() {
                                 >
                                     {stageHistory.map((item, index) => {
                                         const isLatest = index === 0
-                                        const isCompleted = index > 0
 
                                         // Calculate days since previous stage
                                         const nextItem = stageHistory[index + 1]
