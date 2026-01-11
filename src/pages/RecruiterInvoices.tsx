@@ -13,8 +13,6 @@ import {
     AlertCircle,
     CheckCircle2,
     Clock,
-    CreditCard,
-    Building2,
     Receipt
 } from 'lucide-react'
 import { format, formatDistanceToNow, isPast, parseISO } from 'date-fns'

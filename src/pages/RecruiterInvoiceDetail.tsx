@@ -27,11 +27,9 @@ import {
     Upload,
     X,
     ExternalLink,
-    Download,
     Calendar,
     User,
     Mail,
-    Receipt,
     Loader2
 } from 'lucide-react'
 import { format, parseISO, isPast } from 'date-fns'
