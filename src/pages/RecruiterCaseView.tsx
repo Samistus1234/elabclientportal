@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getRecruiterCase, getRecruiterCaseStageHistory, getPortalUserInfo, createServiceRequest } from '@/lib/supabase'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { jsPDF } from 'jspdf'
 import {
     ArrowLeft,
@@ -26,7 +26,13 @@ import {
     Zap,
     X,
     Send,
-    Loader2
+    Loader2,
+    Timer,
+    Circle,
+    ChevronDown,
+    ChevronUp,
+    Award,
+    Target
 } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 
@@ -445,71 +451,261 @@ export default function RecruiterCaseView() {
                     </motion.div>
                 </div>
 
-                {/* Timeline */}
+                {/* Premium Enhanced Timeline */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="bg-white rounded-2xl shadow-sm p-6 mt-6"
+                    className="bg-gradient-to-br from-white via-white to-indigo-50/30 rounded-2xl shadow-lg border border-slate-100/50 p-6 mt-6 overflow-hidden relative"
                 >
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                            <Clock className="w-5 h-5 text-green-600" />
-                        </div>
-                        <h3 className="font-semibold text-slate-800">Progress Timeline</h3>
-                    </div>
+                    {/* Decorative background elements */}
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-100/20 to-purple-100/20 rounded-full blur-3xl -translate-y-32 translate-x-32" />
+                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-emerald-100/20 to-teal-100/20 rounded-full blur-3xl translate-y-24 -translate-x-24" />
 
-                    {stageHistory.length === 0 ? (
-                        <div className="text-center py-8">
-                            <FileText className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                            <p className="text-slate-500">No stage transitions yet</p>
-                        </div>
-                    ) : (
-                        <div className="relative">
-                            <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-slate-200" />
-                            <div className="space-y-6">
-                                {stageHistory.map((item, index) => (
+                    <div className="relative z-10">
+                        {/* Header with progress indicator */}
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="relative">
+                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-200">
+                                        <Target className="w-7 h-7 text-white" />
+                                    </div>
                                     <motion.div
-                                        key={item.id}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.1 }}
-                                        className="relative pl-10"
-                                    >
-                                        <div className={`absolute left-2 w-5 h-5 rounded-full border-2 ${
-                                            index === 0
-                                                ? 'bg-indigo-500 border-indigo-500'
-                                                : 'bg-white border-slate-300'
-                                        }`}>
-                                            {index === 0 && (
-                                                <CheckCircle2 className="w-3 h-3 text-white absolute top-0.5 left-0.5" />
-                                            )}
-                                        </div>
-                                        <div className="bg-slate-50 rounded-xl p-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="font-medium text-slate-800">
-                                                    {item.to_stage_name}
-                                                </span>
-                                                <span className="text-xs text-slate-400">
-                                                    {format(new Date(item.created_at), 'MMM d, yyyy • h:mm a')}
-                                                </span>
-                                            </div>
-                                            {item.from_stage_name && (
-                                                <p className="text-sm text-slate-500">
-                                                    From: {item.from_stage_name}
-                                                </p>
-                                            )}
-                                            {item.notes && (
-                                                <p className="text-sm text-slate-600 mt-2 p-3 bg-white rounded-lg">
-                                                    {item.notes}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                ))}
+                                        animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                        className="absolute inset-0 rounded-2xl bg-emerald-400"
+                                    />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800">Progress Timeline</h3>
+                                    <p className="text-sm text-slate-500">Track your application journey</p>
+                                </div>
                             </div>
+                            {stageHistory.length > 0 && (
+                                <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-full border border-emerald-100">
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                    <span className="text-sm font-medium text-emerald-700">{stageHistory.length} stages completed</span>
+                                </div>
+                            )}
                         </div>
-                    )}
+
+                        {stageHistory.length === 0 ? (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="text-center py-16"
+                            >
+                                <div className="relative inline-block">
+                                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mx-auto mb-6">
+                                        <Clock className="w-10 h-10 text-slate-400" />
+                                    </div>
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                                        className="absolute -inset-2 border-2 border-dashed border-slate-200 rounded-[2rem]"
+                                    />
+                                </div>
+                                <p className="text-slate-600 font-semibold text-lg">Your journey begins here</p>
+                                <p className="text-slate-400 text-sm mt-2 max-w-xs mx-auto">
+                                    Updates will appear as your application progresses through each stage
+                                </p>
+                            </motion.div>
+                        ) : (
+                            <div className="relative">
+                                {/* Animated connecting line */}
+                                <div className="absolute left-6 top-8 bottom-8 w-1 overflow-hidden rounded-full">
+                                    <motion.div
+                                        initial={{ height: 0 }}
+                                        animate={{ height: '100%' }}
+                                        transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
+                                        className="w-full bg-gradient-to-b from-indigo-500 via-purple-500 to-emerald-400 rounded-full"
+                                    />
+                                    {/* Shimmer effect */}
+                                    <motion.div
+                                        animate={{ y: ['-100%', '200%'] }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: 'linear', delay: 1 }}
+                                        className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-transparent via-white/40 to-transparent"
+                                    />
+                                </div>
+
+                                <motion.div
+                                    initial="hidden"
+                                    animate="visible"
+                                    variants={{
+                                        hidden: { opacity: 0 },
+                                        visible: {
+                                            opacity: 1,
+                                            transition: { staggerChildren: 0.15, delayChildren: 0.2 }
+                                        }
+                                    }}
+                                    className="space-y-6"
+                                >
+                                    {stageHistory.map((item, index) => {
+                                        const isLatest = index === 0
+                                        const isCompleted = index > 0
+
+                                        // Calculate days since previous stage
+                                        const nextItem = stageHistory[index + 1]
+                                        const daysDiff = nextItem
+                                            ? Math.ceil((new Date(item.created_at).getTime() - new Date(nextItem.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                                            : null
+
+                                        return (
+                                            <motion.div
+                                                key={item.id}
+                                                variants={{
+                                                    hidden: { opacity: 0, x: -30, scale: 0.95 },
+                                                    visible: {
+                                                        opacity: 1,
+                                                        x: 0,
+                                                        scale: 1,
+                                                        transition: { type: 'spring', stiffness: 100, damping: 15 }
+                                                    }
+                                                }}
+                                                className="relative flex gap-5 group"
+                                            >
+                                                {/* Enhanced node */}
+                                                <div className="relative z-10 flex-shrink-0">
+                                                    <motion.div
+                                                        whileHover={{ scale: 1.1 }}
+                                                        className={`
+                                                            w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 relative
+                                                            ${isLatest
+                                                                ? 'bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 shadow-xl shadow-indigo-300/50 ring-4 ring-indigo-100'
+                                                                : 'bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-200/50'
+                                                            }
+                                                        `}
+                                                    >
+                                                        {isLatest ? (
+                                                            <Sparkles className="w-6 h-6 text-white" />
+                                                        ) : (
+                                                            <CheckCircle2 className="w-6 h-6 text-white" />
+                                                        )}
+
+                                                        {/* Pulse animation for latest */}
+                                                        {isLatest && (
+                                                            <motion.div
+                                                                animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
+                                                                transition={{ duration: 2, repeat: Infinity }}
+                                                                className="absolute inset-0 rounded-xl bg-indigo-400"
+                                                            />
+                                                        )}
+                                                    </motion.div>
+
+                                                    {/* Stage number badge */}
+                                                    <div className={`
+                                                        absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold
+                                                        ${isLatest
+                                                            ? 'bg-amber-400 text-amber-900 shadow-lg'
+                                                            : 'bg-slate-200 text-slate-600'
+                                                        }
+                                                    `}>
+                                                        {stageHistory.length - index}
+                                                    </div>
+                                                </div>
+
+                                                {/* Glassmorphism card */}
+                                                <motion.div
+                                                    whileHover={{ y: -2 }}
+                                                    className={`
+                                                        flex-1 rounded-2xl p-5 transition-all duration-300 relative overflow-hidden
+                                                        ${isLatest
+                                                            ? 'bg-gradient-to-br from-white via-indigo-50/50 to-purple-50/50 border-2 border-indigo-200 shadow-xl shadow-indigo-100/50'
+                                                            : 'bg-white/80 backdrop-blur-sm border border-slate-200/80 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-100/30'
+                                                        }
+                                                    `}
+                                                >
+                                                    {/* Card decorative gradient */}
+                                                    {isLatest && (
+                                                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-2xl -translate-y-16 translate-x-16" />
+                                                    )}
+
+                                                    <div className="relative z-10">
+                                                        <div className="flex items-start justify-between mb-3">
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <span className={`font-bold text-lg ${isLatest ? 'text-indigo-900' : 'text-slate-800'}`}>
+                                                                        {item.to_stage_name}
+                                                                    </span>
+                                                                    {isLatest && (
+                                                                        <motion.span
+                                                                            animate={{ opacity: [1, 0.6, 1] }}
+                                                                            transition={{ duration: 1.5, repeat: Infinity }}
+                                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md"
+                                                                        >
+                                                                            <Sparkles className="w-3 h-3" />
+                                                                            Current Stage
+                                                                        </motion.span>
+                                                                    )}
+                                                                </div>
+
+                                                                {item.from_stage_name && (
+                                                                    <div className="flex items-center gap-2 mt-2 text-sm text-slate-500">
+                                                                        <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-100 rounded-lg">
+                                                                            <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+                                                                            <span>from <span className="font-medium text-slate-600">{item.from_stage_name}</span></span>
+                                                                        </div>
+                                                                        {daysDiff !== null && daysDiff > 0 && (
+                                                                            <div className="flex items-center gap-1 text-xs text-slate-400">
+                                                                                <Timer className="w-3 h-3" />
+                                                                                <span>{daysDiff} day{daysDiff !== 1 ? 's' : ''}</span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="text-right flex-shrink-0 ml-4">
+                                                                <div className={`text-sm font-semibold ${isLatest ? 'text-indigo-600' : 'text-slate-600'}`}>
+                                                                    {format(new Date(item.created_at), 'MMM d, yyyy')}
+                                                                </div>
+                                                                <div className="text-xs text-slate-400 mt-0.5">
+                                                                    {format(new Date(item.created_at), 'h:mm a')}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {item.notes && (
+                                                            <motion.div
+                                                                initial={{ opacity: 0, height: 0 }}
+                                                                animate={{ opacity: 1, height: 'auto' }}
+                                                                className="mt-4 p-4 bg-gradient-to-r from-slate-50 to-slate-100/50 rounded-xl border border-slate-200/50"
+                                                            >
+                                                                <div className="flex items-start gap-2">
+                                                                    <FileText className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
+                                                                    <p className="text-sm text-slate-600 leading-relaxed">
+                                                                        {item.notes}
+                                                                    </p>
+                                                                </div>
+                                                            </motion.div>
+                                                        )}
+                                                    </div>
+                                                </motion.div>
+                                            </motion.div>
+                                        )
+                                    })}
+                                </motion.div>
+
+                                {/* Journey start indicator */}
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 1 }}
+                                    className="flex items-center gap-4 mt-8 pt-6 border-t border-dashed border-slate-200"
+                                >
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                                        <Award className="w-6 h-6 text-slate-400" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-600">Journey Started</p>
+                                        <p className="text-xs text-slate-400">
+                                            {caseData && format(new Date(caseData.out_start_date || caseData.out_created_at), 'MMMM d, yyyy')}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        )}
+                    </div>
                 </motion.div>
 
                 {/* Quick Actions */}
