@@ -45,8 +45,8 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
     KWD: '\u062F.\u0643'
 }
 
-// Stripe USD payment link - you'll want to configure this in env
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/your-link-here'
+// Paystack payment link - configure in env or use inline checkout
+const PAYSTACK_PAYMENT_URL = 'https://paystack.com/pay/elab-invoice'
 
 export default function RecruiterInvoiceDetail() {
     const { invoiceId } = useParams<{ invoiceId: string }>()
@@ -225,9 +225,9 @@ export default function RecruiterInvoiceDetail() {
             return
         }
 
-        // Otherwise redirect to Stripe with invoice details
-        // You can customize this URL based on your Stripe setup
-        const paymentUrl = `${STRIPE_PAYMENT_LINK}?client_reference_id=${invoice?.out_invoice_number}&prefilled_email=${portalUser?.email}`
+        // Otherwise redirect to Paystack with invoice details
+        // You can customize this URL based on your Paystack setup
+        const paymentUrl = `${PAYSTACK_PAYMENT_URL}?reference=${invoice?.out_invoice_number}&email=${portalUser?.email}&amount=${(invoice?.out_amount_due || 0) * 100}`
         window.open(paymentUrl, '_blank')
     }
 
@@ -481,7 +481,7 @@ export default function RecruiterInvoiceDetail() {
                                         </div>
                                     </div>
                                     <p className="text-white/80 text-sm mb-4">
-                                        Pay securely with credit/debit card via Stripe. Supports all currencies including NGN and USD.
+                                        Pay securely with credit/debit card via Paystack. Supports NGN, USD, and other currencies.
                                     </p>
                                     <button
                                         onClick={handlePayOnline}
