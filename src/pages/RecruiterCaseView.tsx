@@ -215,6 +215,16 @@ export default function RecruiterCaseView() {
         return configs[status] || configs.active
     }
 
+    const getPriorityConfig = (priority: string) => {
+        const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
+            urgent: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', label: 'Urgent' },
+            high: { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200', label: 'High Priority' },
+            normal: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', label: 'Normal' },
+            low: { bg: 'bg-slate-100', text: 'text-slate-500', border: 'border-slate-200', label: 'Low' }
+        }
+        return configs[priority] || null
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
@@ -306,9 +316,17 @@ export default function RecruiterCaseView() {
                                     </p>
                                 </div>
                             </div>
-                            <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${statusConfig.bg} ${statusConfig.text}`}>
-                                {statusConfig.icon}
-                                <span className="font-medium">{statusConfig.label}</span>
+                            <div className="flex flex-col items-end gap-2">
+                                <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${statusConfig.bg} ${statusConfig.text}`}>
+                                    {statusConfig.icon}
+                                    <span className="font-medium">{statusConfig.label}</span>
+                                </div>
+                                {/* Priority Badge */}
+                                {getPriorityConfig(caseData.out_priority) && caseData.out_priority !== 'normal' && (
+                                    <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getPriorityConfig(caseData.out_priority)?.bg} ${getPriorityConfig(caseData.out_priority)?.text} ${getPriorityConfig(caseData.out_priority)?.border}`}>
+                                        {getPriorityConfig(caseData.out_priority)?.label}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </motion.div>

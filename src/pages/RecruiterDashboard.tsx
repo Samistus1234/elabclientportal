@@ -164,6 +164,16 @@ export default function RecruiterDashboard() {
         }
     }
 
+    const getPriorityConfig = (priority: string) => {
+        switch (priority) {
+            case 'urgent': return { label: 'Urgent', className: 'bg-red-100 text-red-700 border-red-200' }
+            case 'high': return { label: 'High', className: 'bg-amber-100 text-amber-700 border-amber-200' }
+            case 'normal': return { label: 'Normal', className: 'bg-blue-100 text-blue-700 border-blue-200' }
+            case 'low': return { label: 'Low', className: 'bg-slate-100 text-slate-500 border-slate-200' }
+            default: return null
+        }
+    }
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
@@ -483,7 +493,13 @@ export default function RecruiterDashboard() {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-3">
+                                                {/* Priority Badge */}
+                                                {getPriorityConfig(caseItem.out_priority) && caseItem.out_priority !== 'normal' && (
+                                                    <span className={`text-xs px-2 py-1 rounded-full border hidden md:block ${getPriorityConfig(caseItem.out_priority)?.className}`}>
+                                                        {getPriorityConfig(caseItem.out_priority)?.label}
+                                                    </span>
+                                                )}
                                                 <div className="text-right hidden sm:block">
                                                     <div className={`text-sm px-3 py-1 rounded-full ${getStatusColor(caseItem.out_status)}`}>
                                                         {caseItem.out_current_stage_name || caseItem.out_status}

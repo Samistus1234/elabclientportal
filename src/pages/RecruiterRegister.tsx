@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { Mail, Lock, Building2, ArrowRight, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 
 // API configuration
@@ -29,9 +29,18 @@ interface VerificationResult {
 
 export default function RecruiterRegister() {
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
     const [step, setStep] = useState<'verify' | 'register'>('verify')
     const [email, setEmail] = useState('')
     const [companyName, setCompanyName] = useState('')
+
+    // Pre-fill email and company from URL parameters (from invitation link)
+    useEffect(() => {
+        const emailParam = searchParams.get('email')
+        const companyParam = searchParams.get('company')
+        if (emailParam) setEmail(emailParam)
+        if (companyParam) setCompanyName(companyParam)
+    }, [searchParams])
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
