@@ -122,7 +122,7 @@ export default function Login() {
                         {/* Forgot Password Link */}
                         <div className="flex justify-end">
                             <a
-                                href="mailto:headoffice@elabsolution.org?subject=Password%20Reset%20Request"
+                                href="mailto:support@elabsolution.org?subject=Password%20Reset%20Request"
                                 className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                             >
                                 Forgot password?
@@ -172,11 +172,26 @@ export default function Login() {
                     </form>
                 </div>
 
+                {/* Support Ticket Link */}
+                <div className="text-center mt-6">
+                    <a
+                        href="https://portal.elabsolution.org/support"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-medium hover:from-indigo-600 hover:to-purple-600 transition-all shadow-md"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Submit Support Ticket
+                    </a>
+                </div>
+
                 {/* Footer */}
-                <p className="text-center text-slate-500 text-sm mt-6">
+                <p className="text-center text-slate-500 text-sm mt-4">
                     Need help? Contact{' '}
-                    <a href="mailto:headoffice@elabsolution.org" className="text-primary-600 hover:underline">
-                        headoffice@elabsolution.org
+                    <a href="mailto:support@elabsolution.org" className="text-primary-600 hover:underline">
+                        support@elabsolution.org
                     </a>
                 </p>
                 <div className="flex items-center justify-center gap-3 mt-2 text-xs text-slate-400">
