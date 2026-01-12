@@ -373,6 +373,44 @@ export async function submitPaymentProof(params: SubmitPaymentProofParams): Prom
     return { data, error }
 }
 
+// ============================================================
+// CURRENCY RATES FUNCTIONS
+// ============================================================
+
+export interface CurrencyRate {
+    id: string
+    from_currency: string
+    to_currency: string
+    rate: number
+    effective_date: string
+}
+
+// Get latest exchange rates from database
+export async function getCurrencyRates(): Promise<{ data: CurrencyRate[]; error: any }> {
+    const { data, error } = await supabase
+        .from('currency_rates')
+        .select('id, from_currency, to_currency, rate, effective_date')
+        .eq('is_active', true)
+        .order('effective_date', { ascending: false })
+
+    return { data: data || [], error }
+}
+
+// Get latest rate for a specific currency pair
+export async function getLatestRate(fromCurrency: string, toCurrency: string): Promise<{ data: CurrencyRate | null; error: any }> {
+    const { data, error } = await supabase
+        .from('currency_rates')
+        .select('id, from_currency, to_currency, rate, effective_date')
+        .eq('from_currency', fromCurrency)
+        .eq('to_currency', toCurrency)
+        .eq('is_active', true)
+        .order('effective_date', { ascending: false })
+        .limit(1)
+        .single()
+
+    return { data: data || null, error }
+}
+
 // Upload payment proof file to storage
 export async function uploadPaymentProof(file: File, invoiceId: string): Promise<{ url: string | null; error: any }> {
     const fileExt = file.name.split('.').pop()

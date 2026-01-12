@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase, getRecruiterCases, getRecruiterStats, getRecruiterInvoiceStats, getPortalUserInfo, type PortalUserInfo, type RecruiterInvoiceStats } from '@/lib/supabase'
+import { supabase, getRecruiterCases, getRecruiterStats, getRecruiterInvoiceStats, getPortalUserInfo, getCurrencyRates, type PortalUserInfo, type RecruiterInvoiceStats, type CurrencyRate } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import {
     Users,
@@ -44,8 +44,8 @@ interface RecruiterStats {
     total_commission_earned: number
 }
 
-// Exchange rates (approximate rates for conversion)
-const EXCHANGE_RATES: Record<string, number> = {
+// Default exchange rates (fallback if database rates not available)
+const DEFAULT_EXCHANGE_RATES: Record<string, number> = {
     USD: 1,
     NGN: 1550,
     SAR: 3.75,
@@ -83,12 +83,58 @@ export default function RecruiterDashboard() {
     const [toCurrency, setToCurrency] = useState('NGN')
     const [amount, setAmount] = useState('100')
     const [convertedAmount, setConvertedAmount] = useState('')
+    const [dbExchangeRates, setDbExchangeRates] = useState<CurrencyRate[]>([])
 
-    // Convert currency
+    // Build exchange rates from database rates (converting to USD base)
+    const getExchangeRates = (): Record<string, number> => {
+        // Start with defaults
+        const rates = { ...DEFAULT_EXCHANGE_RATES }
+
+        // Override with database rates where available
+        // Database rates are stored as from_currency -> to_currency pairs
+        // We need to convert to USD base for our converter
+        dbExchangeRates.forEach(rate => {
+            if (rate.from_currency === 'USD') {
+                // Direct USD to X rate
+                rates[rate.to_currency] = rate.rate
+            }
+        })
+
+        return rates
+    }
+
+    // Convert currency using database rates
     const convertCurrency = () => {
         const numAmount = parseFloat(amount) || 0
-        const fromRate = EXCHANGE_RATES[fromCurrency]
-        const toRate = EXCHANGE_RATES[toCurrency]
+        const rates = getExchangeRates()
+
+        // First check if we have a direct rate in the database
+        const directRate = dbExchangeRates.find(
+            r => r.from_currency === fromCurrency && r.to_currency === toCurrency
+        )
+
+        if (directRate) {
+            // Use direct rate from database
+            const result = numAmount * directRate.rate
+            setConvertedAmount(result.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+            return
+        }
+
+        // Check reverse rate
+        const reverseRate = dbExchangeRates.find(
+            r => r.from_currency === toCurrency && r.to_currency === fromCurrency
+        )
+
+        if (reverseRate) {
+            // Use reverse rate
+            const result = numAmount / reverseRate.rate
+            setConvertedAmount(result.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+            return
+        }
+
+        // Fall back to USD-based conversion
+        const fromRate = rates[fromCurrency] || 1
+        const toRate = rates[toCurrency] || 1
         const usdAmount = numAmount / fromRate
         const result = usdAmount * toRate
         setConvertedAmount(result.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
@@ -103,7 +149,7 @@ export default function RecruiterDashboard() {
     // Convert on mount and when values change
     useEffect(() => {
         convertCurrency()
-    }, [fromCurrency, toCurrency, amount])
+    }, [fromCurrency, toCurrency, amount, dbExchangeRates])
 
     useEffect(() => {
         loadData()
@@ -120,16 +166,18 @@ export default function RecruiterDashboard() {
             }
             setPortalUser(userInfo)
 
-            // Load cases, stats, and invoice stats in parallel
-            const [casesResult, statsResult, invoiceStatsResult] = await Promise.all([
+            // Load cases, stats, invoice stats, and currency rates in parallel
+            const [casesResult, statsResult, invoiceStatsResult, ratesResult] = await Promise.all([
                 getRecruiterCases(),
                 getRecruiterStats(),
-                getRecruiterInvoiceStats()
+                getRecruiterInvoiceStats(),
+                getCurrencyRates()
             ])
 
             setCases(casesResult.data || [])
             setStats(statsResult.data)
             setInvoiceStats(invoiceStatsResult.data)
+            setDbExchangeRates(ratesResult.data || [])
         } catch (err) {
             console.error('Error loading recruiter data:', err)
         } finally {
@@ -409,7 +457,7 @@ export default function RecruiterDashboard() {
                                 onChange={(e) => setFromCurrency(e.target.value)}
                                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all outline-none bg-white cursor-pointer font-medium"
                             >
-                                {Object.keys(EXCHANGE_RATES).map(currency => (
+                                {Object.keys(DEFAULT_EXCHANGE_RATES).map(currency => (
                                     <option key={currency} value={currency}>{currency}</option>
                                 ))}
                             </select>
@@ -434,7 +482,7 @@ export default function RecruiterDashboard() {
                                 onChange={(e) => setToCurrency(e.target.value)}
                                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-400 focus:ring-2 focus:ring-green-100 transition-all outline-none bg-white cursor-pointer font-medium"
                             >
-                                {Object.keys(EXCHANGE_RATES).map(currency => (
+                                {Object.keys(DEFAULT_EXCHANGE_RATES).map(currency => (
                                     <option key={currency} value={currency}>{currency}</option>
                                 ))}
                             </select>
