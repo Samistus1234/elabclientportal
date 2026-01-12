@@ -14,6 +14,7 @@ import AcceptInvite from '@/pages/AcceptInvite'
 import FAQ from '@/pages/FAQ'
 import Documents from '@/pages/Documents'
 import Settings from '@/pages/Settings'
+import Support from '@/pages/Support'
 
 // Pages - Recruiter
 import RecruiterRegister from '@/pages/RecruiterRegister'
@@ -146,6 +147,7 @@ export default function App() {
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
                 <Route path="/faq" element={<FAQ />} />
+                <Route path="/support" element={<Support />} />
 
                 {/* Protected routes - Applicant */}
                 <Route
