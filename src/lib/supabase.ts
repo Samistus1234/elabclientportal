@@ -44,16 +44,17 @@ export async function getUser() {
     return { user, error }
 }
 
-// Get portal user info (determines if user is applicant or recruiter)
+// Get portal user info (determines if user is applicant, recruiter, or institutional contact)
 export interface PortalUserInfo {
     portal_user_id: string
     person_id: string | null
-    user_type: 'applicant' | 'recruiter'
+    user_type: 'applicant' | 'recruiter' | 'institutional_contact'
     first_name: string | null
     last_name: string | null
     email: string
     recruiter_id: string | null
     company_name: string | null
+    institutional_contact_id: string | null
     is_active: boolean
 }
 

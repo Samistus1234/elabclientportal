@@ -23,6 +23,15 @@ import RecruiterCaseView from '@/pages/RecruiterCaseView'
 import RecruiterInvoices from '@/pages/RecruiterInvoices'
 import RecruiterInvoiceDetail from '@/pages/RecruiterInvoiceDetail'
 
+// Pages - Institutional Contact
+import ContactLogin from '@/pages/ContactLogin'
+import ContactRegister from '@/pages/ContactRegister'
+import ContactDashboard from '@/pages/ContactDashboard'
+import ContactRequestDetail from '@/pages/ContactRequestDetail'
+
+// Pages - Public (no auth required)
+import PayInvoice from '@/pages/PayInvoice'
+
 // Layout wrapper for authenticated pages
 function ProtectedRoute({ children, session }: { children: React.ReactNode; session: Session | null }) {
     if (!session) {
@@ -42,6 +51,8 @@ function RoleBasedRedirect() {
                 const { data: userInfo } = await getPortalUserInfo()
                 if (userInfo?.user_type === 'recruiter') {
                     setRedirectPath('/recruiter/dashboard')
+                } else if (userInfo?.user_type === 'institutional_contact') {
+                    setRedirectPath('/contact/dashboard')
                 } else {
                     setRedirectPath('/dashboard')
                 }
@@ -144,10 +155,15 @@ export default function App() {
                 <Route path="/login" element={session ? <RoleBasedRedirect /> : <Login />} />
                 <Route path="/register" element={session ? <RoleBasedRedirect /> : <Register />} />
                 <Route path="/recruiter/register" element={session ? <Navigate to="/recruiter/dashboard" replace /> : <RecruiterRegister />} />
+                <Route path="/contact/login" element={session ? <Navigate to="/contact/dashboard" replace /> : <ContactLogin />} />
+                <Route path="/contact/register" element={session ? <Navigate to="/contact/dashboard" replace /> : <ContactRegister />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/support" element={<Support />} />
+
+                {/* Public payment page - no auth required */}
+                <Route path="/pay/:invoiceId" element={<PayInvoice />} />
 
                 {/* Protected routes - Applicant */}
                 <Route
@@ -213,6 +229,24 @@ export default function App() {
                     element={
                         <ProtectedRoute session={session}>
                             <RecruiterInvoiceDetail />
+                        </ProtectedRoute>
+                    }
+                />
+
+                {/* Protected routes - Institutional Contact */}
+                <Route
+                    path="/contact/dashboard"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <ContactDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/contact/request/:id"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <ContactRequestDetail />
                         </ProtectedRoute>
                     }
                 />
