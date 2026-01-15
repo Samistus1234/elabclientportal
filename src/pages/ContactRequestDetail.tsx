@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
     FileText, ArrowLeft, Clock, CheckCircle2,
     Download, DollarSign, File, User, AlertCircle,
-    ExternalLink, Loader2, RefreshCcw
+    ExternalLink, Loader2, RefreshCcw, MessageSquare, Send
 } from 'lucide-react'
 import { supabase, getUser } from '@/lib/supabase'
 
@@ -86,6 +86,8 @@ export default function ContactRequestDetail() {
     const [isUpdating, setIsUpdating] = useState(false)
     const [contactId, setContactId] = useState<string | null>(null)
     const [downloadingDoc, setDownloadingDoc] = useState<string | null>(null)
+    const [notes, setNotes] = useState('')
+    const [isSavingNotes, setIsSavingNotes] = useState(false)
 
     useEffect(() => {
         loadRequest()
@@ -174,6 +176,7 @@ export default function ContactRequestDetail() {
             }
 
             setRequest(formattedRequest)
+            setNotes(formattedRequest.contact_notes || '')
 
         } catch (err: any) {
             setError(err.message || 'Failed to load request')
@@ -239,12 +242,52 @@ export default function ContactRequestDetail() {
         }
     }
 
+    const handleSaveNotes = async () => {
+        if (!request || !contactId) return
+
+        setIsSavingNotes(true)
+
+        try {
+            const { error: updateError } = await supabase
+                .from('verification_requests')
+                .update({
+                    contact_notes: notes,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', request.id)
+                .eq('contact_id', contactId)
+
+            if (updateError) throw updateError
+
+            // Update local state
+            setRequest({ ...request, contact_notes: notes })
+
+            // Trigger notification to eLab
+            try {
+                await supabase.functions.invoke('verification-request-notification', {
+                    body: {
+                        type: 'contact_notes_updated',
+                        verification_request_id: request.id,
+                        metadata: { notes },
+                    },
+                })
+            } catch (e) {
+                console.warn('Notification failed:', e)
+            }
+
+        } catch (err: any) {
+            alert('Failed to save notes: ' + err.message)
+        } finally {
+            setIsSavingNotes(false)
+        }
+    }
+
     const handleDownloadDocument = async (doc: Document) => {
         setDownloadingDoc(doc.id)
 
         try {
             const { data, error } = await supabase.storage
-                .from('verification-documents')
+                .from('documents')
                 .createSignedUrl(doc.storage_path, 3600)
 
             if (error) throw error
@@ -516,7 +559,7 @@ export default function ContactRequestDetail() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
-                    className="glass-card rounded-xl p-6"
+                    className="glass-card rounded-xl p-6 mb-6"
                 >
                     <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
                         <DollarSign className="w-5 h-5 text-emerald-600" />
@@ -568,6 +611,59 @@ export default function ContactRequestDetail() {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+                </motion.div>
+
+                {/* Notes Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="glass-card rounded-xl p-6"
+                >
+                    <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-emerald-600" />
+                        Your Notes
+                    </h3>
+
+                    <p className="text-sm text-slate-500 mb-4">
+                        Add notes or updates about this verification request. ELAB staff will be notified when you save.
+                    </p>
+
+                    <textarea
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Enter your notes here... e.g., 'Verification submitted to registrar on 15/01/2026. Expected response in 3-5 working days.'"
+                        rows={4}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all outline-none text-slate-800 placeholder:text-slate-400 resize-none"
+                    />
+
+                    <div className="flex items-center justify-between mt-4">
+                        <p className="text-xs text-slate-400">
+                            {notes !== request.contact_notes ? 'Unsaved changes' : 'All changes saved'}
+                        </p>
+                        <button
+                            onClick={handleSaveNotes}
+                            disabled={isSavingNotes || notes === request.contact_notes}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            {isSavingNotes ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Send className="w-4 h-4" />
+                            )}
+                            {isSavingNotes ? 'Saving...' : 'Save Notes'}
+                        </button>
+                    </div>
+
+                    {/* Internal Notes from eLab (if any) */}
+                    {request.internal_notes && (
+                        <div className="mt-6 pt-6 border-t border-slate-200">
+                            <h4 className="text-sm font-medium text-slate-700 mb-2">Notes from ELAB</h4>
+                            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                                <p className="text-sm text-amber-800 whitespace-pre-wrap">{request.internal_notes}</p>
+                            </div>
                         </div>
                     )}
                 </motion.div>
