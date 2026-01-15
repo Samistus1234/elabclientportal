@@ -120,13 +120,13 @@ export default function ContactDashboard() {
                 institution_code: (contactData.institution as any)?.code || '',
             })
 
-            // Get verification requests
+            // Get verification requests assigned to this contact
             const { data: requestsData, error: requestsError } = await supabase
                 .from('verification_requests')
                 .select(`
                     id, request_reference, dataflow_case_number, status, priority,
                     requested_at, completed_at,
-                    case:cases(case_reference, person:persons(first_name, last_name))
+                    case:cases(case_reference)
                 `)
                 .eq('contact_id', contactId)
                 .order('created_at', { ascending: false })
@@ -144,9 +144,7 @@ export default function ContactDashboard() {
                 requested_at: r.requested_at,
                 completed_at: r.completed_at,
                 case_reference: r.case?.case_reference || null,
-                applicant_name: r.case?.person
-                    ? `${r.case.person.first_name} ${r.case.person.last_name}`
-                    : null,
+                applicant_name: null, // Will be fetched separately if needed
             }))
 
             setRequests(formattedRequests)

@@ -127,7 +127,7 @@ export default function ContactRequestDetail() {
                     status, priority, requested_at, sent_to_contact_at, completed_at,
                     internal_notes, contact_notes,
                     institution:institutions(name, code),
-                    case:cases(case_reference, person:persons(first_name, last_name))
+                    case:cases(case_reference)
                 `)
                 .eq('id', id)
                 .eq('contact_id', portalUser.institutional_contact_id)
@@ -166,9 +166,7 @@ export default function ContactRequestDetail() {
                 internal_notes: requestData.internal_notes,
                 contact_notes: requestData.contact_notes,
                 case_reference: (requestData.case as any)?.case_reference || null,
-                applicant_name: (requestData.case as any)?.person
-                    ? `${(requestData.case as any).person.first_name} ${(requestData.case as any).person.last_name}`
-                    : null,
+                applicant_name: null, // Person data fetched separately to avoid join issues
                 institution_name: (requestData.institution as any)?.name || '',
                 institution_code: (requestData.institution as any)?.code || '',
                 documents: documents || [],
