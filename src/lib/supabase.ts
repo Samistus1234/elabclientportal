@@ -434,6 +434,71 @@ export async function uploadPaymentProof(file: File, invoiceId: string): Promise
 }
 
 // ============================================================
+// INSTITUTIONAL CONTACT STATUS UPDATE FUNCTIONS
+// ============================================================
+
+// Update verification request status from contact portal
+export async function updateVerificationRequestStatus(
+    requestId: string,
+    contactId: string,
+    newStatus: string
+): Promise<{ success: boolean; error: any }> {
+    try {
+        // First verify this request belongs to the contact
+        const { data: request, error: verifyError } = await supabase
+            .from('verification_requests')
+            .select('id, status, org_id')
+            .eq('id', requestId)
+            .eq('contact_id', contactId)
+            .single()
+
+        if (verifyError || !request) {
+            return { success: false, error: 'Request not found or access denied' }
+        }
+
+        const oldStatus = request.status
+
+        // Update the status
+        const updates: any = {
+            status: newStatus,
+            updated_at: new Date().toISOString(),
+        }
+
+        // Set completed_at if moving to completed
+        if (newStatus === 'completed') {
+            updates.completed_at = new Date().toISOString()
+        }
+
+        const { error: updateError } = await supabase
+            .from('verification_requests')
+            .update(updates)
+            .eq('id', requestId)
+
+        if (updateError) {
+            return { success: false, error: updateError }
+        }
+
+        // Log activity (don't await, fire and forget)
+        void supabase.from('activity_log').insert({
+            org_id: request.org_id,
+            action: 'verification_request_status_updated_by_contact',
+            entity_type: 'verification_request',
+            entity_id: requestId,
+            metadata: {
+                contact_id: contactId,
+                old_status: oldStatus,
+                new_status: newStatus,
+                updated_via: 'kanban_drag',
+            },
+        })
+
+        return { success: true, error: null }
+    } catch (err: any) {
+        return { success: false, error: err }
+    }
+}
+
+// ============================================================
 // INSTITUTIONAL CONTACT PAYMENT FUNCTIONS
 // ============================================================
 

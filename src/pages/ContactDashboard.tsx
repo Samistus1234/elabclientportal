@@ -2,12 +2,28 @@ import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
+    DndContext,
+    DragOverlay,
+    closestCorners,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragStartEvent,
+    type DragEndEvent,
+} from '@dnd-kit/core'
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import {
     FileText, Clock, CheckCircle2, AlertCircle,
     LogOut, RefreshCcw, User, Search, ArrowUpRight
 } from 'lucide-react'
-import { supabase, getUser, signOut, getContactPaymentSummary, type ContactPaymentSummary } from '@/lib/supabase'
+import {
+    supabase, getUser, signOut, getContactPaymentSummary,
+    updateVerificationRequestStatus, type ContactPaymentSummary
+} from '@/lib/supabase'
 import { PortalKanbanColumn, type KanbanColumnConfig } from '@/components/PortalKanbanColumn'
 import { AccruedPaymentsCard } from '@/components/AccruedPaymentsCard'
+import { DraggableRequestCard } from '@/components/DraggableRequestCard'
 
 // Types
 interface VerificationRequest {
@@ -39,12 +55,13 @@ interface Stats {
     completed: number
 }
 
-// Kanban column configuration
-const KANBAN_COLUMNS: KanbanColumnConfig[] = [
+// Kanban column configuration with target status mapping
+const KANBAN_COLUMNS: (KanbanColumnConfig & { targetStatus: string })[] = [
     {
         id: 'pending',
         name: 'Pending',
         statuses: ['pending', 'sent_to_contact'],
+        targetStatus: 'pending',
         color: '#f59e0b', // amber
         bgColor: 'bg-amber-50',
     },
@@ -52,6 +69,7 @@ const KANBAN_COLUMNS: KanbanColumnConfig[] = [
         id: 'in_progress',
         name: 'In Progress',
         statuses: ['in_progress'],
+        targetStatus: 'in_progress',
         color: '#8b5cf6', // purple
         bgColor: 'bg-purple-50',
     },
@@ -59,6 +77,7 @@ const KANBAN_COLUMNS: KanbanColumnConfig[] = [
         id: 'verification_sent',
         name: 'Verification Sent',
         statuses: ['verification_sent'],
+        targetStatus: 'verification_sent',
         color: '#10b981', // emerald
         bgColor: 'bg-emerald-50',
     },
@@ -66,6 +85,7 @@ const KANBAN_COLUMNS: KanbanColumnConfig[] = [
         id: 'completed',
         name: 'Completed',
         statuses: ['completed'],
+        targetStatus: 'completed',
         color: '#22c55e', // green
         bgColor: 'bg-green-50',
     },
@@ -82,6 +102,20 @@ export default function ContactDashboard() {
     const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [contactId, setContactId] = useState<string | null>(null)
+    const [activeId, setActiveId] = useState<string | null>(null)
+    const [isUpdating, setIsUpdating] = useState(false)
+
+    // DnD sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    )
 
     useEffect(() => {
         loadData()
@@ -183,15 +217,7 @@ export default function ContactDashboard() {
             }))
 
             setRequests(formattedRequests)
-
-            // Calculate stats
-            const statsData = {
-                total: formattedRequests.length,
-                pending: formattedRequests.filter((r: any) => ['pending', 'sent_to_contact'].includes(r.status)).length,
-                in_progress: formattedRequests.filter((r: any) => r.status === 'in_progress').length,
-                completed: formattedRequests.filter((r: any) => ['completed', 'verification_sent'].includes(r.status)).length,
-            }
-            setStats(statsData)
+            updateStats(formattedRequests)
 
         } catch (err: any) {
             setError(err.message || 'Failed to load data')
@@ -200,9 +226,76 @@ export default function ContactDashboard() {
         }
     }
 
+    const updateStats = (requestsList: VerificationRequest[]) => {
+        const statsData = {
+            total: requestsList.length,
+            pending: requestsList.filter((r) => ['pending', 'sent_to_contact'].includes(r.status)).length,
+            in_progress: requestsList.filter((r) => r.status === 'in_progress').length,
+            completed: requestsList.filter((r) => ['completed', 'verification_sent'].includes(r.status)).length,
+        }
+        setStats(statsData)
+    }
+
     const handleSignOut = async () => {
         await signOut()
         navigate('/login')
+    }
+
+    // DnD handlers
+    const handleDragStart = (event: DragStartEvent) => {
+        setActiveId(event.active.id as string)
+    }
+
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event
+        setActiveId(null)
+
+        if (!over || !contactId) return
+
+        const requestId = active.id as string
+        const targetColumnId = over.id as string
+
+        // Find the target column
+        const targetColumn = KANBAN_COLUMNS.find((col) => col.id === targetColumnId)
+        if (!targetColumn) return
+
+        // Find the request being moved
+        const request = requests.find((r) => r.id === requestId)
+        if (!request) return
+
+        // Check if it's actually changing columns
+        const currentColumn = KANBAN_COLUMNS.find((col) => col.statuses.includes(request.status))
+        if (currentColumn?.id === targetColumnId) return
+
+        // Optimistically update UI
+        const newStatus = targetColumn.targetStatus
+        setRequests((prev) =>
+            prev.map((r) =>
+                r.id === requestId ? { ...r, status: newStatus } : r
+            )
+        )
+        updateStats(requests.map((r) => (r.id === requestId ? { ...r, status: newStatus } : r)))
+
+        // Update in database
+        setIsUpdating(true)
+        const { success, error } = await updateVerificationRequestStatus(requestId, contactId, newStatus)
+
+        if (!success) {
+            // Revert on error
+            console.error('Failed to update status:', error)
+            setRequests((prev) =>
+                prev.map((r) =>
+                    r.id === requestId ? { ...r, status: request.status } : r
+                )
+            )
+            updateStats(requests)
+            // Show error toast or notification here if desired
+        }
+        setIsUpdating(false)
+    }
+
+    const handleDragCancel = () => {
+        setActiveId(null)
     }
 
     // Filter requests by search query
@@ -228,6 +321,12 @@ export default function ContactDashboard() {
 
         return grouped
     }, [filteredRequests])
+
+    // Get the active request for drag overlay
+    const activeRequest = useMemo(() => {
+        if (!activeId) return null
+        return requests.find((r) => r.id === activeId) || null
+    }, [activeId, requests])
 
     if (isLoading) {
         return (
@@ -271,6 +370,9 @@ export default function ContactDashboard() {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
+                        {isUpdating && (
+                            <span className="text-xs text-emerald-600 animate-pulse">Saving...</span>
+                        )}
                         <button
                             onClick={loadData}
                             className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
@@ -403,27 +505,49 @@ export default function ContactDashboard() {
                     </div>
                 </motion.div>
 
-                {/* Kanban Board */}
+                {/* Kanban Board with DnD */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                 >
-                    <h3 className="text-lg font-semibold text-slate-800 mb-4">
-                        Verification Requests
-                    </h3>
-
-                    <div className="overflow-x-auto pb-4">
-                        <div className="flex gap-4 min-w-max">
-                            {KANBAN_COLUMNS.map((column) => (
-                                <PortalKanbanColumn
-                                    key={column.id}
-                                    column={column}
-                                    requests={requestsByColumn[column.id] || []}
-                                />
-                            ))}
-                        </div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-slate-800">
+                            Verification Requests
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                            Drag cards to update status
+                        </p>
                     </div>
+
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCorners}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                        onDragCancel={handleDragCancel}
+                    >
+                        <div className="overflow-x-auto pb-4">
+                            <div className="flex gap-4 min-w-max">
+                                {KANBAN_COLUMNS.map((column) => (
+                                    <PortalKanbanColumn
+                                        key={column.id}
+                                        column={column}
+                                        requests={requestsByColumn[column.id] || []}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Drag Overlay */}
+                        <DragOverlay>
+                            {activeRequest ? (
+                                <div className="opacity-80 rotate-3 scale-105">
+                                    <DraggableRequestCard request={activeRequest} isDragging />
+                                </div>
+                            ) : null}
+                        </DragOverlay>
+                    </DndContext>
                 </motion.div>
             </main>
 
