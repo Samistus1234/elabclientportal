@@ -253,10 +253,19 @@ export default function ContactDashboard() {
         if (!over || !contactId) return
 
         const requestId = active.id as string
-        const targetColumnId = over.id as string
+        const overId = over.id as string
 
-        // Find the target column
-        const targetColumn = KANBAN_COLUMNS.find((col) => col.id === targetColumnId)
+        // Find the target column - could be a column id OR a card id
+        let targetColumn = KANBAN_COLUMNS.find((col) => col.id === overId)
+
+        // If not a column, the overId might be a card id - find which column it belongs to
+        if (!targetColumn) {
+            const overRequest = requests.find((r) => r.id === overId)
+            if (overRequest) {
+                targetColumn = KANBAN_COLUMNS.find((col) => col.statuses.includes(overRequest.status))
+            }
+        }
+
         if (!targetColumn) return
 
         // Find the request being moved
@@ -265,7 +274,7 @@ export default function ContactDashboard() {
 
         // Check if it's actually changing columns
         const currentColumn = KANBAN_COLUMNS.find((col) => col.statuses.includes(request.status))
-        if (currentColumn?.id === targetColumnId) return
+        if (currentColumn?.id === targetColumn.id) return
 
         // Optimistically update UI
         const newStatus = targetColumn.targetStatus
