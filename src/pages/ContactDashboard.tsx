@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
     Building2, FileText, Clock, CheckCircle2, AlertCircle,
-    LogOut, RefreshCcw, User, Search, Filter, ChevronRight,
-    ArrowUpRight, Calendar
+    LogOut, RefreshCcw, User, Search, ArrowUpRight
 } from 'lucide-react'
-import { supabase, getUser, signOut } from '@/lib/supabase'
+import { supabase, getUser, signOut, getContactPaymentSummary, type ContactPaymentSummary } from '@/lib/supabase'
+import { PortalKanbanColumn, type KanbanColumnConfig } from '@/components/PortalKanbanColumn'
+import { AccruedPaymentsCard } from '@/components/AccruedPaymentsCard'
 
 // Types
 interface VerificationRequest {
@@ -38,36 +39,69 @@ interface Stats {
     completed: number
 }
 
-const statusConfig: Record<string, { label: string; color: string; bgColor: string }> = {
-    pending: { label: 'Pending', color: 'text-amber-700', bgColor: 'bg-amber-50' },
-    sent_to_contact: { label: 'Awaiting Review', color: 'text-blue-700', bgColor: 'bg-blue-50' },
-    in_progress: { label: 'In Progress', color: 'text-indigo-700', bgColor: 'bg-indigo-50' },
-    verification_sent: { label: 'Verification Sent', color: 'text-purple-700', bgColor: 'bg-purple-50' },
-    completed: { label: 'Completed', color: 'text-green-700', bgColor: 'bg-green-50' },
-    rejected: { label: 'Rejected', color: 'text-red-700', bgColor: 'bg-red-50' },
-    cancelled: { label: 'Cancelled', color: 'text-slate-700', bgColor: 'bg-slate-50' },
-}
-
-const priorityConfig: Record<string, { label: string; color: string }> = {
-    low: { label: 'Low', color: 'text-slate-500' },
-    normal: { label: 'Normal', color: 'text-blue-500' },
-    high: { label: 'High', color: 'text-orange-500' },
-    urgent: { label: 'Urgent', color: 'text-red-500' },
-}
+// Kanban column configuration
+const KANBAN_COLUMNS: KanbanColumnConfig[] = [
+    {
+        id: 'pending',
+        name: 'Pending',
+        statuses: ['pending', 'sent_to_contact'],
+        color: '#f59e0b', // amber
+        bgColor: 'bg-amber-50',
+    },
+    {
+        id: 'in_progress',
+        name: 'In Progress',
+        statuses: ['in_progress'],
+        color: '#8b5cf6', // purple
+        bgColor: 'bg-purple-50',
+    },
+    {
+        id: 'verification_sent',
+        name: 'Verification Sent',
+        statuses: ['verification_sent'],
+        color: '#10b981', // emerald
+        bgColor: 'bg-emerald-50',
+    },
+    {
+        id: 'completed',
+        name: 'Completed',
+        statuses: ['completed'],
+        color: '#22c55e', // green
+        bgColor: 'bg-green-50',
+    },
+]
 
 export default function ContactDashboard() {
     const navigate = useNavigate()
     const [profile, setProfile] = useState<ContactProfile | null>(null)
     const [requests, setRequests] = useState<VerificationRequest[]>([])
     const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, in_progress: 0, completed: 0 })
+    const [paymentSummary, setPaymentSummary] = useState<ContactPaymentSummary | null>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [isPaymentLoading, setIsPaymentLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
-    const [statusFilter, setStatusFilter] = useState<string>('all')
+    const [contactId, setContactId] = useState<string | null>(null)
 
     useEffect(() => {
         loadData()
     }, [])
+
+    // Load payment summary when contactId is available
+    useEffect(() => {
+        if (contactId) {
+            loadPaymentSummary(contactId)
+        }
+    }, [contactId])
+
+    const loadPaymentSummary = async (id: string) => {
+        setIsPaymentLoading(true)
+        const { data, error } = await getContactPaymentSummary(id)
+        if (!error && data) {
+            setPaymentSummary(data)
+        }
+        setIsPaymentLoading(false)
+    }
 
     const loadData = async () => {
         setIsLoading(true)
@@ -93,7 +127,8 @@ export default function ContactDashboard() {
                 return
             }
 
-            const contactId = portalUser.institutional_contact_id
+            const currentContactId = portalUser.institutional_contact_id
+            setContactId(currentContactId)
 
             // Get contact profile
             const { data: contactData, error: contactError } = await supabase
@@ -102,7 +137,7 @@ export default function ContactDashboard() {
                     id, first_name, last_name, email, title,
                     institution:institutions(name, code)
                 `)
-                .eq('id', contactId)
+                .eq('id', currentContactId)
                 .single()
 
             if (contactError || !contactData) {
@@ -128,7 +163,7 @@ export default function ContactDashboard() {
                     requested_at, completed_at,
                     case:cases(case_reference)
                 `)
-                .eq('contact_id', contactId)
+                .eq('contact_id', currentContactId)
                 .order('created_at', { ascending: false })
 
             if (requestsError) {
@@ -144,7 +179,7 @@ export default function ContactDashboard() {
                 requested_at: r.requested_at,
                 completed_at: r.completed_at,
                 case_reference: r.case?.case_reference || null,
-                applicant_name: null, // Will be fetched separately if needed
+                applicant_name: null,
             }))
 
             setRequests(formattedRequests)
@@ -170,16 +205,29 @@ export default function ContactDashboard() {
         navigate('/login')
     }
 
-    const filteredRequests = requests.filter(r => {
-        const matchesSearch = !searchQuery ||
+    // Filter requests by search query
+    const filteredRequests = useMemo(() => {
+        if (!searchQuery) return requests
+
+        return requests.filter(r =>
             r.request_reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             r.dataflow_case_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             r.applicant_name?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+    }, [requests, searchQuery])
 
-        const matchesStatus = statusFilter === 'all' || r.status === statusFilter
+    // Group requests by Kanban column
+    const requestsByColumn = useMemo(() => {
+        const grouped: Record<string, VerificationRequest[]> = {}
 
-        return matchesSearch && matchesStatus
-    })
+        for (const column of KANBAN_COLUMNS) {
+            grouped[column.id] = filteredRequests.filter((r) =>
+                column.statuses.includes(r.status)
+            )
+        }
+
+        return grouped
+    }, [filteredRequests])
 
     if (isLoading) {
         return (
@@ -296,8 +344,8 @@ export default function ContactDashboard() {
 
                     <div className="glass-card rounded-xl p-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-                                <ArrowUpRight className="w-5 h-5 text-indigo-600" />
+                            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                                <ArrowUpRight className="w-5 h-5 text-purple-600" />
                             </div>
                             <div>
                                 <p className="text-2xl font-bold text-slate-800">{stats.in_progress}</p>
@@ -319,43 +367,43 @@ export default function ContactDashboard() {
                     </div>
                 </motion.div>
 
-                {/* Filters */}
+                {/* Accrued Payments Card */}
+                <div className="mb-8">
+                    <AccruedPaymentsCard
+                        summary={paymentSummary}
+                        isLoading={isPaymentLoading}
+                    />
+                </div>
+
+                {/* Search Bar */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
                     className="glass-card rounded-xl p-4 mb-6"
                 >
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex items-center gap-4">
                         <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Search by reference, DataFlow case, or applicant..."
+                                placeholder="Search by reference or DataFlow case..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
                             />
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Filter className="w-5 h-5 text-slate-400" />
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="px-4 py-2.5 rounded-lg border border-slate-200 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
-                            >
-                                <option value="all">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="sent_to_contact">Awaiting Review</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="verification_sent">Verification Sent</option>
-                                <option value="completed">Completed</option>
-                            </select>
-                        </div>
+                        <button
+                            onClick={loadData}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                        >
+                            <RefreshCcw className="w-4 h-4" />
+                            <span className="hidden sm:inline">Refresh</span>
+                        </button>
                     </div>
                 </motion.div>
 
-                {/* Requests List */}
+                {/* Kanban Board */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -365,66 +413,17 @@ export default function ContactDashboard() {
                         Verification Requests
                     </h3>
 
-                    {filteredRequests.length === 0 ? (
-                        <div className="glass-card rounded-xl p-12 text-center">
-                            <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                            <p className="text-slate-600">
-                                {requests.length === 0
-                                    ? 'No verification requests assigned yet'
-                                    : 'No requests match your search'}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {filteredRequests.map((request, index) => (
-                                <motion.div
-                                    key={request.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 * index }}
-                                >
-                                    <Link
-                                        to={`/contact/request/${request.id}`}
-                                        className="glass-card rounded-xl p-4 flex items-center gap-4 hover:shadow-lg transition-all group"
-                                    >
-                                        <div className="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                                            <Building2 className="w-6 h-6 text-emerald-600" />
-                                        </div>
-
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-semibold text-slate-800 truncate">
-                                                    {request.request_reference}
-                                                </h4>
-                                                {request.priority !== 'normal' && (
-                                                    <span className={`text-xs font-medium ${priorityConfig[request.priority]?.color}`}>
-                                                        {priorityConfig[request.priority]?.label}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <p className="text-sm text-slate-600 truncate">
-                                                {request.applicant_name || 'Unknown Applicant'}
-                                                {request.dataflow_case_number && ` • DF: ${request.dataflow_case_number}`}
-                                            </p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                                                <span className="text-xs text-slate-500">
-                                                    {new Date(request.requested_at).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3 shrink-0">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig[request.status]?.bgColor} ${statusConfig[request.status]?.color}`}>
-                                                {statusConfig[request.status]?.label || request.status}
-                                            </span>
-                                            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 transition-colors" />
-                                        </div>
-                                    </Link>
-                                </motion.div>
+                    <div className="overflow-x-auto pb-4">
+                        <div className="flex gap-4 min-w-max">
+                            {KANBAN_COLUMNS.map((column) => (
+                                <PortalKanbanColumn
+                                    key={column.id}
+                                    column={column}
+                                    requests={requestsByColumn[column.id] || []}
+                                />
                             ))}
                         </div>
-                    )}
+                    </div>
                 </motion.div>
             </main>
 

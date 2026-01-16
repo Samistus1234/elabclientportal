@@ -432,3 +432,143 @@ export async function uploadPaymentProof(file: File, invoiceId: string): Promise
 
     return { url: publicUrl, error: null }
 }
+
+// ============================================================
+// INSTITUTIONAL CONTACT PAYMENT FUNCTIONS
+// ============================================================
+
+export type PaymentType = 'official_fee' | 'facilitation_fee' | 'processing_fee' | 'courier_fee' | 'other'
+export type PaymentStatus = 'pending' | 'paid' | 'confirmed' | 'refunded'
+
+export interface PaymentBreakdownItem {
+    type: PaymentType
+    total: number
+    confirmed: number
+    pending: number
+    count: number
+}
+
+export interface ContactPaymentSummary {
+    total_amount: number
+    confirmed_amount: number
+    pending_amount: number
+    currency: string
+    breakdown_by_type: PaymentBreakdownItem[]
+    total_payments_count: number
+}
+
+export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
+    official_fee: 'Official Fee',
+    facilitation_fee: 'Facilitation Fee',
+    processing_fee: 'Processing Fee',
+    courier_fee: 'Courier Fee',
+    other: 'Other',
+}
+
+// Get payment summary for a contact's verification requests
+export async function getContactPaymentSummary(contactId: string): Promise<{ data: ContactPaymentSummary | null; error: any }> {
+    try {
+        // Get all verification requests for this contact
+        const { data: requests, error: requestsError } = await supabase
+            .from('verification_requests')
+            .select('id')
+            .eq('contact_id', contactId)
+
+        if (requestsError) return { data: null, error: requestsError }
+
+        if (!requests || requests.length === 0) {
+            return {
+                data: {
+                    total_amount: 0,
+                    confirmed_amount: 0,
+                    pending_amount: 0,
+                    currency: 'AED',
+                    breakdown_by_type: [],
+                    total_payments_count: 0,
+                },
+                error: null,
+            }
+        }
+
+        const requestIds = requests.map((r) => r.id)
+
+        // Get all payments for these requests
+        const { data: payments, error: paymentsError } = await supabase
+            .from('verification_request_payments')
+            .select('*')
+            .in('verification_request_id', requestIds)
+
+        if (paymentsError) return { data: null, error: paymentsError }
+
+        if (!payments || payments.length === 0) {
+            return {
+                data: {
+                    total_amount: 0,
+                    confirmed_amount: 0,
+                    pending_amount: 0,
+                    currency: 'AED',
+                    breakdown_by_type: [],
+                    total_payments_count: 0,
+                },
+                error: null,
+            }
+        }
+
+        // Aggregate by payment type
+        const breakdownMap = new Map<PaymentType, PaymentBreakdownItem>()
+        let totalAmount = 0
+        let confirmedAmount = 0
+        let pendingAmount = 0
+        let currency = 'AED'
+
+        for (const payment of payments) {
+            const amount = payment.amount || 0
+            const type = payment.payment_type as PaymentType
+            const status = payment.status as PaymentStatus
+
+            if (payment.currency) {
+                currency = payment.currency
+            }
+
+            totalAmount += amount
+            if (status === 'confirmed' || status === 'paid') {
+                confirmedAmount += amount
+            } else if (status === 'pending') {
+                pendingAmount += amount
+            }
+
+            if (!breakdownMap.has(type)) {
+                breakdownMap.set(type, {
+                    type,
+                    total: 0,
+                    confirmed: 0,
+                    pending: 0,
+                    count: 0,
+                })
+            }
+
+            const item = breakdownMap.get(type)!
+            item.total += amount
+            item.count += 1
+            if (status === 'confirmed' || status === 'paid') {
+                item.confirmed += amount
+            } else if (status === 'pending') {
+                item.pending += amount
+            }
+        }
+
+        return {
+            data: {
+                total_amount: totalAmount,
+                confirmed_amount: confirmedAmount,
+                pending_amount: pendingAmount,
+                currency,
+                breakdown_by_type: Array.from(breakdownMap.values()),
+                total_payments_count: payments.length,
+            },
+            error: null,
+        }
+    } catch (err: any) {
+        return { data: null, error: err }
+    }
+}
