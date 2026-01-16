@@ -30,13 +30,6 @@ interface PortalKanbanColumnProps {
     requests: VerificationRequest[]
 }
 
-const priorityConfig: Record<string, { label: string; color: string }> = {
-    low: { label: 'Low', color: 'text-slate-500' },
-    normal: { label: 'Normal', color: 'text-blue-500' },
-    high: { label: 'High', color: 'text-orange-500' },
-    urgent: { label: 'Urgent', color: 'text-red-500' },
-}
-
 export function PortalKanbanColumn({ column, requests }: PortalKanbanColumnProps) {
     return (
         <div className="flex-shrink-0 w-72 md:w-80">

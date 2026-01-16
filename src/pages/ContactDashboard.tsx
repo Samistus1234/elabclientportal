@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
-    Building2, FileText, Clock, CheckCircle2, AlertCircle,
+    FileText, Clock, CheckCircle2, AlertCircle,
     LogOut, RefreshCcw, User, Search, ArrowUpRight
 } from 'lucide-react'
 import { supabase, getUser, signOut, getContactPaymentSummary, type ContactPaymentSummary } from '@/lib/supabase'

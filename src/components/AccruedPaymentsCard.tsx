@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { DollarSign, CheckCircle2, Clock, Receipt } from 'lucide-react'
-import type { ContactPaymentSummary, PaymentType } from '@/lib/supabase'
+import type { ContactPaymentSummary } from '@/lib/supabase'
 import { PAYMENT_TYPE_LABELS } from '@/lib/supabase'
 
 interface AccruedPaymentsCardProps {
