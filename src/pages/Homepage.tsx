@@ -1568,7 +1568,7 @@ function Footer() {
                         </p>
                         <div className="flex gap-3">
                             <a
-                                href="https://twitter.com/elabsolutions"
+                                href="https://x.com/elabsolution1"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
