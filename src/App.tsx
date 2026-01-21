@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { supabase, getPortalUserInfo } from '@/lib/supabase'
 import { Session } from '@supabase/supabase-js'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { WalkthroughProvider } from '@/contexts/WalkthroughContext'
+import WalkthroughOverlay from '@/components/WalkthroughOverlay'
 
 // Pages - Applicant
 import Login from '@/pages/Login'
@@ -15,6 +17,7 @@ import FAQ from '@/pages/FAQ'
 import Documents from '@/pages/Documents'
 import Settings from '@/pages/Settings'
 import Support from '@/pages/Support'
+import Homepage from '@/pages/Homepage'
 
 // Pages - Recruiter
 import RecruiterRegister from '@/pages/RecruiterRegister'
@@ -149,8 +152,12 @@ export default function App() {
 
     return (
         <ThemeProvider>
-            <AuthHashHandler>
-                <Routes>
+            <WalkthroughProvider>
+                <AuthHashHandler>
+                    <Routes>
+                {/* Homepage - public landing page */}
+                <Route path="/" element={session ? <RoleBasedRedirect /> : <Homepage />} />
+
                 {/* Public routes */}
                 <Route path="/login" element={session ? <RoleBasedRedirect /> : <Login />} />
                 <Route path="/register" element={session ? <RoleBasedRedirect /> : <Register />} />
@@ -251,10 +258,12 @@ export default function App() {
                     }
                 />
 
-                {/* Default redirect */}
-                <Route path="*" element={session ? <RoleBasedRedirect /> : <Navigate to="/login" replace />} />
-                </Routes>
-            </AuthHashHandler>
+                    {/* Default redirect */}
+                    <Route path="*" element={session ? <RoleBasedRedirect /> : <Navigate to="/" replace />} />
+                    </Routes>
+                </AuthHashHandler>
+                <WalkthroughOverlay />
+            </WalkthroughProvider>
         </ThemeProvider>
     )
 }

@@ -5,14 +5,12 @@ import {
     CheckCircle,
     Sparkles,
     TrendingUp,
-    Gift,
     FileCheck,
     GraduationCap,
     Building2,
     Globe,
     BookOpen,
-    Award,
-    BadgePercent
+    Award
 } from 'lucide-react'
 
 interface CaseData {
@@ -26,7 +24,6 @@ interface CaseData {
 
 interface SmartCrossSellRecommendationsProps {
     cases: CaseData[]
-    recruiterDiscount?: number // Optional recruiter discount percentage
 }
 
 interface Recommendation {
@@ -37,8 +34,7 @@ interface Recommendation {
     icon: React.ElementType
     gradient: string
     features: string[]
-    originalPrice?: string
-    discountedPrice?: string
+    price?: string
     badge?: string
     priority: number // Higher = more relevant
     href: string
@@ -74,8 +70,7 @@ const ALL_RECOMMENDATIONS: Record<string, Omit<Recommendation, 'priority'>> = {
         icon: FileCheck,
         gradient: 'from-blue-500 via-indigo-500 to-purple-500',
         features: ['Document collection', 'Verification tracking', 'Fast processing', 'Expert support'],
-        originalPrice: '$150',
-        discountedPrice: '$135',
+        price: '$135',
         badge: 'Essential',
         href: 'https://www.elabsolution.org/dataflow'
     },
@@ -87,21 +82,19 @@ const ALL_RECOMMENDATIONS: Record<string, Omit<Recommendation, 'priority'>> = {
         icon: Building2,
         gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
         features: ['Account setup', 'Document upload', 'Application tracking', 'Approval support'],
-        originalPrice: '$200',
-        discountedPrice: '$180',
+        price: '$80',
         badge: 'Popular',
         href: 'https://www.elabsolution.org/mumaris'
     },
     'prometric-tutorial': {
         id: 'prometric-tutorial',
         title: 'Prometric Exam Prep',
-        subtitle: 'Video Tutorials',
-        description: 'Comprehensive video tutorials and practice exams for Prometric nursing exams.',
+        subtitle: 'Gulf Licensing Exams',
+        description: 'Comprehensive practice exams and study materials for Prometric nursing exams.',
         icon: GraduationCap,
         gradient: 'from-rose-500 via-pink-500 to-purple-500',
-        features: ['500+ video lessons', 'Practice questions', 'Mock exams', '95% pass rate'],
-        originalPrice: '$299',
-        discountedPrice: '$249',
+        features: ['Practice questions', 'Mock exams', 'Study guides', '95% pass rate'],
+        price: '$80',
         badge: 'Best Value',
         href: 'https://www.elab.academy/prometric'
     },
@@ -113,8 +106,7 @@ const ALL_RECOMMENDATIONS: Record<string, Omit<Recommendation, 'priority'>> = {
         icon: Award,
         gradient: 'from-violet-500 via-purple-500 to-indigo-500',
         features: ['Credential evaluation', 'Exam preparation', 'Application support', 'Expert guidance'],
-        originalPrice: '$299',
-        discountedPrice: '$284',
+        price: '$550',
         badge: 'US Pathway',
         href: 'https://www.elab.academy/trumerit'
     },
@@ -126,8 +118,7 @@ const ALL_RECOMMENDATIONS: Record<string, Omit<Recommendation, 'priority'>> = {
         icon: GraduationCap,
         gradient: 'from-emerald-500 via-teal-500 to-cyan-500',
         features: ['All courses included', 'Lifetime access', 'Certificate programs', 'Expert instructors'],
-        originalPrice: '$499',
-        discountedPrice: '$474',
+        price: '$474',
         badge: 'Best Value',
         href: 'https://www.elab.academy'
     },
@@ -139,8 +130,7 @@ const ALL_RECOMMENDATIONS: Record<string, Omit<Recommendation, 'priority'>> = {
         icon: Globe,
         gradient: 'from-blue-500 via-cyan-500 to-teal-500',
         features: ['All 4 modules', 'Role-play practice', 'Writing feedback', 'Mock tests'],
-        originalPrice: '$249',
-        discountedPrice: '$219',
+        price: '$54',
         badge: 'Healthcare Focused',
         href: 'https://www.elab.academy/oet'
     },
@@ -152,13 +142,12 @@ const ALL_RECOMMENDATIONS: Record<string, Omit<Recommendation, 'priority'>> = {
         icon: BookOpen,
         gradient: 'from-amber-500 via-orange-500 to-red-500',
         features: ['Band 7+ strategies', 'Speaking practice', 'Writing templates', 'Flexible schedule'],
-        originalPrice: '$199',
-        discountedPrice: '$169',
+        price: '$169',
         href: 'https://www.elab.academy/ielts'
     }
 }
 
-export default function SmartCrossSellRecommendations({ cases, recruiterDiscount = 5 }: SmartCrossSellRecommendationsProps) {
+export default function SmartCrossSellRecommendations({ cases }: SmartCrossSellRecommendationsProps) {
     // Analyze user's current cases to determine relevant recommendations
     const getRecommendations = (): Recommendation[] => {
         // Get all pipeline slugs from user's cases
@@ -225,19 +214,6 @@ export default function SmartCrossSellRecommendations({ cases, recruiterDiscount
                     </p>
                 </div>
 
-                {recruiterDiscount > 0 && (
-                    <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.3, type: 'spring' }}
-                        className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl"
-                    >
-                        <BadgePercent className="w-5 h-5 text-green-600" />
-                        <span className="text-sm font-semibold text-green-700">
-                            {recruiterDiscount}% Recruiter Discount Applied!
-                        </span>
-                    </motion.div>
-                )}
             </div>
 
             {/* Trending/Stats Banner */}
@@ -287,16 +263,6 @@ export default function SmartCrossSellRecommendations({ cases, recruiterDiscount
                                     shadow-lg hover:shadow-2xl transition-all duration-300
                                     ${index === 0 ? 'ring-2 ring-yellow-400 ring-offset-2' : ''}
                                 `}>
-                                    {/* Discount Badge */}
-                                    {recruiterDiscount > 0 && (
-                                        <div className="absolute top-3 left-3">
-                                            <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-400 text-green-900 flex items-center gap-1">
-                                                <Gift className="w-3 h-3" />
-                                                {recruiterDiscount}% OFF
-                                            </span>
-                                        </div>
-                                    )}
-
                                     {/* Type Badge */}
                                     {rec.badge && (
                                         <div className="absolute top-3 right-3">
@@ -335,10 +301,9 @@ export default function SmartCrossSellRecommendations({ cases, recruiterDiscount
                                         </div>
 
                                         {/* Pricing */}
-                                        {rec.originalPrice && (
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <span className="text-white/50 line-through text-sm">{rec.originalPrice}</span>
-                                                <span className="text-white font-bold text-lg">{rec.discountedPrice}</span>
+                                        {rec.price && (
+                                            <div className="mb-4">
+                                                <span className="text-white font-bold text-lg">{rec.price}</span>
                                             </div>
                                         )}
 

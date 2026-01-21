@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion'
-import { CheckCircle2, Circle, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { CheckCircle2, Circle, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface Stage {
     id: string
@@ -20,41 +21,19 @@ export default function StageProgressVisualization({
     stages,
     currentStageId,
     completedStageIds = [],
-    showLabels = true,
-    size = 'md'
 }: StageProgressVisualizationProps) {
+    const [isExpanded, setIsExpanded] = useState(false)
+
     if (!stages || stages.length === 0) {
         return null
     }
 
     const sortedStages = [...stages].sort((a, b) => a.order_index - b.order_index)
     const currentIndex = sortedStages.findIndex(s => s.id === currentStageId)
+    const currentStage = sortedStages[currentIndex]
     const progressPercentage = currentIndex >= 0
         ? ((currentIndex + 1) / sortedStages.length) * 100
         : 0
-
-    const sizeConfig = {
-        sm: {
-            node: 'w-8 h-8',
-            icon: 'w-4 h-4',
-            text: 'text-xs',
-            gap: 'gap-1'
-        },
-        md: {
-            node: 'w-10 h-10',
-            icon: 'w-5 h-5',
-            text: 'text-sm',
-            gap: 'gap-2'
-        },
-        lg: {
-            node: 'w-12 h-12',
-            icon: 'w-6 h-6',
-            text: 'text-base',
-            gap: 'gap-3'
-        }
-    }
-
-    const config = sizeConfig[size]
 
     const getStageStatus = (stage: Stage, index: number) => {
         if (completedStageIds.includes(stage.id) || index < currentIndex) {
@@ -66,131 +45,199 @@ export default function StageProgressVisualization({
         return 'pending'
     }
 
-    return (
-        <div className="w-full">
-            {/* Progress Bar Background */}
-            <div className="relative mb-6">
-                {/* Connector Line */}
-                <div className="absolute top-5 left-0 right-0 h-1 bg-slate-200 rounded-full mx-6" />
+    // Group stages into phases for visual clarity
+    const completedCount = sortedStages.filter((_, i) => i < currentIndex).length
+    const remainingCount = sortedStages.length - currentIndex - 1
 
-                {/* Animated Progress Line */}
+    return (
+        <div className="w-full space-y-4">
+            {/* Main Progress Section */}
+            <div className="flex items-center gap-6">
+                {/* Circular Progress */}
+                <div className="relative flex-shrink-0">
+                    <svg className="w-20 h-20 -rotate-90" viewBox="0 0 100 100">
+                        {/* Background circle */}
+                        <circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            fill="none"
+                            stroke="#e2e8f0"
+                            strokeWidth="8"
+                        />
+                        {/* Progress circle */}
+                        <motion.circle
+                            cx="50"
+                            cy="50"
+                            r="42"
+                            fill="none"
+                            stroke="url(#progressGradient)"
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                            initial={{ strokeDasharray: '0 264' }}
+                            animate={{ strokeDasharray: `${(progressPercentage / 100) * 264} 264` }}
+                            transition={{ duration: 1.5, ease: 'easeOut' }}
+                        />
+                        <defs>
+                            <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#0ea5e9" />
+                                <stop offset="100%" stopColor="#3b82f6" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-xl font-bold text-slate-700">
+                            {Math.round(progressPercentage)}%
+                        </span>
+                    </div>
+                </div>
+
+                {/* Current Stage Info */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                        <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                            className="w-2 h-2 rounded-full bg-primary-500"
+                        />
+                        <span className="text-xs font-medium text-primary-600 uppercase tracking-wide">
+                            Current Stage
+                        </span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-800 truncate">
+                        {currentStage?.name || 'Processing'}
+                    </h3>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                        Step {currentIndex + 1} of {sortedStages.length}
+                    </p>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="hidden sm:flex items-center gap-4">
+                    <div className="text-center px-4 py-2 bg-success-50 rounded-xl">
+                        <p className="text-lg font-bold text-success-600">{completedCount}</p>
+                        <p className="text-xs text-success-600/70">Completed</p>
+                    </div>
+                    <div className="text-center px-4 py-2 bg-slate-100 rounded-xl">
+                        <p className="text-lg font-bold text-slate-600">{remainingCount}</p>
+                        <p className="text-xs text-slate-500">Remaining</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Simplified Stage Indicator Bar */}
+            <div className="relative h-2 bg-slate-100 rounded-full overflow-hidden">
                 <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `calc(${progressPercentage}% - 48px)` }}
-                    transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
-                    className="absolute top-5 left-6 h-1 bg-gradient-to-r from-primary-500 via-accent-500 to-primary-500 rounded-full"
-                    style={{
-                        backgroundSize: '200% 100%',
-                        animation: 'shimmer 2s linear infinite'
-                    }}
+                    animate={{ width: `${progressPercentage}%` }}
+                    transition={{ duration: 1.5, ease: 'easeOut' }}
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary-500 to-accent-500 rounded-full"
                 />
-
-                {/* Stage Nodes */}
-                <div className="relative flex justify-between">
+                {/* Stage markers */}
+                <div className="absolute inset-0 flex justify-between px-0.5">
                     {sortedStages.map((stage, index) => {
                         const status = getStageStatus(stage, index)
-
                         return (
-                            <motion.div
+                            <div
                                 key={stage.id}
-                                initial={{ opacity: 0, scale: 0.5 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: index * 0.1 + 0.2 }}
-                                className="flex flex-col items-center"
-                            >
-                                {/* Node */}
-                                <motion.div
-                                    whileHover={{ scale: 1.1 }}
-                                    className={`
-                                        ${config.node} rounded-full flex items-center justify-center
-                                        transition-all duration-300 relative z-10
-                                        ${status === 'completed'
-                                            ? 'bg-gradient-to-br from-success-400 to-success-600 shadow-lg shadow-success-200'
-                                            : status === 'current'
-                                                ? 'bg-gradient-to-br from-primary-400 via-primary-500 to-accent-500 shadow-lg shadow-primary-200 ring-4 ring-primary-100'
-                                                : 'bg-white border-2 border-slate-200'
-                                        }
-                                    `}
-                                >
-                                    {status === 'completed' ? (
-                                        <CheckCircle2 className={`${config.icon} text-white`} />
-                                    ) : status === 'current' ? (
-                                        <motion.div
-                                            animate={{ rotate: 360 }}
-                                            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                                        >
-                                            <Loader2 className={`${config.icon} text-white`} />
-                                        </motion.div>
-                                    ) : (
-                                        <Circle className={`${config.icon} text-slate-300`} />
-                                    )}
-
-                                    {/* Pulse animation for current stage */}
-                                    {status === 'current' && (
-                                        <motion.div
-                                            animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
-                                            transition={{ duration: 2, repeat: Infinity }}
-                                            className="absolute inset-0 rounded-full bg-primary-400"
-                                        />
-                                    )}
-                                </motion.div>
-
-                                {/* Label */}
-                                {showLabels && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 5 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.1 + 0.4 }}
-                                        className={`mt-3 text-center max-w-[80px] md:max-w-[120px]`}
-                                    >
-                                        <p className={`
-                                            ${config.text} font-medium leading-tight
-                                            ${status === 'current'
-                                                ? 'text-primary-600'
-                                                : status === 'completed'
-                                                    ? 'text-success-600'
-                                                    : 'text-slate-400'
-                                            }
-                                        `}>
-                                            {stage.name}
-                                        </p>
-                                        {status === 'current' && (
-                                            <motion.span
-                                                initial={{ opacity: 0 }}
-                                                animate={{ opacity: 1 }}
-                                                className="text-xs text-primary-500 font-normal"
-                                            >
-                                                Current
-                                            </motion.span>
-                                        )}
-                                    </motion.div>
-                                )}
-                            </motion.div>
+                                className={`w-1 h-full rounded-full transition-colors ${
+                                    status === 'completed' ? 'bg-white/50' :
+                                    status === 'current' ? 'bg-white' :
+                                    'bg-slate-200'
+                                }`}
+                            />
                         )
                     })}
                 </div>
             </div>
 
-            {/* Progress Summary */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="flex items-center justify-between text-sm bg-gradient-to-r from-slate-50 to-primary-50 rounded-xl p-4"
+            {/* Expandable Stage List */}
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full flex items-center justify-center gap-2 py-2 text-sm text-slate-500 hover:text-primary-600 transition-colors"
             >
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
-                    <span className="text-slate-600">
-                        Stage {currentIndex + 1} of {sortedStages.length}
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-slate-600">Progress:</span>
-                    <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-accent-600">
-                        {Math.round(progressPercentage)}%
-                    </span>
-                </div>
-            </motion.div>
+                <span>{isExpanded ? 'Hide all stages' : 'View all stages'}</span>
+                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-2">
+                            {sortedStages.map((stage, index) => {
+                                const status = getStageStatus(stage, index)
+                                return (
+                                    <motion.div
+                                        key={stage.id}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.03 }}
+                                        className={`
+                                            flex items-center gap-3 p-3 rounded-xl transition-all
+                                            ${status === 'current'
+                                                ? 'bg-primary-50 border-2 border-primary-200'
+                                                : status === 'completed'
+                                                    ? 'bg-success-50/50'
+                                                    : 'bg-slate-50'
+                                            }
+                                        `}
+                                    >
+                                        {/* Status Icon */}
+                                        <div className={`
+                                            flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center
+                                            ${status === 'completed'
+                                                ? 'bg-success-500'
+                                                : status === 'current'
+                                                    ? 'bg-primary-500'
+                                                    : 'bg-slate-200'
+                                            }
+                                        `}>
+                                            {status === 'completed' ? (
+                                                <CheckCircle2 className="w-4 h-4 text-white" />
+                                            ) : status === 'current' ? (
+                                                <Loader2 className="w-4 h-4 text-white animate-spin" />
+                                            ) : (
+                                                <Circle className="w-4 h-4 text-slate-400" />
+                                            )}
+                                        </div>
+
+                                        {/* Stage Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className={`
+                                                text-sm font-medium truncate
+                                                ${status === 'current'
+                                                    ? 'text-primary-700'
+                                                    : status === 'completed'
+                                                        ? 'text-success-700'
+                                                        : 'text-slate-500'
+                                                }
+                                            `}>
+                                                {stage.name}
+                                            </p>
+                                            <p className="text-xs text-slate-400">
+                                                Step {index + 1}
+                                            </p>
+                                        </div>
+
+                                        {/* Current Badge */}
+                                        {status === 'current' && (
+                                            <span className="flex-shrink-0 text-xs font-medium text-primary-600 bg-primary-100 px-2 py-0.5 rounded-full">
+                                                Current
+                                            </span>
+                                        )}
+                                    </motion.div>
+                                )
+                            })}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
