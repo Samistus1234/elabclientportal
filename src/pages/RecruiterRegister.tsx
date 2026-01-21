@@ -195,8 +195,8 @@ export default function RecruiterRegister() {
                 return
             }
 
-            // Registration successful - redirect to login
-            navigate('/login?registered=recruiter')
+            // Registration successful - redirect to recruiter login
+            navigate('/recruiter/login?registered=recruiter')
         } catch (err: any) {
             setError(err.message || 'Registration failed')
         } finally {

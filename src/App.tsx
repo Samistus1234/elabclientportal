@@ -20,6 +20,7 @@ import Support from '@/pages/Support'
 import Homepage from '@/pages/Homepage'
 
 // Pages - Recruiter
+import RecruiterLogin from '@/pages/RecruiterLogin'
 import RecruiterRegister from '@/pages/RecruiterRegister'
 import RecruiterDashboard from '@/pages/RecruiterDashboard'
 import RecruiterCaseView from '@/pages/RecruiterCaseView'
@@ -161,6 +162,7 @@ export default function App() {
                 {/* Public routes */}
                 <Route path="/login" element={session ? <RoleBasedRedirect /> : <Login />} />
                 <Route path="/register" element={session ? <RoleBasedRedirect /> : <Register />} />
+                <Route path="/recruiter/login" element={session ? <Navigate to="/recruiter/dashboard" replace /> : <RecruiterLogin />} />
                 <Route path="/recruiter/register" element={session ? <Navigate to="/recruiter/dashboard" replace /> : <RecruiterRegister />} />
                 <Route path="/contact/login" element={session ? <Navigate to="/contact/dashboard" replace /> : <ContactLogin />} />
                 <Route path="/contact/register" element={session ? <Navigate to="/contact/dashboard" replace /> : <ContactRegister />} />
