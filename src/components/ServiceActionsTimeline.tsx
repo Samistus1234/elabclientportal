@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { motion } from 'framer-motion'
-import { Activity, CheckCircle2, Clock, AlertCircle } from 'lucide-react'
+import { Activity, CheckCircle2, Clock } from 'lucide-react'
 import { format, formatDistanceToNow, isToday, isYesterday, isThisWeek } from 'date-fns'
 
 interface ServiceAction {
@@ -23,7 +23,6 @@ interface ServiceActionsTimelineProps {
 export default function ServiceActionsTimeline({ caseId }: ServiceActionsTimelineProps) {
     const [actions, setActions] = useState<ServiceAction[]>([])
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         if (caseId) {
@@ -33,8 +32,6 @@ export default function ServiceActionsTimeline({ caseId }: ServiceActionsTimelin
 
     const loadServiceActions = async () => {
         try {
-            setError(null)
-
             // Use RPC function for secure access (matches portal pattern)
             const { data, error: rpcError } = await supabase
                 .rpc('get_my_case_service_actions', { p_case_id: caseId })
@@ -47,9 +44,8 @@ export default function ServiceActionsTimeline({ caseId }: ServiceActionsTimelin
             }
 
             setActions(data || [])
-        } catch (err: any) {
+        } catch (err) {
             console.error('Error loading service actions:', err)
-            setError(err.message)
         } finally {
             setLoading(false)
         }
