@@ -385,13 +385,6 @@ export default function RecruiterLogin() {
                         </div>
                     </motion.div>
 
-                    {/* Info Box */}
-                    <div className="mt-6 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-indigo-100">
-                        <p className="text-sm text-slate-600 text-center">
-                            This portal is exclusively for recruiter partners who refer candidates to ELAB for healthcare licensing services.
-                        </p>
-                    </div>
-
                     {/* Client Portal Link */}
                     <div className="text-center mt-4">
                         <p className="text-slate-500 text-sm">
