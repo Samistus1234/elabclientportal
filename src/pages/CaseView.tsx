@@ -20,6 +20,7 @@ import { format, formatDistanceToNow } from 'date-fns'
 import TimelineView from '@/components/TimelineView'
 import AISummaryCard from '@/components/AISummaryCard'
 import StageProgressVisualization from '@/components/StageProgressVisualization'
+import ServiceActionsTimeline from '@/components/ServiceActionsTimeline'
 
 interface CaseDetails {
     id: string
@@ -525,11 +526,21 @@ export default function CaseView() {
                     </motion.div>
                 </div>
 
+                {/* Service Actions Timeline */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="mt-6"
+                >
+                    <ServiceActionsTimeline caseId={caseId!} />
+                </motion.div>
+
                 {/* Case Info Footer */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
+                    transition={{ delay: 0.6 }}
                     className="mt-8 pt-6 border-t border-slate-100"
                 >
                     <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-400">
