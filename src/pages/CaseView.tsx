@@ -533,7 +533,7 @@ export default function CaseView() {
                     transition={{ delay: 0.5 }}
                     className="mt-6"
                 >
-                    <ServiceActionsTimeline caseId={caseId!} />
+                    <ServiceActionsTimeline caseId={caseData.id} />
                 </motion.div>
 
                 {/* Case Info Footer */}
