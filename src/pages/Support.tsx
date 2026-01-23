@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Send, CheckCircle, Search, HelpCircle, ArrowLeft, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 type PortalView = "form" | "success" | "track"
 
@@ -30,6 +30,62 @@ export default function Support() {
     const [trackTicketNumber, setTrackTicketNumber] = useState("")
     const [trackedTicket, setTrackedTicket] = useState<any>(null)
     const [isTracking, setIsTracking] = useState(false)
+
+    // URL parameters for auto-tracking from email links
+    const [searchParams] = useSearchParams()
+
+    // Auto-track function for URL parameters
+    const autoTrackTicket = useCallback(async (email: string, ticketNumber: string) => {
+        setIsTracking(true)
+        setError(null)
+
+        try {
+            const response = await fetch(
+                `${SUPABASE_URL}/functions/v1/public-ticket-track`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    },
+                    body: JSON.stringify({
+                        email: email.toLowerCase().trim(),
+                        ticket_number: ticketNumber.trim().toUpperCase(),
+                    }),
+                }
+            )
+
+            const result = await response.json()
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Ticket not found')
+            }
+
+            setTrackedTicket(result.ticket)
+        } catch (err: any) {
+            setError("No ticket found with that number and email combination.")
+            setTrackedTicket(null)
+        } finally {
+            setIsTracking(false)
+        }
+    }, [])
+
+    // Handle URL parameters for auto-tracking from email links
+    useEffect(() => {
+        const shouldTrack = searchParams.get('track')
+        const ticketParam = searchParams.get('ticket')
+        const emailParam = searchParams.get('email')
+
+        if (shouldTrack === 'true' && ticketParam && emailParam) {
+            // Switch to track view
+            setView('track')
+            // Populate the form fields
+            setTrackEmail(emailParam)
+            setTrackTicketNumber(ticketParam)
+            // Auto-trigger tracking
+            autoTrackTicket(emailParam, ticketParam)
+        }
+    }, [searchParams, autoTrackTicket])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
