@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Send, CheckCircle, Search, HelpCircle, ArrowLeft, Loader2 } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Send, CheckCircle, Search, HelpCircle, ArrowLeft, Loader2, Paperclip, X, FileText } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -24,6 +24,11 @@ export default function Support() {
         category: "",
         case_reference: "",
     })
+
+    // Attachment state
+    const [attachments, setAttachments] = useState<File[]>([])
+    const fileInputRef = useRef<HTMLInputElement>(null)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB in bytes
 
     // Tracking state
     const [trackEmail, setTrackEmail] = useState("")
@@ -87,6 +92,49 @@ export default function Support() {
         }
     }, [searchParams, autoTrackTicket])
 
+    // Handle file selection
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files
+        if (!files) return
+
+        const newFiles: File[] = []
+        let hasError = false
+
+        Array.from(files).forEach(file => {
+            if (file.size > MAX_FILE_SIZE) {
+                setError(`File "${file.name}" exceeds 5MB limit`)
+                hasError = true
+                return
+            }
+            // Check if file already exists
+            if (!attachments.some(att => att.name === file.name && att.size === file.size)) {
+                newFiles.push(file)
+            }
+        })
+
+        if (!hasError && newFiles.length > 0) {
+            setAttachments(prev => [...prev, ...newFiles])
+            setError(null)
+        }
+
+        // Reset input so same file can be selected again
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''
+        }
+    }
+
+    // Remove attachment
+    const removeAttachment = (index: number) => {
+        setAttachments(prev => prev.filter((_, i) => i !== index))
+    }
+
+    // Format file size
+    const formatFileSize = (bytes: number) => {
+        if (bytes < 1024) return bytes + ' B'
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
@@ -99,6 +147,26 @@ export default function Support() {
         setIsSubmitting(true)
 
         try {
+            // Convert attachments to base64
+            const attachmentData = await Promise.all(
+                attachments.map(async (file) => {
+                    return new Promise<{ name: string; type: string; size: number; data: string }>((resolve, reject) => {
+                        const reader = new FileReader()
+                        reader.onload = () => {
+                            const base64 = (reader.result as string).split(',')[1]
+                            resolve({
+                                name: file.name,
+                                type: file.type,
+                                size: file.size,
+                                data: base64
+                            })
+                        }
+                        reader.onerror = reject
+                        reader.readAsDataURL(file)
+                    })
+                })
+            )
+
             const response = await fetch(
                 `${SUPABASE_URL}/functions/v1/public-ticket-submit`,
                 {
@@ -115,6 +183,7 @@ export default function Support() {
                         description: formData.description.trim(),
                         category: formData.category || 'general',
                         case_reference: formData.case_reference?.trim() || null,
+                        attachments: attachmentData.length > 0 ? attachmentData : null,
                     }),
                 }
             )
@@ -136,6 +205,7 @@ export default function Support() {
                 category: "",
                 case_reference: "",
             })
+            setAttachments([])
         } catch (err: any) {
             setError(err.message || "Unable to submit your request. Please try again.")
         } finally {
@@ -497,6 +567,62 @@ export default function Support() {
                                             rows={5}
                                             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all outline-none resize-none"
                                         />
+                                    </div>
+
+                                    {/* Attachment Upload */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                            Attachments (Optional)
+                                        </label>
+                                        <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 hover:border-primary-300 transition-colors">
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                onChange={handleFileSelect}
+                                                multiple
+                                                className="hidden"
+                                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt,.xlsx,.xls,.csv"
+                                            />
+                                            <div
+                                                className="flex flex-col items-center justify-center cursor-pointer"
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
+                                                <Paperclip className="w-8 h-8 text-slate-400 mb-2" />
+                                                <p className="text-sm text-slate-600 text-center">
+                                                    Click to upload files
+                                                </p>
+                                                <p className="text-xs text-slate-400 mt-1">
+                                                    Max 5MB per file (PDF, DOC, Images, Excel)
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Attached Files List */}
+                                        {attachments.length > 0 && (
+                                            <div className="mt-3 space-y-2">
+                                                {attachments.map((file, index) => (
+                                                    <div
+                                                        key={`${file.name}-${index}`}
+                                                        className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2"
+                                                    >
+                                                        <div className="flex items-center gap-2 overflow-hidden">
+                                                            <FileText className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                                                            <span className="text-sm text-slate-700 truncate">{file.name}</span>
+                                                            <span className="text-xs text-slate-400 flex-shrink-0">
+                                                                ({formatFileSize(file.size)})
+                                                            </span>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeAttachment(index)}
+                                                            className="p-1 hover:bg-red-100 rounded-full transition-colors"
+                                                        >
+                                                            <X className="w-4 h-4 text-red-500" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
