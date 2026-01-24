@@ -36,6 +36,20 @@ import ContactRequestDetail from '@/pages/ContactRequestDetail'
 // Pages - Public (no auth required)
 import PayInvoice from '@/pages/PayInvoice'
 
+// Pages - Free Tools (public, no auth required)
+import ToolsHome from '@/pages/tools/ToolsHome'
+import MergePdf from '@/pages/tools/pdf/MergePdf'
+import CompressPdf from '@/pages/tools/pdf/CompressPdf'
+import SplitPdf from '@/pages/tools/pdf/SplitPdf'
+import ImageToPdf from '@/pages/tools/pdf/ImageToPdf'
+import RotatePdf from '@/pages/tools/pdf/RotatePdf'
+import CompressImage from '@/pages/tools/image/CompressImage'
+import ConvertImage from '@/pages/tools/image/ConvertImage'
+import ResizeImage from '@/pages/tools/image/ResizeImage'
+import HeicToJpg from '@/pages/tools/image/HeicToJpg'
+import PasswordGenerator from '@/pages/tools/utility/PasswordGenerator'
+import QrCodeGenerator from '@/pages/tools/utility/QrCodeGenerator'
+
 // Layout wrapper for authenticated pages
 function ProtectedRoute({ children, session }: { children: React.ReactNode; session: Session | null }) {
     if (!session) {
@@ -173,6 +187,20 @@ export default function App() {
 
                 {/* Public payment page - no auth required */}
                 <Route path="/pay/:invoiceId" element={<PayInvoice />} />
+
+                {/* Free Tools - Public, no auth required */}
+                <Route path="/tools" element={<ToolsHome />} />
+                <Route path="/tools/pdf/merge" element={<MergePdf />} />
+                <Route path="/tools/pdf/compress" element={<CompressPdf />} />
+                <Route path="/tools/pdf/split" element={<SplitPdf />} />
+                <Route path="/tools/pdf/from-image" element={<ImageToPdf />} />
+                <Route path="/tools/pdf/rotate" element={<RotatePdf />} />
+                <Route path="/tools/image/compress" element={<CompressImage />} />
+                <Route path="/tools/image/convert" element={<ConvertImage />} />
+                <Route path="/tools/image/resize" element={<ResizeImage />} />
+                <Route path="/tools/image/heic-to-jpg" element={<HeicToJpg />} />
+                <Route path="/tools/utility/password" element={<PasswordGenerator />} />
+                <Route path="/tools/utility/qr-code" element={<QrCodeGenerator />} />
 
                 {/* Protected routes - Applicant */}
                 <Route

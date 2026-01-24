@@ -178,6 +178,7 @@ function NavigationHeader() {
         { name: 'How It Works', href: '#how-it-works' },
         { name: 'Testimonials', href: '#testimonials' },
         { name: 'FAQ', href: '#faq' },
+        { name: 'Free Tools', href: '/tools' },
         { name: 'Support', href: '/support' },
     ]
 
