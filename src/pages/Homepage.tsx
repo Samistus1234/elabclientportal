@@ -179,6 +179,7 @@ function NavigationHeader() {
         { name: 'Testimonials', href: '#testimonials' },
         { name: 'FAQ', href: '#faq' },
         { name: 'Free Tools', href: '/tools' },
+        { name: 'Verification Fees', href: '/support/verification-fees' },
         { name: 'Support', href: '/support' },
     ]
 
@@ -1615,6 +1616,7 @@ function Footer() {
                         <ul className="space-y-3">
                             <li><Link to="/faq" className="hover:text-white transition-colors">Help Center</Link></li>
                             <li><Link to="/support" className="hover:text-white transition-colors">Contact Us</Link></li>
+                            <li><Link to="/support/verification-fees" className="hover:text-white transition-colors">Verification Fees</Link></li>
                             <li><a href="https://wa.me/2348165634195" className="hover:text-white transition-colors">WhatsApp</a></li>
                             <li><a href="mailto:support@elabsolution.org" className="hover:text-white transition-colors">Email Support</a></li>
                         </ul>
