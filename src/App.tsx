@@ -18,6 +18,8 @@ import Documents from '@/pages/Documents'
 import Settings from '@/pages/Settings'
 import Support from '@/pages/Support'
 import Homepage from '@/pages/Homepage'
+import PrivacyPolicy from '@/pages/PrivacyPolicy'
+import TermsOfService from '@/pages/TermsOfService'
 
 // Pages - Recruiter
 import RecruiterLogin from '@/pages/RecruiterLogin'
@@ -184,6 +186,8 @@ export default function App() {
                 <Route path="/accept-invite" element={<AcceptInvite />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/support" element={<Support />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
 
                 {/* Public payment page - no auth required */}
                 <Route path="/pay/:invoiceId" element={<PayInvoice />} />

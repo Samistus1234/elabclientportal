@@ -1651,30 +1651,9 @@ function Footer() {
                         &copy; {new Date().getFullYear()} ELAB Solutions International. All rights reserved.
                     </p>
                     <div className="flex gap-6 text-sm">
-                        <a
-                            href="https://www.elab.academy/privacy"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-white transition-colors"
-                        >
-                            Privacy Policy
-                        </a>
-                        <a
-                            href="https://www.elab.academy/terms"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-white transition-colors"
-                        >
-                            Terms of Service
-                        </a>
-                        <a
-                            href="https://www.elab.academy/privacy#cookies"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:text-white transition-colors"
-                        >
-                            Cookie Settings
-                        </a>
+                        <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+                        <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+                        <Link to="/privacy#cookies" className="hover:text-white transition-colors">Cookie Settings</Link>
                     </div>
                 </div>
             </div>

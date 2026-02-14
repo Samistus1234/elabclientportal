@@ -1120,9 +1120,9 @@ export default function Dashboard() {
                         <p>828 Lane Allen Road 219, Lexington, Kentucky, USA</p>
                     </div>
                     <div className="flex items-center justify-center gap-4 mt-3 text-xs text-slate-400">
-                        <a href="https://www.elab.academy/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500 transition-colors">Privacy Policy</a>
+                        <Link to="/privacy" className="hover:text-primary-500 transition-colors">Privacy Policy</Link>
                         <span>•</span>
-                        <a href="https://www.elab.academy/terms" target="_blank" rel="noopener noreferrer" className="hover:text-primary-500 transition-colors">Terms of Service</a>
+                        <Link to="/terms" className="hover:text-primary-500 transition-colors">Terms of Service</Link>
                         <span>•</span>
                         <a href="mailto:headoffice@elabsolution.org" className="hover:text-primary-500 transition-colors">Contact Us</a>
                     </div>
