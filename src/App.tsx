@@ -21,6 +21,7 @@ import Homepage from '@/pages/Homepage'
 import PrivacyPolicy from '@/pages/PrivacyPolicy'
 import TermsOfService from '@/pages/TermsOfService'
 import RefundPolicy from '@/pages/RefundPolicy'
+import VerificationFeeChecker from '@/pages/VerificationFeeChecker'
 
 // Pages - Recruiter
 import RecruiterLogin from '@/pages/RecruiterLogin'
@@ -191,6 +192,8 @@ export default function App() {
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/refund-policy" element={<RefundPolicy />} />
                 <Route path="/support/refund-policy" element={<RefundPolicy />} />
+                <Route path="/support/verification-fees" element={<VerificationFeeChecker />} />
+                <Route path="/verification-fees" element={<VerificationFeeChecker />} />
 
                 {/* Public payment page - no auth required */}
                 <Route path="/pay/:invoiceId" element={<PayInvoice />} />

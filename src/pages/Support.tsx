@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Send, CheckCircle, Search, HelpCircle, ArrowLeft, Loader2, Paperclip, X, FileText } from 'lucide-react'
+import { Send, CheckCircle, Search, HelpCircle, ArrowLeft, Loader2, Paperclip, X, FileText, FileCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -666,6 +666,25 @@ export default function Support() {
                                 Email: <a href="mailto:support@elabsolution.org" className="text-primary-600 hover:underline">support@elabsolution.org</a>
                             </p>
                         </div>
+
+                        {/* Helpful Resources */}
+                        <div className="glass-card rounded-2xl p-6">
+                            <h3 className="font-semibold text-slate-800 mb-3">Helpful Resources</h3>
+                            <Link
+                                to="/support/verification-fees"
+                                className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors"
+                            >
+                                <div className="h-9 w-9 rounded-full bg-primary-50 flex items-center justify-center shrink-0">
+                                    <FileCheck className="w-4 h-4 text-primary-600" />
+                                </div>
+                                <div>
+                                    <p className="font-medium text-sm text-slate-800">Verification Fee Guide</p>
+                                    <p className="text-xs text-slate-500">
+                                        Look up DataFlow verification fees by institution
+                                    </p>
+                                </div>
+                            </Link>
+                        </div>
                     </motion.div>
                 )}
             </main>
@@ -676,6 +695,15 @@ export default function Support() {
                     <div className="text-center text-sm text-slate-500">
                         <p>&copy; {new Date().getFullYear()} ELAB Solutions International LLC. All rights reserved.</p>
                         <p className="mt-1">Lagos, Nigeria | Houston, Texas, USA</p>
+                        <p className="mt-2 space-x-3">
+                            <Link to="/refund-policy" className="text-primary-600 hover:underline">
+                                Refund Policy
+                            </Link>
+                            <span>&middot;</span>
+                            <Link to="/support/verification-fees" className="text-primary-600 hover:underline">
+                                Verification Fee Guide
+                            </Link>
+                        </p>
                     </div>
                 </div>
             </footer>
