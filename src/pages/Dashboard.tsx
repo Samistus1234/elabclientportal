@@ -1124,6 +1124,8 @@ export default function Dashboard() {
                         <span>•</span>
                         <Link to="/terms" className="hover:text-primary-500 transition-colors">Terms of Service</Link>
                         <span>•</span>
+                        <Link to="/support/refund-policy" className="hover:text-primary-500 transition-colors">Refund Policy</Link>
+                        <span>•</span>
                         <a href="mailto:headoffice@elabsolution.org" className="hover:text-primary-500 transition-colors">Contact Us</a>
                     </div>
                 </motion.footer>

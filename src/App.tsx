@@ -20,6 +20,7 @@ import Support from '@/pages/Support'
 import Homepage from '@/pages/Homepage'
 import PrivacyPolicy from '@/pages/PrivacyPolicy'
 import TermsOfService from '@/pages/TermsOfService'
+import RefundPolicy from '@/pages/RefundPolicy'
 
 // Pages - Recruiter
 import RecruiterLogin from '@/pages/RecruiterLogin'
@@ -188,6 +189,8 @@ export default function App() {
                 <Route path="/support" element={<Support />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/refund-policy" element={<RefundPolicy />} />
+                <Route path="/support/refund-policy" element={<RefundPolicy />} />
 
                 {/* Public payment page - no auth required */}
                 <Route path="/pay/:invoiceId" element={<PayInvoice />} />

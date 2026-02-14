@@ -908,6 +908,14 @@ export default function PayInvoice() {
                                         </a>
                                     </div>
                                 </div>
+
+                                <div className="text-center text-xs text-slate-500">
+                                    <a href="/privacy" className="hover:text-indigo-600 hover:underline">Privacy Policy</a>
+                                    <span className="mx-2">•</span>
+                                    <a href="/terms" className="hover:text-indigo-600 hover:underline">Terms of Service</a>
+                                    <span className="mx-2">•</span>
+                                    <a href="/support/refund-policy" className="hover:text-indigo-600 hover:underline">Refund Policy</a>
+                                </div>
                             </motion.div>
                         )}
                     </div>

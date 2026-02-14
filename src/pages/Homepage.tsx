@@ -1653,6 +1653,7 @@ function Footer() {
                     <div className="flex gap-6 text-sm">
                         <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
                         <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+                        <Link to="/support/refund-policy" className="hover:text-white transition-colors">Refund Policy</Link>
                         <Link to="/privacy#cookies" className="hover:text-white transition-colors">Cookie Settings</Link>
                     </div>
                 </div>

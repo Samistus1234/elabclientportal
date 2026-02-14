@@ -88,6 +88,21 @@ export default function TermsOfService() {
               </a>.
             </p>
           </section>
+
+          <section className="space-y-2 text-slate-700">
+            <h2 className="text-xl font-semibold text-slate-900">Related Policies</h2>
+            <p>
+              See also{' '}
+              <Link to="/privacy" className="text-indigo-600 hover:underline">
+                Privacy Policy
+              </Link>{' '}
+              and{' '}
+              <Link to="/support/refund-policy" className="text-indigo-600 hover:underline">
+                Refund Policy
+              </Link>
+              .
+            </p>
+          </section>
         </div>
       </div>
     </div>
