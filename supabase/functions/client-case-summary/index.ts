@@ -222,17 +222,108 @@ ACTION REQUIRED: Yes, client needs to provide information or documents.
     return context
 }
 
+const DATAFLOW_STAGE_ORDER = [
+    'incoming_stage',
+    'waiting_for_client_reply',
+    'document_ready',
+    'document_review',
+    'application_made',
+    'internal_quality_control',
+    'application_submitted',
+    'first_update_email',
+    'issue_in_authority_stages',
+    'first_completed_component',
+    'next_completed_component',
+    'verification_completed',
+]
+
+const DATAFLOW_STAGE_INDEX = new Map<string, number>(
+    DATAFLOW_STAGE_ORDER.map((slug, index) => [slug, index + 1])
+)
+
+function getDataflowProgress(stageSlug: string): number | null {
+    const index = DATAFLOW_STAGE_INDEX.get(stageSlug)
+    if (!index) {
+        return null
+    }
+    return Math.round((index / DATAFLOW_STAGE_ORDER.length) * 100)
+}
+
+function getDataflowFallbackSummary(stageSlug: string, pipelineName: string): AISummary | null {
+    const progress = getDataflowProgress(stageSlug)
+    if (progress === null) {
+        return null
+    }
+
+    if (stageSlug === 'verification_completed') {
+        return {
+            summary: `Congratulations! Your ${pipelineName} verification is now complete.`,
+            nextSteps: ['Check your email for final documents and confirmation', 'Contact us if you need help with your next step'],
+            estimatedProgress: progress,
+            alerts: [],
+        }
+    }
+
+    if (stageSlug === 'waiting_for_client_reply' || stageSlug === 'document_ready') {
+        return {
+            summary: `Your ${pipelineName} is waiting on information or documents from you so we can proceed quickly.`,
+            nextSteps: ['Review recent ELAB messages for pending requests', 'Upload or share any requested details as soon as possible'],
+            estimatedProgress: progress,
+            alerts: [],
+        }
+    }
+
+    if (stageSlug === 'application_submitted' || stageSlug === 'first_update_email' || stageSlug === 'issue_in_authority_stages') {
+        return {
+            summary: `Your ${pipelineName} has moved into external processing with the relevant authority.`,
+            nextSteps: ['Processing timelines may vary based on authority queues', 'We will keep you updated as soon as there is movement'],
+            estimatedProgress: progress,
+            alerts: [],
+        }
+    }
+
+    if (stageSlug === 'first_completed_component' || stageSlug === 'next_completed_component') {
+        return {
+            summary: `Your ${pipelineName} is progressing well and key components are being completed.`,
+            nextSteps: ['More completion updates are expected as checks finalize', 'Watch for progress updates in your timeline'],
+            estimatedProgress: progress,
+            alerts: [],
+        }
+    }
+
+    return {
+        summary: `Your ${pipelineName} application is currently in progress and moving through internal review steps.`,
+        nextSteps: ['Our team is actively working on your case', 'We will notify you when the stage changes'],
+        estimatedProgress: progress,
+        alerts: [],
+    }
+}
+
 function generateFallbackSummary(caseData: any): AISummary {
     const stageName = caseData.current_stage?.name || 'Processing'
     const pipelineName = caseData.pipeline?.name || 'Application'
     const stageSlug = caseData.current_stage?.slug || ''
+
+    if ((caseData.pipeline?.slug || '').toLowerCase() === 'dataflow') {
+        const dataflowSummary = getDataflowFallbackSummary(stageSlug, pipelineName)
+        if (dataflowSummary) {
+            if (caseData.metadata?.actionRequiredFromClient) {
+                dataflowSummary.alerts = ['Please check your email for pending requests from ELAB']
+            }
+            return dataflowSummary
+        }
+    }
 
     let summary = `Your ${pipelineName} is currently in the "${stageName}" stage.`
     let nextSteps: string[] = []
     let progress = 30
     let alerts: string[] = []
 
-    if (stageSlug.includes('new') || stageSlug.includes('intake')) {
+    if (stageSlug.includes('complete') || stageSlug.includes('approved')) {
+        summary = `Congratulations! Your ${pipelineName} has been completed successfully.`
+        nextSteps = ['Check your email for final documentation', 'Contact us if you need any additional assistance']
+        progress = 100
+    } else if (stageSlug.includes('new') || stageSlug.includes('intake')) {
         summary = `We've received your ${pipelineName} application and it's being reviewed by our team.`
         nextSteps = ['Our team will review your initial documents', 'You may receive requests for additional information']
         progress = 15
@@ -251,10 +342,6 @@ function generateFallbackSummary(caseData: any): AISummary {
         summary = `Your ${pipelineName} application has been submitted and is awaiting verification.`
         nextSteps = ['Verification typically takes 2-4 weeks', 'We will notify you once verification is complete']
         progress = 75
-    } else if (stageSlug.includes('complete') || stageSlug.includes('approved')) {
-        summary = `Congratulations! Your ${pipelineName} has been completed successfully.`
-        nextSteps = ['Check your email for final documentation', 'Contact us if you need any additional assistance']
-        progress = 100
     }
 
     return { summary, nextSteps, estimatedProgress: progress, alerts }

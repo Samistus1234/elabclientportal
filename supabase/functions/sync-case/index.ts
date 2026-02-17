@@ -51,6 +51,47 @@ interface SyncPayload {
   stages?: StageData[]
 }
 
+const DATAFLOW_PIPELINE_SLUG = 'dataflow'
+const DATAFLOW_STAGE_ORDER = [
+  'incoming_stage',
+  'waiting_for_client_reply',
+  'document_ready',
+  'document_review',
+  'application_made',
+  'internal_quality_control',
+  'application_submitted',
+  'first_update_email',
+  'issue_in_authority_stages',
+  'first_completed_component',
+  'next_completed_component',
+  'verification_completed',
+]
+
+const DATAFLOW_STAGE_INDEX = new Map<string, number>(
+  DATAFLOW_STAGE_ORDER.map((slug, index) => [slug, index + 1])
+)
+
+const normalizeStagesForPipeline = (
+  stages: StageData[],
+  pipelineSlug: string | undefined,
+  pipelineId: string
+): StageData[] => {
+  if ((pipelineSlug || '').toLowerCase() !== DATAFLOW_PIPELINE_SLUG) {
+    return stages.map((stage) => ({
+      ...stage,
+      pipeline_id: pipelineId,
+    }))
+  }
+
+  return stages
+    .filter((stage) => DATAFLOW_STAGE_INDEX.has(stage.slug))
+    .map((stage) => ({
+      ...stage,
+      pipeline_id: pipelineId,
+      order_index: DATAFLOW_STAGE_INDEX.get(stage.slug) || stage.order_index,
+    }))
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -241,7 +282,7 @@ serve(async (req) => {
       console.log('Verifying pipeline exists with ID:', finalPipelineIdForCase)
       const { data: verifyPipeline, error: verifyError } = await supabase
         .from('pipelines')
-        .select('id, name')
+        .select('id, name, slug')
         .eq('id', finalPipelineIdForCase)
         .single()
 
@@ -258,23 +299,40 @@ serve(async (req) => {
 
     // Determine final pipeline ID (might be from existing pipeline found by slug)
     const resolvedPipelineId = syncedPipeline?.id || targetPipelineId
+    const resolvedPipelineSlug = syncedPipeline?.slug || pipeline?.slug
 
     // Step 2: Upsert stages if provided
     // Use resolvedPipelineId to ensure stages reference the correct pipeline
     if (stages && stages.length > 0) {
-      console.log('Upserting stages with pipeline_id:', resolvedPipelineId)
-      const { error: stagesError } = await supabase
-        .from('pipeline_stages')
-        .upsert(stages.map(s => ({
-          id: s.id,
-          name: s.name,
-          slug: s.slug,
-          order_index: s.order_index,
-          pipeline_id: resolvedPipelineId, // Use resolved ID, not the one from Command Center
-        })), { onConflict: 'id' })
+      const normalizedStages = normalizeStagesForPipeline(stages, resolvedPipelineSlug, resolvedPipelineId)
+      if (normalizedStages.length > 0) {
+        console.log('Upserting stages with pipeline_id:', resolvedPipelineId)
+        const { error: stagesError } = await supabase
+          .from('pipeline_stages')
+          .upsert(normalizedStages.map(s => ({
+            id: s.id,
+            name: s.name,
+            slug: s.slug,
+            order_index: s.order_index,
+            pipeline_id: resolvedPipelineId, // Use resolved ID, not the one from Command Center
+          })), { onConflict: 'id' })
 
-      if (stagesError) {
-        console.error('Stages upsert error:', stagesError)
+        if (stagesError) {
+          console.error('Stages upsert error:', stagesError)
+        }
+      }
+    }
+
+    if ((resolvedPipelineSlug || '').toLowerCase() === DATAFLOW_PIPELINE_SLUG) {
+      // Keep only the active DataFlow stages in client portal to prevent deprecated columns from resurfacing.
+      const { error: cleanupError } = await supabase
+        .from('pipeline_stages')
+        .delete()
+        .eq('pipeline_id', resolvedPipelineId)
+        .not('slug', 'in', `(${DATAFLOW_STAGE_ORDER.join(',')})`)
+
+      if (cleanupError) {
+        console.error('DataFlow stage cleanup error:', cleanupError)
       }
     }
 

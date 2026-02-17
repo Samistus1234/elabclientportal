@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { motion } from 'framer-motion'
 import { Sparkles, RefreshCw, ChevronDown, ChevronUp, Lightbulb, Target, AlertTriangle } from 'lucide-react'
+import { getDataflowStageProgress, isDataflowPipeline } from '@/lib/dataflowStages'
 
 interface AISummaryCardProps {
     caseId: string
@@ -18,6 +19,51 @@ interface AISummary {
     nextSteps: string[]
     estimatedProgress: number
     alerts?: string[]
+}
+
+const getDataflowFallbackSummary = (stageSlug: string, pipelineName: string): AISummary | null => {
+    const progress = getDataflowStageProgress(stageSlug)
+    if (progress === null) {
+        return null
+    }
+
+    if (stageSlug === 'verification_completed') {
+        return {
+            summary: `Congratulations! Your ${pipelineName} verification is now complete.`,
+            nextSteps: ['Check your email for final documents and confirmation', 'Contact us if you need help with your next step'],
+            estimatedProgress: progress,
+        }
+    }
+
+    if (stageSlug === 'waiting_for_client_reply' || stageSlug === 'document_ready') {
+        return {
+            summary: `Your ${pipelineName} is waiting on information or documents from you so we can proceed quickly.`,
+            nextSteps: ['Review recent ELAB messages for pending requests', 'Upload or share any requested details as soon as possible'],
+            estimatedProgress: progress,
+        }
+    }
+
+    if (stageSlug === 'application_submitted' || stageSlug === 'first_update_email' || stageSlug === 'issue_in_authority_stages') {
+        return {
+            summary: `Your ${pipelineName} has moved into external processing with the relevant authority.`,
+            nextSteps: ['Processing timelines may vary based on authority queues', 'We will keep you updated as soon as there is movement'],
+            estimatedProgress: progress,
+        }
+    }
+
+    if (stageSlug === 'first_completed_component' || stageSlug === 'next_completed_component') {
+        return {
+            summary: `Your ${pipelineName} is progressing well and key components are being completed.`,
+            nextSteps: ['More completion updates are expected as checks finalize', 'Watch for progress updates in your timeline'],
+            estimatedProgress: progress,
+        }
+    }
+
+    return {
+        summary: `Your ${pipelineName} application is currently in progress and moving through internal review steps.`,
+        nextSteps: ['Our team is actively working on your case', 'We will notify you when the stage changes'],
+        estimatedProgress: progress,
+    }
 }
 
 export default function AISummaryCard({ caseId, caseData }: AISummaryCardProps) {
@@ -57,15 +103,25 @@ export default function AISummaryCard({ caseId, caseData }: AISummaryCardProps) 
     const generateFallbackSummary = (): AISummary => {
         const stageName = caseData.current_stage?.name || 'Processing'
         const pipelineName = caseData.pipeline?.name || 'Application'
+        const stageSlug = caseData.current_stage?.slug || ''
+
+        if (isDataflowPipeline(caseData.pipeline?.slug)) {
+            const dataflowSummary = getDataflowFallbackSummary(stageSlug, pipelineName)
+            if (dataflowSummary) {
+                return dataflowSummary
+            }
+        }
 
         // Generate contextual summary based on stage
         let summary = `Your ${pipelineName} application is currently in the "${stageName}" stage.`
         let nextSteps: string[] = []
         let progress = 30
 
-        const stageSlug = caseData.current_stage?.slug || ''
-
-        if (stageSlug.includes('new') || stageSlug.includes('intake')) {
+        if (stageSlug.includes('complete') || stageSlug.includes('approved')) {
+            summary = `Congratulations! Your ${pipelineName} has been completed successfully.`
+            nextSteps = ['Check your email for final documentation', 'Contact us if you need any additional assistance']
+            progress = 100
+        } else if (stageSlug.includes('new') || stageSlug.includes('intake')) {
             summary = `We've received your ${pipelineName} application and it's being reviewed by our team.`
             nextSteps = ['Our team will review your initial documents', 'You may receive requests for additional information']
             progress = 15
@@ -81,10 +137,6 @@ export default function AISummaryCard({ caseId, caseData }: AISummaryCardProps) 
             summary = `Your ${pipelineName} application has been submitted and is awaiting verification.`
             nextSteps = ['Verification typically takes 2-4 weeks', 'We will notify you once verification is complete']
             progress = 75
-        } else if (stageSlug.includes('complete') || stageSlug.includes('approved')) {
-            summary = `Congratulations! Your ${pipelineName} has been completed successfully.`
-            nextSteps = ['Check your email for final documentation', 'Contact us if you need any additional assistance']
-            progress = 100
         }
 
         return { summary, nextSteps, estimatedProgress: progress }

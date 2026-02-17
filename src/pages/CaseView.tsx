@@ -34,6 +34,7 @@ import TimelineView from '@/components/TimelineView'
 import AISummaryCard from '@/components/AISummaryCard'
 import StageProgressVisualization from '@/components/StageProgressVisualization'
 import ServiceActionsTimeline from '@/components/ServiceActionsTimeline'
+import { normalizePipelineStagesForDisplay } from '@/lib/dataflowStages'
 
 interface CaseDetails {
     id: string
@@ -472,7 +473,9 @@ export default function CaseView() {
                     .order('order_index', { ascending: true })
 
                 if (stagesData) {
-                    setPipelineStages(stagesData)
+                    setPipelineStages(
+                        normalizePipelineStagesForDisplay(stagesData, typedCaseData.pipeline?.slug)
+                    )
                 }
             }
 

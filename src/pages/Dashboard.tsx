@@ -45,6 +45,7 @@ import SupportHelpSection from '@/components/SupportHelpSection'
 import SmartCrossSellRecommendations from '@/components/SmartCrossSellRecommendations'
 import { useWalkthrough } from '@/contexts/WalkthroughContext'
 import { portalOverviewTour } from '@/data/walkthroughTours'
+import { normalizePipelineStagesForDisplay } from '@/lib/dataflowStages'
 
 interface CaseData {
     id: string
@@ -712,17 +713,32 @@ export default function Dashboard() {
             const { data: casesData, error: casesError } = await supabase.rpc('get_my_synced_cases')
             if (casesError) throw casesError
 
-            const typedCases = (casesData || []).map(normalizeCase)
+            const typedCases: CaseData[] = (casesData || []).map(normalizeCase)
             setCases(typedCases)
 
             const pipelineIds = [...new Set(typedCases.map((c: CaseData) => c.pipeline?.id || c.pipeline_id).filter(Boolean))] as string[]
+            const pipelineSlugsById = typedCases.reduce<Record<string, string>>((acc, c) => {
+                const pipelineId = c.pipeline?.id || c.pipeline_id
+                const pipelineSlug = c.pipeline?.slug || c.pipeline_slug
+
+                if (pipelineId && pipelineSlug && !acc[pipelineId]) {
+                    acc[pipelineId] = pipelineSlug
+                }
+
+                return acc
+            }, {} as Record<string, string>)
 
             if (pipelineIds.length > 0) {
                 const stagesByPipeline: Record<string, PipelineStage[]> = {}
                 await Promise.all(pipelineIds.map(async (pipelineId) => {
                     const { data: stagesData } = await supabase.rpc('get_pipeline_stages', { p_pipeline_id: pipelineId })
                     if (stagesData) {
-                        stagesByPipeline[pipelineId] = stagesData.map((s: any) => ({ ...s, pipeline_id: pipelineId }))
+                        const mappedStages: PipelineStage[] = stagesData.map((s: any) => ({ ...s, pipeline_id: pipelineId }))
+                        const normalizedStages = normalizePipelineStagesForDisplay<PipelineStage>(
+                            mappedStages,
+                            pipelineSlugsById[pipelineId]
+                        )
+                        stagesByPipeline[pipelineId] = normalizedStages
                     }
                 }))
                 setPipelineStages(stagesByPipeline)
