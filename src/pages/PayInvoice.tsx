@@ -15,7 +15,11 @@ import {
     AlertCircle,
     Loader2,
     Shield,
-    Mail
+    Mail,
+    Phone,
+    Globe,
+    ArrowRight,
+    Lock
 } from 'lucide-react'
 import { format, parseISO, isPast } from 'date-fns'
 
@@ -230,21 +234,21 @@ export default function PayInvoice() {
         const isOverdue = dueDate && isPast(parseISO(dueDate)) && status !== 'paid'
 
         if (isOverdue || status === 'overdue') {
-            return { label: 'Overdue', className: 'bg-red-100 text-red-700 border-red-200', icon: AlertCircle }
+            return { label: 'Overdue', className: 'bg-red-50 text-red-700 border border-red-200', icon: AlertCircle }
         }
 
         switch (status) {
             case 'paid':
-                return { label: 'Paid', className: 'bg-green-100 text-green-700 border-green-200', icon: CheckCircle2 }
+                return { label: 'Paid', className: 'bg-emerald-50 text-emerald-700 border border-emerald-200', icon: CheckCircle2 }
             case 'partial':
-                return { label: 'Partial Payment', className: 'bg-amber-100 text-amber-700 border-amber-200', icon: Clock }
+                return { label: 'Partial', className: 'bg-amber-50 text-amber-700 border border-amber-200', icon: Clock }
             case 'sent':
             case 'viewed':
-                return { label: 'Awaiting Payment', className: 'bg-blue-100 text-blue-700 border-blue-200', icon: Clock }
+                return { label: 'Pending', className: 'bg-sky-50 text-sky-700 border border-sky-200', icon: Clock }
             case 'cancelled':
-                return { label: 'Cancelled', className: 'bg-slate-100 text-slate-500 border-slate-200', icon: X }
+                return { label: 'Cancelled', className: 'bg-slate-50 text-slate-500 border border-slate-200', icon: X }
             default:
-                return { label: status, className: 'bg-slate-100 text-slate-700 border-slate-200', icon: FileText }
+                return { label: status, className: 'bg-slate-50 text-slate-700 border border-slate-200', icon: FileText }
         }
     }
 
@@ -421,74 +425,84 @@ export default function PayInvoice() {
         }
     }
 
+    // ── Loading State ──
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-                <div className="flex flex-col items-center gap-4">
+            <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4]">
+                <div className="flex flex-col items-center gap-5">
                     <motion.div
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
                     >
-                        <div className="w-16 h-16 rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+                        <div className="w-12 h-12 rounded-full border-[3px] border-[#e5e2db] border-t-[#0c1220]" />
                     </motion.div>
-                    <p className="text-slate-600 font-medium">Loading invoice...</p>
+                    <p className="text-sm text-[#8b8680] tracking-wide uppercase font-medium" style={{ fontFamily: "'Georgia', serif" }}>
+                        Loading invoice...
+                    </p>
                 </div>
             </div>
         )
     }
 
+    // ── Error State ──
     if (error || !invoice) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-                <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
-                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <AlertCircle className="w-8 h-8 text-red-600" />
-                    </div>
-                    <h1 className="text-xl font-bold text-slate-800 mb-2">Invoice Not Found</h1>
-                    <p className="text-slate-600 mb-6">
+            <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4]">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white border border-[#e5e2db] p-10 max-w-md text-center"
+                >
+                    <div className="w-px h-8 bg-[#b8860b] mx-auto mb-6" />
+                    <h1 className="text-xl font-semibold text-[#0c1220] mb-3" style={{ fontFamily: "'Georgia', serif" }}>
+                        Invoice Not Found
+                    </h1>
+                    <p className="text-sm text-[#64748b] mb-8 leading-relaxed">
                         {error || 'This invoice could not be found or may have been removed.'}
                     </p>
                     <a
                         href="mailto:headoffice@elabsolution.org"
-                        className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
+                        className="inline-flex items-center gap-2 text-[#b8860b] hover:text-[#96700a] text-sm font-medium transition-colors"
                     >
                         <Mail className="w-4 h-4" />
                         Contact Support
                     </a>
-                </div>
+                </motion.div>
             </div>
         )
     }
 
-    // Payment success screen
+    // ── Payment Success Screen ──
     if (paymentSuccess) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+            <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4]">
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
+                    initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center"
+                    className="bg-white border border-[#e5e2db] p-10 max-w-md text-center"
                 >
                     <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.2, type: 'spring' }}
-                        className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
+                        className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto mb-6"
                     >
-                        <CheckCircle2 className="w-10 h-10 text-green-600" />
+                        <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                     </motion.div>
-                    <h1 className="text-2xl font-bold text-slate-800 mb-2">Payment Successful!</h1>
-                    <p className="text-slate-600 mb-4">
-                        Thank you for your payment. A confirmation email will be sent shortly.
+                    <h1 className="text-2xl font-semibold text-[#0c1220] mb-3" style={{ fontFamily: "'Georgia', serif" }}>
+                        Payment Received
+                    </h1>
+                    <p className="text-sm text-[#64748b] mb-6 leading-relaxed">
+                        Thank you for your payment. A confirmation will be sent to your email shortly.
                     </p>
                     {paymentReference && (
-                        <div className="bg-slate-50 rounded-xl p-4 mb-6">
-                            <p className="text-xs text-slate-500 mb-1">Payment Reference</p>
-                            <p className="font-mono font-semibold text-slate-800">{paymentReference}</p>
+                        <div className="bg-[#faf9f7] border border-[#e5e2db] p-4 mb-6">
+                            <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] mb-1">Payment Reference</p>
+                            <p className="font-mono font-semibold text-[#0c1220]">{paymentReference}</p>
                         </div>
                     )}
-                    <div className="text-sm text-slate-500">
-                        Invoice: <span className="font-semibold">{invoice.invoice_number}</span>
+                    <div className="text-xs text-[#8b8680]">
+                        Invoice <span className="font-semibold text-[#0c1220]">{invoice.invoice_number}</span>
                     </div>
                 </motion.div>
             </div>
@@ -501,420 +515,462 @@ export default function PayInvoice() {
     const nairaBankAccount = bankAccounts.find(b => b.currency === 'NGN' || b.currency === invoice.currency)
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-md border-b border-slate-100/50">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
-                    <div className="flex items-center justify-between">
+        <div className="min-h-screen bg-[#f8f7f4]">
+
+            {/* ── Header ── */}
+            <header className="bg-[#0c1220] text-white">
+                <div className="max-w-5xl mx-auto px-4 sm:px-6">
+                    {/* Gold accent line */}
+                    <div className="h-[3px] bg-[#b8860b] -mx-4 sm:-mx-6" />
+
+                    <div className="flex items-center justify-between py-4">
                         <div className="flex items-center gap-3">
-                            <img src="/elab-logo.png" alt="ELAB Solutions" className="h-10" />
+                            <img src="/elab-logo.png" alt="ELAB" className="h-9 brightness-0 invert opacity-90" />
                             <div className="hidden sm:block">
-                                <h1 className="font-semibold text-slate-800">ELAB Solutions</h1>
-                                <p className="text-xs text-slate-500">Secure Payment Portal</p>
+                                <h1 className="text-sm font-semibold tracking-tight" style={{ fontFamily: "'Georgia', serif" }}>
+                                    Elab Solutions International
+                                </h1>
+                                <p className="text-[9px] uppercase tracking-[2px] text-[#b8860b]">
+                                    Secure Payment Portal
+                                </p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-slate-500">
-                            <Shield className="w-4 h-4 text-green-600" />
-                            <span className="hidden sm:inline">Secure Payment</span>
+                        <div className="flex items-center gap-1.5 text-xs text-white/50">
+                            <Lock className="w-3.5 h-3.5 text-[#b8860b]" />
+                            <span className="hidden sm:inline uppercase tracking-wider text-[10px]">256-bit Encrypted</span>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* Main Content */}
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-                <div className="grid lg:grid-cols-5 gap-6">
-                    {/* Invoice Summary - Left */}
+            {/* ── Main Content ── */}
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+                <div className="grid lg:grid-cols-5 gap-6 lg:gap-8">
+
+                    {/* ── Invoice Summary — Left Column ── */}
                     <div className="lg:col-span-2">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-white rounded-2xl shadow-sm p-6 sticky top-24"
+                            className="bg-white border border-[#e5e2db] sticky top-8"
                         >
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-bold text-slate-800">Invoice</h2>
-                                <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs border ${statusConfig.className}`}>
-                                    <StatusIcon className="w-3 h-3" />
-                                    <span className="font-medium">{statusConfig.label}</span>
-                                </div>
-                            </div>
+                            {/* Top gold accent */}
+                            <div className="h-[3px] bg-[#b8860b]" />
 
-                            <div className="space-y-3 mb-6">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-500">Invoice #</span>
-                                    <span className="font-mono font-medium text-slate-800">{invoice.invoice_number}</span>
+                            <div className="p-6">
+                                {/* Invoice header */}
+                                <div className="flex items-start justify-between mb-6">
+                                    <div>
+                                        <p className="text-[10px] uppercase tracking-[2px] text-[#b8860b] font-medium mb-1">Invoice</p>
+                                        <p className="font-mono text-sm font-semibold text-[#0c1220]">{invoice.invoice_number}</p>
+                                    </div>
+                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-sm ${statusConfig.className}`}>
+                                        <StatusIcon className="w-3 h-3" />
+                                        {statusConfig.label}
+                                    </div>
                                 </div>
-                                {invoice.customer_name && (
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500">Customer</span>
-                                        <span className="font-medium text-slate-800">{invoice.customer_name}</span>
-                                    </div>
-                                )}
-                                {invoice.due_date && (
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500">Due Date</span>
-                                        <span className="font-medium text-slate-800">
-                                            {format(parseISO(invoice.due_date), 'MMM d, yyyy')}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
 
-                            {/* Line Items */}
-                            <div className="border-t border-slate-100 pt-4 mb-4">
-                                <h3 className="text-xs font-semibold text-slate-500 uppercase mb-3">Items</h3>
-                                <div className="space-y-2">
-                                    {invoice.line_items?.map((item, index) => (
-                                        <div key={index} className="flex justify-between text-sm">
-                                            <span className="text-slate-600">{item.description}</span>
-                                            <span className="font-medium text-slate-800">
-                                                {formatCurrency(item.line_total, invoice.currency)}
+                                {/* Details */}
+                                <div className="space-y-3 mb-6">
+                                    {invoice.customer_name && (
+                                        <div className="flex justify-between items-baseline">
+                                            <span className="text-[11px] uppercase tracking-wider text-[#8b8680]">Client</span>
+                                            <span className="text-sm font-medium text-[#0c1220]">{invoice.customer_name}</span>
+                                        </div>
+                                    )}
+                                    {invoice.due_date && (
+                                        <div className="flex justify-between items-baseline">
+                                            <span className="text-[11px] uppercase tracking-wider text-[#8b8680]">Due Date</span>
+                                            <span className="text-sm font-medium text-[#0c1220]">
+                                                {format(parseISO(invoice.due_date), 'MMM d, yyyy')}
                                             </span>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
-                            </div>
 
-                            {/* Totals */}
-                            <div className="border-t border-slate-100 pt-4 space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-500">Subtotal</span>
-                                    <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
+                                {/* Divider */}
+                                <div className="border-t border-[#e5e2db] mb-5" />
+
+                                {/* Line Items */}
+                                <div className="mb-5">
+                                    <p className="text-[10px] uppercase tracking-[1.5px] text-[#b8860b] font-medium mb-3">Services</p>
+                                    <div className="space-y-2.5">
+                                        {invoice.line_items?.map((item, index) => (
+                                            <div key={index} className="flex justify-between items-baseline gap-4">
+                                                <span className="text-[13px] text-[#374151] leading-snug">{item.description}</span>
+                                                <span className="text-[13px] font-semibold text-[#0c1220] tabular-nums whitespace-nowrap">
+                                                    {formatCurrency(item.line_total, invoice.currency)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                                {invoice.discount_amount > 0 && (
-                                    <div className="flex justify-between text-sm text-green-600">
-                                        <span>Discount</span>
-                                        <span>-{formatCurrency(invoice.discount_amount, invoice.currency)}</span>
+
+                                {/* Totals */}
+                                <div className="border-t border-[#e5e2db] pt-4 space-y-2">
+                                    <div className="flex justify-between text-[13px]">
+                                        <span className="text-[#8b8680]">Subtotal</span>
+                                        <span className="tabular-nums">{formatCurrency(invoice.subtotal, invoice.currency)}</span>
                                     </div>
-                                )}
-                                {invoice.tax_amount > 0 && (
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-slate-500">Tax</span>
-                                        <span>{formatCurrency(invoice.tax_amount, invoice.currency)}</span>
+                                    {invoice.discount_amount > 0 && (
+                                        <div className="flex justify-between text-[13px] text-emerald-600">
+                                            <span>Discount</span>
+                                            <span className="tabular-nums">-{formatCurrency(invoice.discount_amount, invoice.currency)}</span>
+                                        </div>
+                                    )}
+                                    {invoice.tax_amount > 0 && (
+                                        <div className="flex justify-between text-[13px]">
+                                            <span className="text-[#8b8680]">Tax</span>
+                                            <span className="tabular-nums">{formatCurrency(invoice.tax_amount, invoice.currency)}</span>
+                                        </div>
+                                    )}
+                                    {invoice.amount_paid > 0 && (
+                                        <div className="flex justify-between text-[13px] text-emerald-600">
+                                            <span>Amount Paid</span>
+                                            <span className="tabular-nums">-{formatCurrency(invoice.amount_paid, invoice.currency)}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Bold separator before total */}
+                                    <div className="border-t-2 border-[#0c1220] !mt-3 !mb-2" />
+
+                                    <div className="flex justify-between items-baseline">
+                                        <span className="text-[10px] uppercase tracking-[1px] font-bold text-[#8b8680]">Amount Due</span>
+                                        <span className="text-xl font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                            {formatCurrency(invoice.amount_due, invoice.currency)}
+                                        </span>
                                     </div>
-                                )}
-                                {invoice.amount_paid > 0 && (
-                                    <div className="flex justify-between text-sm text-green-600">
-                                        <span>Paid</span>
-                                        <span>-{formatCurrency(invoice.amount_paid, invoice.currency)}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between text-lg font-bold pt-2 border-t border-slate-200">
-                                    <span className="text-slate-800">Amount Due</span>
-                                    <span className="text-indigo-600">{formatCurrency(invoice.amount_due, invoice.currency)}</span>
                                 </div>
                             </div>
                         </motion.div>
                     </div>
 
-                    {/* Payment Options - Right */}
+                    {/* ── Payment Options — Right Column ── */}
                     <div className="lg:col-span-3">
                         {isPaid ? (
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center"
+                                className="bg-white border border-emerald-200 p-10 text-center"
                             >
-                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <CheckCircle2 className="w-8 h-8 text-green-600" />
+                                <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto mb-5">
+                                    <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                                 </div>
-                                <h2 className="text-xl font-bold text-green-800 mb-2">Invoice Paid</h2>
-                                <p className="text-green-700">This invoice has been paid in full. Thank you!</p>
+                                <h2 className="text-xl font-semibold text-[#0c1220] mb-2" style={{ fontFamily: "'Georgia', serif" }}>
+                                    Invoice Paid in Full
+                                </h2>
+                                <p className="text-sm text-[#64748b]">This invoice has been settled. Thank you for your payment.</p>
                             </motion.div>
                         ) : (
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="space-y-6"
+                                transition={{ delay: 0.1 }}
+                                className="space-y-5"
                             >
-                                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                                    {/* Payment Method Tabs */}
+                                {/* Payment Method Card */}
+                                <div className="bg-white border border-[#e5e2db] overflow-hidden">
+                                    {/* Tabs */}
                                     {(() => {
                                         const tabFeeInfo = calculatePaystackFee(invoice.amount_due, invoice.currency)
                                         return (
-                                    <div className="flex border-b border-slate-100">
-                                        <button
-                                            onClick={() => setActiveTab('card')}
-                                            className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 text-sm font-medium transition-colors ${
-                                                activeTab === 'card'
-                                                    ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
-                                                    : 'text-slate-500 hover:text-slate-700'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <CreditCard className="w-4 h-4" />
-                                                Pay with Card
+                                            <div className="flex border-b border-[#e5e2db]">
+                                                <button
+                                                    onClick={() => setActiveTab('card')}
+                                                    className={`flex-1 flex items-center justify-center gap-3 py-4 text-sm font-medium transition-all relative ${
+                                                        activeTab === 'card'
+                                                            ? 'text-[#0c1220] bg-white'
+                                                            : 'text-[#8b8680] hover:text-[#64748b] bg-[#faf9f7]'
+                                                    }`}
+                                                >
+                                                    {activeTab === 'card' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#b8860b]" />}
+                                                    <CreditCard className="w-4 h-4" />
+                                                    <div className="text-left">
+                                                        <div className="text-[13px] font-semibold">Pay with Card</div>
+                                                        <div className="text-[11px] font-normal opacity-60">
+                                                            {formatCurrency(tabFeeInfo.total, invoice.currency)}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                                <div className="w-px bg-[#e5e2db]" />
+                                                <button
+                                                    onClick={() => setActiveTab('bank')}
+                                                    className={`flex-1 flex items-center justify-center gap-3 py-4 text-sm font-medium transition-all relative ${
+                                                        activeTab === 'bank'
+                                                            ? 'text-[#0c1220] bg-white'
+                                                            : 'text-[#8b8680] hover:text-[#64748b] bg-[#faf9f7]'
+                                                    }`}
+                                                >
+                                                    {activeTab === 'bank' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#b8860b]" />}
+                                                    <Building2 className="w-4 h-4" />
+                                                    <div className="text-left">
+                                                        <div className="text-[13px] font-semibold">Bank Transfer</div>
+                                                        <div className="text-[11px] font-normal opacity-60">
+                                                            {formatCurrency(invoice.amount_due, invoice.currency)} (No Fee)
+                                                        </div>
+                                                    </div>
+                                                </button>
                                             </div>
-                                            <span className="text-xs font-normal opacity-75">
-                                                {formatCurrency(tabFeeInfo.total, invoice.currency)}
-                                            </span>
-                                        </button>
-                                        <button
-                                            onClick={() => setActiveTab('bank')}
-                                            className={`flex-1 flex flex-col items-center justify-center gap-1 py-4 text-sm font-medium transition-colors ${
-                                                activeTab === 'bank'
-                                                    ? 'text-green-600 border-b-2 border-green-600 bg-green-50/50'
-                                                    : 'text-slate-500 hover:text-slate-700'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <Building2 className="w-4 h-4" />
-                                                Bank Transfer
-                                            </div>
-                                            <span className="text-xs font-normal opacity-75">
-                                                {formatCurrency(invoice.amount_due, invoice.currency)} (No Fee)
-                                            </span>
-                                        </button>
-                                    </div>
                                         )
                                     })()}
 
-                                    {/* Card Payment Tab */}
+                                    {/* ── Card Payment Tab ── */}
                                     {activeTab === 'card' && (() => {
                                         const feeInfo = calculatePaystackFee(invoice.amount_due, invoice.currency)
                                         const isUSD = invoice.currency === 'USD'
                                         return (
-                                        <div className="p-6">
-                                            <div className="text-center mb-6">
-                                                <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                    <CreditCard className="w-8 h-8 text-indigo-600" />
+                                            <div className="p-6 sm:p-8">
+                                                <div className="text-center mb-8">
+                                                    <div className="w-14 h-14 bg-[#faf9f7] border border-[#e5e2db] rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <CreditCard className="w-6 h-6 text-[#0c1220]" />
+                                                    </div>
+                                                    <h3 className="text-lg font-semibold text-[#0c1220] mb-2" style={{ fontFamily: "'Georgia', serif" }}>
+                                                        Debit / Credit Card
+                                                        {isUSD && <span className="ml-2 px-2 py-0.5 bg-sky-50 text-sky-700 text-[10px] font-medium border border-sky-200 uppercase tracking-wider">USD</span>}
+                                                    </h3>
+                                                    <p className="text-[13px] text-[#8b8680] max-w-xs mx-auto leading-relaxed">
+                                                        {isUSD
+                                                            ? 'Secure international payment. Accepts Visa, Mastercard, and international cards.'
+                                                            : 'Secure payment powered by Paystack. Supports Visa, Mastercard, and Verve.'
+                                                        }
+                                                    </p>
                                                 </div>
-                                                <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                                                    Pay with Debit/Credit Card
-                                                    {isUSD && <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">USD</span>}
-                                                </h3>
-                                                <p className="text-sm text-slate-500">
-                                                    {isUSD
-                                                        ? 'Secure international payment via Paystack. Accepts Visa, Mastercard, and international cards.'
-                                                        : 'Secure payment powered by Paystack. Supports Visa, Mastercard, and Verve cards.'
-                                                    }
-                                                </p>
-                                            </div>
 
-                                            {/* Fee Breakdown */}
-                                            <div className="bg-slate-50 rounded-xl p-4 mb-4 space-y-2">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-slate-600">Invoice Amount</span>
-                                                    <span className="font-medium text-slate-800">{formatCurrency(invoice.amount_due, invoice.currency)}</span>
-                                                </div>
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-slate-600">Processing Fee ({feeInfo.percentage}) <span className="text-slate-400 text-xs">(charged by Paystack)</span></span>
-                                                    <span className="font-medium text-amber-600">+{formatCurrency(feeInfo.fee, invoice.currency)}</span>
-                                                </div>
-                                                <div className="border-t border-slate-200 pt-2 mt-2">
-                                                    <div className="flex justify-between">
-                                                        <span className="font-semibold text-slate-800">Total to Pay</span>
-                                                        <span className="font-bold text-indigo-600">{formatCurrency(feeInfo.total, invoice.currency)}</span>
+                                                {/* Fee Breakdown */}
+                                                <div className="bg-[#faf9f7] border border-[#e5e2db] p-5 mb-6 space-y-3">
+                                                    <div className="flex justify-between text-[13px]">
+                                                        <span className="text-[#64748b]">Invoice Amount</span>
+                                                        <span className="font-medium text-[#0c1220] tabular-nums">{formatCurrency(invoice.amount_due, invoice.currency)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-[13px]">
+                                                        <span className="text-[#64748b]">
+                                                            Processing Fee ({feeInfo.percentage})
+                                                            <span className="text-[11px] text-[#8b8680] ml-1">(Paystack)</span>
+                                                        </span>
+                                                        <span className="font-medium text-[#b8860b] tabular-nums">+{formatCurrency(feeInfo.fee, invoice.currency)}</span>
+                                                    </div>
+                                                    <div className="border-t border-[#e5e2db] pt-3">
+                                                        <div className="flex justify-between items-baseline">
+                                                            <span className="text-[10px] uppercase tracking-[1px] font-bold text-[#64748b]">Total to Pay</span>
+                                                            <span className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                                {formatCurrency(feeInfo.total, invoice.currency)}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            {/* Email input for card payment */}
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-medium text-slate-700 mb-2">
-                                                    Email Address (for receipt)
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    value={proofForm.payerEmail}
-                                                    onChange={(e) => setProofForm({ ...proofForm, payerEmail: e.target.value })}
-                                                    placeholder="your@email.com"
-                                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
-                                                />
-                                            </div>
+                                                {/* Email Input */}
+                                                <div className="mb-5">
+                                                    <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
+                                                        Email for Receipt
+                                                    </label>
+                                                    <input
+                                                        type="email"
+                                                        value={proofForm.payerEmail}
+                                                        onChange={(e) => setProofForm({ ...proofForm, payerEmail: e.target.value })}
+                                                        placeholder="your@email.com"
+                                                        className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220] placeholder:text-[#c4c0b8]"
+                                                    />
+                                                </div>
 
-                                            {isUSD ? (
-                                                /* USD Payment - Use Paystack Payment Link */
-                                                <>
+                                                {/* Pay Button */}
+                                                {isUSD ? (
                                                     <button
                                                         onClick={handlePayWithUSDLink}
                                                         disabled={!proofForm.payerEmail}
-                                                        className="w-full bg-indigo-600 text-white font-semibold py-4 px-6 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
                                                     >
-                                                        Pay {formatCurrency(feeInfo.total, invoice.currency)} (USD)
-                                                        <CreditCard className="w-5 h-5" />
+                                                        PAY {formatCurrency(feeInfo.total, invoice.currency)}
+                                                        <ArrowRight className="w-4 h-4" />
                                                     </button>
-                                                    <p className="text-xs text-slate-500 text-center mt-3">
-                                                        You will be redirected to Paystack's secure payment page
-                                                    </p>
-                                                </>
-                                            ) : (
-                                                /* NGN Payment - Use Paystack Inline */
-                                                <button
-                                                    onClick={handlePayWithCard}
-                                                    disabled={paymentLoading || !proofForm.payerEmail}
-                                                    className="w-full bg-indigo-600 text-white font-semibold py-4 px-6 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    {paymentLoading ? (
-                                                        <>
-                                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                                            Processing...
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            Pay {formatCurrency(feeInfo.total, invoice.currency)}
-                                                            <CreditCard className="w-5 h-5" />
-                                                        </>
-                                                    )}
-                                                </button>
-                                            )}
+                                                ) : (
+                                                    <button
+                                                        onClick={handlePayWithCard}
+                                                        disabled={paymentLoading || !proofForm.payerEmail}
+                                                        className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
+                                                    >
+                                                        {paymentLoading ? (
+                                                            <>
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                                Processing...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                PAY {formatCurrency(feeInfo.total, invoice.currency)}
+                                                                <ArrowRight className="w-4 h-4" />
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                )}
 
-                                            <div className="flex items-center justify-center gap-3 mt-4">
-                                                <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">VISA</span>
-                                                <span className="px-3 py-1 bg-orange-100 text-orange-800 text-xs font-semibold rounded">Mastercard</span>
-                                                {!isUSD && <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded">Verve</span>}
-                                                {isUSD && <span className="px-3 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded">AMEX</span>}
+                                                {/* Card logos */}
+                                                <div className="flex items-center justify-center gap-3 mt-5">
+                                                    <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">VISA</span>
+                                                    <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">MASTERCARD</span>
+                                                    {!isUSD && <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">VERVE</span>}
+                                                    {isUSD && <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">AMEX</span>}
+                                                </div>
+
+                                                <p className="text-[11px] text-[#8b8680] text-center mt-4">
+                                                    Processing fee is charged by Paystack for card transactions
+                                                </p>
                                             </div>
-
-                                            <p className="text-xs text-slate-400 text-center mt-3">
-                                                Processing fee is charged by Paystack for card transactions
-                                            </p>
-                                        </div>
                                         )
                                     })()}
 
-                                    {/* Bank Transfer Tab */}
+                                    {/* ── Bank Transfer Tab ── */}
                                     {activeTab === 'bank' && nairaBankAccount && (
-                                        <div className="p-6">
-                                            <div className="text-center mb-6">
-                                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                    <Building2 className="w-8 h-8 text-green-600" />
+                                        <div className="p-6 sm:p-8">
+                                            <div className="text-center mb-8">
+                                                <div className="w-14 h-14 bg-[#faf9f7] border border-[#e5e2db] rounded-full flex items-center justify-center mx-auto mb-4">
+                                                    <Building2 className="w-6 h-6 text-[#0c1220]" />
                                                 </div>
-                                                <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                                                <h3 className="text-lg font-semibold text-[#0c1220] mb-1" style={{ fontFamily: "'Georgia', serif" }}>
                                                     Bank Transfer
-                                                    <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">No Fees</span>
                                                 </h3>
-                                                <p className="text-sm text-slate-500">
+                                                <span className="inline-block px-2.5 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200 uppercase tracking-wider mb-3">
+                                                    No Processing Fee
+                                                </span>
+                                                <p className="text-[13px] text-[#8b8680] max-w-xs mx-auto leading-relaxed">
                                                     Transfer to the account below and submit your payment proof.
                                                 </p>
                                             </div>
 
+                                            {/* Bank Details */}
                                             <div className="space-y-3 mb-6">
-                                                <div className="p-4 bg-slate-50 rounded-xl">
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <p className="text-xs text-slate-500">Bank Name</p>
-                                                            <p className="font-semibold text-slate-800">{nairaBankAccount.bank_name}</p>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => copyToClipboard(nairaBankAccount.bank_name, 'bank')}
-                                                            className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
-                                                        >
-                                                            {copiedField === 'bank' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-slate-400" />}
-                                                        </button>
+                                                {/* Bank Name */}
+                                                <div className="flex items-center justify-between p-4 bg-[#faf9f7] border border-[#e5e2db]">
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] mb-0.5">Bank</p>
+                                                        <p className="text-sm font-semibold text-[#0c1220]">{nairaBankAccount.bank_name}</p>
                                                     </div>
+                                                    <button
+                                                        onClick={() => copyToClipboard(nairaBankAccount.bank_name, 'bank')}
+                                                        className="p-2 hover:bg-[#e5e2db] transition-colors"
+                                                    >
+                                                        {copiedField === 'bank' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-[#8b8680]" />}
+                                                    </button>
                                                 </div>
 
-                                                <div className="p-4 bg-slate-50 rounded-xl">
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <p className="text-xs text-slate-500">Account Name</p>
-                                                            <p className="font-semibold text-slate-800">{nairaBankAccount.account_name}</p>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => copyToClipboard(nairaBankAccount.account_name, 'name')}
-                                                            className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
-                                                        >
-                                                            {copiedField === 'name' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-slate-400" />}
-                                                        </button>
+                                                {/* Account Name */}
+                                                <div className="flex items-center justify-between p-4 bg-[#faf9f7] border border-[#e5e2db]">
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] mb-0.5">Account Name</p>
+                                                        <p className="text-sm font-semibold text-[#0c1220]">{nairaBankAccount.account_name}</p>
                                                     </div>
+                                                    <button
+                                                        onClick={() => copyToClipboard(nairaBankAccount.account_name, 'name')}
+                                                        className="p-2 hover:bg-[#e5e2db] transition-colors"
+                                                    >
+                                                        {copiedField === 'name' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-[#8b8680]" />}
+                                                    </button>
                                                 </div>
 
-                                                <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200">
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <p className="text-xs text-indigo-600">Account Number</p>
-                                                            <p className="font-bold text-xl text-indigo-800">{nairaBankAccount.account_number}</p>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => copyToClipboard(nairaBankAccount.account_number, 'number')}
-                                                            className="p-2 hover:bg-indigo-100 rounded-lg transition-colors"
-                                                        >
-                                                            {copiedField === 'number' ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5 text-indigo-600" />}
-                                                        </button>
+                                                {/* Account Number — Highlighted */}
+                                                <div className="flex items-center justify-between p-4 bg-[#0c1220] border border-[#0c1220]">
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-[1.5px] text-[#b8860b] mb-0.5">Account Number</p>
+                                                        <p className="text-xl font-bold text-white tracking-wide tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                            {nairaBankAccount.account_number}
+                                                        </p>
                                                     </div>
+                                                    <button
+                                                        onClick={() => copyToClipboard(nairaBankAccount.account_number, 'number')}
+                                                        className="p-2 hover:bg-white/10 transition-colors"
+                                                    >
+                                                        {copiedField === 'number' ? <Check className="w-5 h-5 text-[#b8860b]" /> : <Copy className="w-5 h-5 text-white/60" />}
+                                                    </button>
                                                 </div>
 
-                                                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                                                    <p className="text-xs text-amber-700 font-medium mb-1">Payment Reference (Important!)</p>
-                                                    <div className="flex items-center justify-between">
-                                                        <p className="font-bold text-amber-800">{invoice.invoice_number}</p>
-                                                        <button
-                                                            onClick={() => copyToClipboard(invoice.invoice_number, 'ref')}
-                                                            className="p-2 hover:bg-amber-100 rounded-lg transition-colors"
-                                                        >
-                                                            {copiedField === 'ref' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-amber-600" />}
-                                                        </button>
+                                                {/* Payment Reference */}
+                                                <div className="flex items-center justify-between p-4 bg-amber-50/60 border border-[#b8860b]/20">
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-[1.5px] text-[#b8860b] font-semibold mb-0.5">
+                                                            Payment Reference (Required)
+                                                        </p>
+                                                        <p className="text-sm font-bold text-[#0c1220]">{invoice.invoice_number}</p>
                                                     </div>
+                                                    <button
+                                                        onClick={() => copyToClipboard(invoice.invoice_number, 'ref')}
+                                                        className="p-2 hover:bg-[#b8860b]/10 transition-colors"
+                                                    >
+                                                        {copiedField === 'ref' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-[#b8860b]" />}
+                                                    </button>
                                                 </div>
 
-                                                <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-                                                    <div className="flex items-center justify-between">
-                                                        <div>
-                                                            <p className="text-xs text-green-700">Amount to Pay</p>
-                                                            <p className="font-bold text-xl text-green-800">
-                                                                {formatCurrency(invoice.amount_due, invoice.currency)}
-                                                            </p>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => copyToClipboard(invoice.amount_due.toString(), 'amount')}
-                                                            className="p-2 hover:bg-green-100 rounded-lg transition-colors"
-                                                        >
-                                                            {copiedField === 'amount' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-green-600" />}
-                                                        </button>
+                                                {/* Amount */}
+                                                <div className="flex items-center justify-between p-4 bg-emerald-50/50 border border-emerald-200/60">
+                                                    <div>
+                                                        <p className="text-[10px] uppercase tracking-[1.5px] text-emerald-700 mb-0.5">Amount to Transfer</p>
+                                                        <p className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                            {formatCurrency(invoice.amount_due, invoice.currency)}
+                                                        </p>
                                                     </div>
+                                                    <button
+                                                        onClick={() => copyToClipboard(invoice.amount_due.toString(), 'amount')}
+                                                        className="p-2 hover:bg-emerald-100 transition-colors"
+                                                    >
+                                                        {copiedField === 'amount' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-emerald-600" />}
+                                                    </button>
                                                 </div>
                                             </div>
 
+                                            {/* Submit Proof Button */}
                                             <button
                                                 onClick={() => setShowProofModal(true)}
-                                                className="w-full bg-green-600 text-white font-semibold py-4 px-6 rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                                                className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 text-sm tracking-wide"
                                             >
-                                                <Upload className="w-5 h-5" />
-                                                I've Paid - Submit Proof
+                                                <Upload className="w-4 h-4" />
+                                                I'VE PAID — SUBMIT PROOF
                                             </button>
                                         </div>
                                     )}
 
                                     {activeTab === 'bank' && !nairaBankAccount && (
-                                        <div className="p-6 text-center text-slate-500">
-                                            <p>Bank transfer details not available for this currency.</p>
-                                            <p className="text-sm mt-2">Please use card payment or contact support.</p>
+                                        <div className="p-8 text-center">
+                                            <p className="text-sm text-[#8b8680]">Bank transfer details not available for this currency.</p>
+                                            <p className="text-[13px] text-[#64748b] mt-2">Please use card payment or contact support.</p>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Security Notice */}
-                                <div className="bg-slate-50 rounded-xl p-4 flex items-start gap-3">
-                                    <Shield className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                                    <div className="text-sm text-slate-600">
-                                        <p className="font-medium text-slate-800 mb-1">Secure Payment</p>
-                                        <p>Your payment information is encrypted and secure. We never store your card details.</p>
+                                <div className="bg-white border border-[#e5e2db] p-5 flex items-start gap-4">
+                                    <div className="w-10 h-10 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <Shield className="w-5 h-5 text-emerald-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-semibold text-[#0c1220] mb-1" style={{ fontFamily: "'Georgia', serif" }}>
+                                            Secure Payment
+                                        </p>
+                                        <p className="text-[13px] text-[#64748b] leading-relaxed">
+                                            Your payment information is encrypted and secure. We never store your card details.
+                                        </p>
                                     </div>
                                 </div>
 
                                 {/* Contact Support */}
-                                <div className="bg-white rounded-xl p-4 flex items-center justify-between">
-                                    <div className="text-sm">
-                                        <p className="text-slate-500">Need help?</p>
-                                        <a href="mailto:headoffice@elabsolution.org" className="text-indigo-600 font-medium hover:underline">
+                                <div className="bg-white border border-[#e5e2db] p-5">
+                                    <p className="text-[10px] uppercase tracking-[1.5px] text-[#b8860b] font-medium mb-3">Need Assistance?</p>
+                                    <div className="flex items-center justify-between">
+                                        <a href="mailto:headoffice@elabsolution.org" className="flex items-center gap-2 text-[13px] text-[#0c1220] hover:text-[#b8860b] transition-colors font-medium">
+                                            <Mail className="w-3.5 h-3.5 text-[#8b8680]" />
                                             headoffice@elabsolution.org
                                         </a>
-                                    </div>
-                                    <div className="text-sm text-right">
-                                        <p className="text-slate-500">Call us</p>
-                                        <a href="tel:+2348168634195" className="text-indigo-600 font-medium hover:underline">
+                                        <a href="tel:+2348168634195" className="flex items-center gap-2 text-[13px] text-[#0c1220] hover:text-[#b8860b] transition-colors font-medium">
+                                            <Phone className="w-3.5 h-3.5 text-[#8b8680]" />
                                             +234 816 863 4195
                                         </a>
                                     </div>
                                 </div>
 
-                                <div className="text-center text-xs text-slate-500">
-                                    <a href="/privacy" className="hover:text-indigo-600 hover:underline">Privacy Policy</a>
-                                    <span className="mx-2">•</span>
-                                    <a href="/terms" className="hover:text-indigo-600 hover:underline">Terms of Service</a>
-                                    <span className="mx-2">•</span>
-                                    <a href="/support/refund-policy" className="hover:text-indigo-600 hover:underline">Refund Policy</a>
+                                {/* Legal Links */}
+                                <div className="text-center text-[11px] text-[#8b8680] space-x-4">
+                                    <a href="/privacy" className="hover:text-[#b8860b] transition-colors">Privacy</a>
+                                    <span className="text-[#e5e2db]">|</span>
+                                    <a href="/terms" className="hover:text-[#b8860b] transition-colors">Terms</a>
+                                    <span className="text-[#e5e2db]">|</span>
+                                    <a href="/support/refund-policy" className="hover:text-[#b8860b] transition-colors">Refund Policy</a>
                                 </div>
                             </motion.div>
                         )}
@@ -922,63 +978,76 @@ export default function PayInvoice() {
                 </div>
             </div>
 
-            {/* Payment Proof Modal */}
+            {/* ── Payment Proof Modal ── */}
             <AnimatePresence>
                 {showProofModal && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                        className="fixed inset-0 bg-[#0c1220]/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
                         onClick={() => !submittingProof && !proofSuccess && setShowProofModal(false)}
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+                            className="bg-white border border-[#e5e2db] max-w-md w-full max-h-[90vh] overflow-y-auto"
                             onClick={e => e.stopPropagation()}
                         >
-                            <div className="p-6 border-b border-slate-100">
+                            {/* Modal gold accent */}
+                            <div className="h-[3px] bg-[#b8860b]" />
+
+                            {/* Header */}
+                            <div className="p-6 border-b border-[#e5e2db]">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-xl font-bold text-slate-800">Submit Payment Proof</h3>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-[#0c1220]" style={{ fontFamily: "'Georgia', serif" }}>
+                                            Submit Payment Proof
+                                        </h3>
+                                        <p className="text-[12px] text-[#8b8680] mt-0.5">
+                                            Invoice {invoice.invoice_number}
+                                        </p>
+                                    </div>
                                     <button
                                         onClick={() => !submittingProof && !proofSuccess && setShowProofModal(false)}
                                         disabled={submittingProof || proofSuccess}
-                                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+                                        className="p-2 hover:bg-[#faf9f7] transition-colors disabled:opacity-50"
                                     >
-                                        <X className="w-5 h-5 text-slate-500" />
+                                        <X className="w-5 h-5 text-[#8b8680]" />
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="p-6 space-y-4">
+                            <div className="p-6 space-y-5">
                                 {proofSuccess ? (
                                     <div className="text-center py-8">
                                         <motion.div
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
                                             transition={{ type: 'spring' }}
-                                            className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                                            className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto mb-5"
                                         >
-                                            <CheckCircle2 className="w-8 h-8 text-green-600" />
+                                            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                                         </motion.div>
-                                        <h4 className="text-lg font-semibold text-slate-800 mb-2">Proof Submitted!</h4>
-                                        <p className="text-slate-600">
+                                        <h4 className="text-lg font-semibold text-[#0c1220] mb-2" style={{ fontFamily: "'Georgia', serif" }}>
+                                            Proof Submitted
+                                        </h4>
+                                        <p className="text-[13px] text-[#64748b] leading-relaxed">
                                             Your payment proof has been submitted. We'll verify it within 24-48 hours and send you a confirmation.
                                         </p>
                                     </div>
                                 ) : (
                                     <>
                                         {proofError && (
-                                            <div className="p-4 bg-red-50 text-red-700 rounded-xl text-sm">
+                                            <div className="p-4 bg-red-50 border border-red-200 text-red-700 text-sm">
                                                 {proofError}
                                             </div>
                                         )}
 
                                         {/* File Upload */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
                                                 Payment Receipt / Screenshot *
                                             </label>
                                             <input
@@ -994,13 +1063,13 @@ export default function PayInvoice() {
                                                         <img
                                                             src={proofPreview}
                                                             alt="Proof preview"
-                                                            className="w-full h-48 object-cover rounded-xl"
+                                                            className="w-full h-48 object-cover border border-[#e5e2db]"
                                                         />
                                                     ) : (
-                                                        <div className="w-full h-48 bg-slate-100 rounded-xl flex items-center justify-center">
+                                                        <div className="w-full h-48 bg-[#faf9f7] border border-[#e5e2db] flex items-center justify-center">
                                                             <div className="text-center">
-                                                                <FileText className="w-12 h-12 text-slate-400 mx-auto mb-2" />
-                                                                <p className="text-sm text-slate-600">{proofFile?.name}</p>
+                                                                <FileText className="w-10 h-10 text-[#8b8680] mx-auto mb-2" />
+                                                                <p className="text-sm text-[#64748b]">{proofFile?.name}</p>
                                                             </div>
                                                         </div>
                                                     )}
@@ -1009,30 +1078,30 @@ export default function PayInvoice() {
                                                             setProofFile(null)
                                                             setProofPreview(null)
                                                         }}
-                                                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                                        className="absolute top-2 right-2 p-1.5 bg-[#0c1220] text-white hover:bg-[#1a2538] transition-colors"
                                                     >
-                                                        <X className="w-4 h-4" />
+                                                        <X className="w-3.5 h-3.5" />
                                                     </button>
                                                 </div>
                                             ) : (
                                                 <button
                                                     onClick={() => fileInputRef.current?.click()}
-                                                    className="w-full h-32 border-2 border-dashed border-slate-300 rounded-xl flex flex-col items-center justify-center gap-2 hover:border-indigo-400 hover:bg-indigo-50 transition-colors"
+                                                    className="w-full h-32 border-2 border-dashed border-[#e5e2db] flex flex-col items-center justify-center gap-2 hover:border-[#b8860b] hover:bg-[#faf9f7] transition-all"
                                                 >
-                                                    <Upload className="w-8 h-8 text-slate-400" />
-                                                    <span className="text-sm text-slate-600">
+                                                    <Upload className="w-6 h-6 text-[#8b8680]" />
+                                                    <span className="text-[13px] text-[#64748b] font-medium">
                                                         Click to upload receipt
                                                     </span>
-                                                    <span className="text-xs text-slate-400">
+                                                    <span className="text-[11px] text-[#8b8680]">
                                                         Image or PDF, max 5MB
                                                     </span>
                                                 </button>
                                             )}
                                         </div>
 
-                                        {/* Your Email */}
+                                        {/* Email */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
                                                 Your Email *
                                             </label>
                                             <input
@@ -1040,26 +1109,26 @@ export default function PayInvoice() {
                                                 value={proofForm.payerEmail}
                                                 onChange={(e) => setProofForm({ ...proofForm, payerEmail: e.target.value })}
                                                 placeholder="your@email.com"
-                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
+                                                className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220] placeholder:text-[#c4c0b8]"
                                             />
                                         </div>
 
                                         {/* Payment Date */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
                                                 Payment Date *
                                             </label>
                                             <input
                                                 type="date"
                                                 value={proofForm.paymentDate}
                                                 onChange={(e) => setProofForm({ ...proofForm, paymentDate: e.target.value })}
-                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
+                                                className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220]"
                                             />
                                         </div>
 
                                         {/* Bank Reference */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
                                                 Bank Reference / Transaction ID
                                             </label>
                                             <input
@@ -1067,13 +1136,13 @@ export default function PayInvoice() {
                                                 value={proofForm.bankReference}
                                                 onChange={(e) => setProofForm({ ...proofForm, bankReference: e.target.value })}
                                                 placeholder="e.g., TRF123456789"
-                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
+                                                className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220] placeholder:text-[#c4c0b8]"
                                             />
                                         </div>
 
-                                        {/* Your Name */}
+                                        {/* Name */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
                                                 Your Name
                                             </label>
                                             <input
@@ -1081,25 +1150,25 @@ export default function PayInvoice() {
                                                 value={proofForm.payerName}
                                                 onChange={(e) => setProofForm({ ...proofForm, payerName: e.target.value })}
                                                 placeholder="Full name"
-                                                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
+                                                className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220] placeholder:text-[#c4c0b8]"
                                             />
                                         </div>
 
-                                        {/* Submit Button */}
+                                        {/* Submit */}
                                         <button
                                             onClick={handleSubmitProof}
                                             disabled={!proofFile || !proofForm.payerEmail || submittingProof}
-                                            className="w-full bg-green-600 text-white font-semibold py-4 px-4 rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-full bg-[#0c1220] text-white font-semibold py-4 px-4 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
                                         >
                                             {submittingProof ? (
                                                 <>
-                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
                                                     Submitting...
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Upload className="w-5 h-5" />
-                                                    Submit Payment Proof
+                                                    <Upload className="w-4 h-4" />
+                                                    SUBMIT PAYMENT PROOF
                                                 </>
                                             )}
                                         </button>
@@ -1111,15 +1180,30 @@ export default function PayInvoice() {
                 )}
             </AnimatePresence>
 
-            {/* Footer */}
-            <footer className="border-t border-slate-100 bg-white/50 py-6 mt-12">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-                    <p className="text-sm text-slate-400">
-                        ELAB Solutions International LLC &middot; Secure Payment Portal
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">
-                        Nigeria: +234 816 863 4195 &middot; USA: +1 (929) 419-2327
-                    </p>
+            {/* ── Footer ── */}
+            <footer className="bg-[#0c1220] mt-16">
+                <div className="h-[3px] bg-[#b8860b]" />
+                <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="text-center sm:text-left">
+                            <p className="text-sm text-white/80 font-medium" style={{ fontFamily: "'Georgia', serif" }}>
+                                Elab Solutions International, LLC
+                            </p>
+                            <p className="text-[10px] uppercase tracking-[2px] text-[#b8860b] mt-1">
+                                Healthcare Credentialing & Global Placement
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-6 text-[11px] text-white/40">
+                            <div className="flex items-center gap-1.5">
+                                <Globe className="w-3 h-3" />
+                                <span>elabsolution.org</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <Phone className="w-3 h-3" />
+                                <span>+234 816 863 4195</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </footer>
         </div>
