@@ -90,6 +90,9 @@ interface PublicInvoice {
     id: string
     invoice_number: string
     currency: string
+    secondary_currency?: string | null
+    secondary_total?: number | null
+    secondary_exchange_rate?: number | null
     subtotal: number
     discount_amount: number
     tax_amount: number
@@ -154,6 +157,7 @@ export default function PayInvoice() {
     const [paymentLoading, setPaymentLoading] = useState(false)
     const [paymentSuccess, setPaymentSuccess] = useState(false)
     const [paymentReference, setPaymentReference] = useState<string | null>(null)
+    const [cardCurrency, setCardCurrency] = useState<'primary' | 'secondary'>('primary')
 
     useEffect(() => {
         loadInvoice()
@@ -252,8 +256,22 @@ export default function PayInvoice() {
         }
     }
 
+    // Calculate secondary currency amount due (pro-rated if partial payment)
+    const getSecondaryAmountDue = (): number => {
+        if (!invoice?.secondary_total || !invoice?.secondary_currency) return 0
+        if (invoice.amount_paid > 0 && invoice.total_amount > 0) {
+            // Pro-rate: secondary_total * (amount_due / total_amount)
+            return Math.round((invoice.secondary_total * (invoice.amount_due / invoice.total_amount)) * 100) / 100
+        }
+        return invoice.secondary_total
+    }
+
     const handlePayWithCard = async () => {
         if (!invoice) return
+
+        const useSecondary = cardCurrency === 'secondary' && invoice.secondary_currency && invoice.secondary_total
+        const payCurrency = useSecondary ? invoice.secondary_currency! : (invoice.currency || 'NGN')
+        const payAmount = useSecondary ? getSecondaryAmountDue() : invoice.amount_due
 
         setPaymentLoading(true)
 
@@ -263,21 +281,27 @@ export default function PayInvoice() {
             const payerEmail = proofForm.payerEmail || invoice.customer_email || 'customer@example.com'
 
             // Calculate fee - charge customer the total (invoice + fee)
-            const feeInfo = calculatePaystackFee(invoice.amount_due, invoice.currency || 'NGN')
+            const feeInfo = calculatePaystackFee(payAmount, payCurrency)
 
             // @ts-ignore - PaystackPop is loaded from script
             const handler = window.PaystackPop.setup({
                 key: PAYSTACK_PUBLIC_KEY,
                 email: payerEmail,
                 amount: Math.round(feeInfo.total * 100), // Paystack expects amount in kobo/cents - charge total with fee
-                currency: invoice.currency || 'NGN',
+                currency: payCurrency,
                 ref: `${invoice.invoice_number}-${Date.now()}`,
                 metadata: {
                     invoice_id: invoice.id,
                     invoice_number: invoice.invoice_number,
                     customer_name: invoice.customer_name,
-                    invoice_amount: invoice.amount_due,
+                    invoice_amount: payAmount,
+                    invoice_currency: invoice.currency,
+                    payment_currency: payCurrency,
                     processing_fee: feeInfo.fee,
+                    ...(useSecondary && {
+                        exchange_rate_used: invoice.secondary_exchange_rate,
+                        amount_in_invoice_currency: invoice.amount_due
+                    }),
                     custom_fields: [
                         {
                             display_name: "Invoice Number",
@@ -287,7 +311,7 @@ export default function PayInvoice() {
                         {
                             display_name: "Processing Fee",
                             variable_name: "processing_fee",
-                            value: `${feeInfo.percentage} (${invoice.currency} ${feeInfo.fee})`
+                            value: `${feeInfo.percentage} (${payCurrency} ${feeInfo.fee})`
                         }
                     ]
                 },
@@ -299,7 +323,7 @@ export default function PayInvoice() {
                     supabase.rpc('record_public_paystack_payment', {
                         p_invoice_id: invoice.id,
                         p_paystack_reference: response.reference,
-                        p_amount: invoice.amount_due, // Record original invoice amount
+                        p_amount: invoice.amount_due, // Always record in invoice's primary currency
                         p_currency: invoice.currency || 'NGN',
                         p_payer_email: payerEmail
                     }).then(({ error: recordError }) => {
@@ -640,6 +664,20 @@ export default function PayInvoice() {
                                             {formatCurrency(invoice.amount_due, invoice.currency)}
                                         </span>
                                     </div>
+
+                                    {/* Secondary currency amount */}
+                                    {invoice.secondary_currency && invoice.secondary_total && (
+                                        <div className="bg-amber-50/60 border border-[#b8860b]/20 p-3 !mt-4">
+                                            <div className="flex justify-between items-baseline">
+                                                <span className="text-[10px] uppercase tracking-[1px] font-semibold text-[#b8860b]">
+                                                    Or pay in {invoice.secondary_currency}
+                                                </span>
+                                                <span className="text-base font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                    {formatCurrency(getSecondaryAmountDue(), invoice.secondary_currency)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </motion.div>
@@ -672,7 +710,10 @@ export default function PayInvoice() {
                                 <div className="bg-white border border-[#e5e2db] overflow-hidden">
                                     {/* Tabs */}
                                     {(() => {
-                                        const tabFeeInfo = calculatePaystackFee(invoice.amount_due, invoice.currency)
+                                        const hasSecondary = !!(invoice.secondary_currency && invoice.secondary_total)
+                                        const cardCur = cardCurrency === 'secondary' && hasSecondary ? invoice.secondary_currency! : invoice.currency
+                                        const cardAmt = cardCurrency === 'secondary' && hasSecondary ? getSecondaryAmountDue() : invoice.amount_due
+                                        const tabFeeInfo = calculatePaystackFee(cardAmt, cardCur)
                                         return (
                                             <div className="flex border-b border-[#e5e2db]">
                                                 <button
@@ -688,7 +729,7 @@ export default function PayInvoice() {
                                                     <div className="text-left">
                                                         <div className="text-[13px] font-semibold">Pay with Card</div>
                                                         <div className="text-[11px] font-normal opacity-60">
-                                                            {formatCurrency(tabFeeInfo.total, invoice.currency)}
+                                                            {formatCurrency(tabFeeInfo.total, cardCur)}
                                                         </div>
                                                     </div>
                                                 </button>
@@ -716,44 +757,95 @@ export default function PayInvoice() {
 
                                     {/* ── Card Payment Tab ── */}
                                     {activeTab === 'card' && (() => {
-                                        const feeInfo = calculatePaystackFee(invoice.amount_due, invoice.currency)
-                                        const isUSD = invoice.currency === 'USD'
+                                        const hasSecondary = !!(invoice.secondary_currency && invoice.secondary_total)
+                                        const secondaryAmountDue = getSecondaryAmountDue()
+                                        const selectedCurrency = cardCurrency === 'secondary' && hasSecondary ? invoice.secondary_currency! : invoice.currency
+                                        const selectedAmount = cardCurrency === 'secondary' && hasSecondary ? secondaryAmountDue : invoice.amount_due
+                                        const feeInfo = calculatePaystackFee(selectedAmount, selectedCurrency)
+                                        const isUSDSelected = selectedCurrency === 'USD'
                                         return (
                                             <div className="p-6 sm:p-8">
-                                                <div className="text-center mb-8">
+                                                <div className="text-center mb-6">
                                                     <div className="w-14 h-14 bg-[#faf9f7] border border-[#e5e2db] rounded-full flex items-center justify-center mx-auto mb-4">
                                                         <CreditCard className="w-6 h-6 text-[#0c1220]" />
                                                     </div>
                                                     <h3 className="text-lg font-semibold text-[#0c1220] mb-2" style={{ fontFamily: "'Georgia', serif" }}>
                                                         Debit / Credit Card
-                                                        {isUSD && <span className="ml-2 px-2 py-0.5 bg-sky-50 text-sky-700 text-[10px] font-medium border border-sky-200 uppercase tracking-wider">USD</span>}
                                                     </h3>
                                                     <p className="text-[13px] text-[#8b8680] max-w-xs mx-auto leading-relaxed">
-                                                        {isUSD
-                                                            ? 'Secure international payment. Accepts Visa, Mastercard, and international cards.'
-                                                            : 'Secure payment powered by Paystack. Supports Visa, Mastercard, and Verve.'
-                                                        }
+                                                        Secure payment powered by Paystack. Choose your preferred currency below.
                                                     </p>
                                                 </div>
+
+                                                {/* Currency Selector — only show if secondary currency exists */}
+                                                {hasSecondary && (
+                                                    <div className="grid grid-cols-2 gap-3 mb-6">
+                                                        {/* Primary currency option */}
+                                                        <button
+                                                            onClick={() => setCardCurrency('primary')}
+                                                            className={`relative p-4 border-2 transition-all text-left ${
+                                                                cardCurrency === 'primary'
+                                                                    ? 'border-[#b8860b] bg-amber-50/30'
+                                                                    : 'border-[#e5e2db] hover:border-[#c4c0b8] bg-white'
+                                                            }`}
+                                                        >
+                                                            {cardCurrency === 'primary' && (
+                                                                <div className="absolute top-2 right-2 w-5 h-5 bg-[#b8860b] rounded-full flex items-center justify-center">
+                                                                    <Check className="w-3 h-3 text-white" />
+                                                                </div>
+                                                            )}
+                                                            <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] font-medium mb-1">Pay in {invoice.currency}</p>
+                                                            <p className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                                {formatCurrency(invoice.amount_due, invoice.currency)}
+                                                            </p>
+                                                            <p className="text-[11px] text-[#8b8680] mt-1">
+                                                                + {calculatePaystackFee(invoice.amount_due, invoice.currency).percentage} fee
+                                                            </p>
+                                                        </button>
+
+                                                        {/* Secondary currency option */}
+                                                        <button
+                                                            onClick={() => setCardCurrency('secondary')}
+                                                            className={`relative p-4 border-2 transition-all text-left ${
+                                                                cardCurrency === 'secondary'
+                                                                    ? 'border-[#b8860b] bg-amber-50/30'
+                                                                    : 'border-[#e5e2db] hover:border-[#c4c0b8] bg-white'
+                                                            }`}
+                                                        >
+                                                            {cardCurrency === 'secondary' && (
+                                                                <div className="absolute top-2 right-2 w-5 h-5 bg-[#b8860b] rounded-full flex items-center justify-center">
+                                                                    <Check className="w-3 h-3 text-white" />
+                                                                </div>
+                                                            )}
+                                                            <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] font-medium mb-1">Pay in {invoice.secondary_currency}</p>
+                                                            <p className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                                {formatCurrency(secondaryAmountDue, invoice.secondary_currency!)}
+                                                            </p>
+                                                            <p className="text-[11px] text-[#8b8680] mt-1">
+                                                                + {calculatePaystackFee(secondaryAmountDue, invoice.secondary_currency!).percentage} fee
+                                                            </p>
+                                                        </button>
+                                                    </div>
+                                                )}
 
                                                 {/* Fee Breakdown */}
                                                 <div className="bg-[#faf9f7] border border-[#e5e2db] p-5 mb-6 space-y-3">
                                                     <div className="flex justify-between text-[13px]">
                                                         <span className="text-[#64748b]">Invoice Amount</span>
-                                                        <span className="font-medium text-[#0c1220] tabular-nums">{formatCurrency(invoice.amount_due, invoice.currency)}</span>
+                                                        <span className="font-medium text-[#0c1220] tabular-nums">{formatCurrency(selectedAmount, selectedCurrency)}</span>
                                                     </div>
                                                     <div className="flex justify-between text-[13px]">
                                                         <span className="text-[#64748b]">
                                                             Processing Fee ({feeInfo.percentage})
                                                             <span className="text-[11px] text-[#8b8680] ml-1">(Paystack)</span>
                                                         </span>
-                                                        <span className="font-medium text-[#b8860b] tabular-nums">+{formatCurrency(feeInfo.fee, invoice.currency)}</span>
+                                                        <span className="font-medium text-[#b8860b] tabular-nums">+{formatCurrency(feeInfo.fee, selectedCurrency)}</span>
                                                     </div>
                                                     <div className="border-t border-[#e5e2db] pt-3">
                                                         <div className="flex justify-between items-baseline">
                                                             <span className="text-[10px] uppercase tracking-[1px] font-bold text-[#64748b]">Total to Pay</span>
                                                             <span className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
-                                                                {formatCurrency(feeInfo.total, invoice.currency)}
+                                                                {formatCurrency(feeInfo.total, selectedCurrency)}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -774,13 +866,13 @@ export default function PayInvoice() {
                                                 </div>
 
                                                 {/* Pay Button */}
-                                                {isUSD ? (
+                                                {isUSDSelected ? (
                                                     <button
                                                         onClick={handlePayWithUSDLink}
                                                         disabled={!proofForm.payerEmail}
                                                         className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
                                                     >
-                                                        PAY {formatCurrency(feeInfo.total, invoice.currency)}
+                                                        PAY {formatCurrency(feeInfo.total, selectedCurrency)}
                                                         <ArrowRight className="w-4 h-4" />
                                                     </button>
                                                 ) : (
@@ -796,7 +888,7 @@ export default function PayInvoice() {
                                                             </>
                                                         ) : (
                                                             <>
-                                                                PAY {formatCurrency(feeInfo.total, invoice.currency)}
+                                                                PAY {formatCurrency(feeInfo.total, selectedCurrency)}
                                                                 <ArrowRight className="w-4 h-4" />
                                                             </>
                                                         )}
@@ -807,8 +899,8 @@ export default function PayInvoice() {
                                                 <div className="flex items-center justify-center gap-3 mt-5">
                                                     <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">VISA</span>
                                                     <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">MASTERCARD</span>
-                                                    {!isUSD && <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">VERVE</span>}
-                                                    {isUSD && <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">AMEX</span>}
+                                                    {!isUSDSelected && <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">VERVE</span>}
+                                                    {isUSDSelected && <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">AMEX</span>}
                                                 </div>
 
                                                 <p className="text-[11px] text-[#8b8680] text-center mt-4">
@@ -913,6 +1005,24 @@ export default function PayInvoice() {
                                                         {copiedField === 'amount' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-emerald-600" />}
                                                     </button>
                                                 </div>
+
+                                                {/* Secondary currency equivalent */}
+                                                {invoice.secondary_currency && invoice.secondary_total && (
+                                                    <div className="flex items-center justify-between p-4 bg-amber-50/60 border border-[#b8860b]/20">
+                                                        <div>
+                                                            <p className="text-[10px] uppercase tracking-[1.5px] text-[#b8860b] font-semibold mb-0.5">Or Transfer in {invoice.secondary_currency}</p>
+                                                            <p className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                                {formatCurrency(getSecondaryAmountDue(), invoice.secondary_currency)}
+                                                            </p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => copyToClipboard(getSecondaryAmountDue().toString(), 'sec-amount')}
+                                                            className="p-2 hover:bg-[#b8860b]/10 transition-colors"
+                                                        >
+                                                            {copiedField === 'sec-amount' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-[#b8860b]" />}
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Submit Proof Button */}
