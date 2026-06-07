@@ -101,8 +101,8 @@ export default function Register() {
     const [currentStep, setCurrentStep] = useState<Step>('verify')
 
     // Step 1: Verification fields
-    const [caseReference, setCaseReference] = useState('')
-    const [email, setEmail] = useState('')
+    const [caseReference, setCaseReference] = useState(() => new URLSearchParams(window.location.search).get('case') || '')
+    const [email, setEmail] = useState(() => new URLSearchParams(window.location.search).get('email') || '')
     const [isVerifying, setIsVerifying] = useState(false)
     const [verifyError, setVerifyError] = useState<string | null>(null)
 
