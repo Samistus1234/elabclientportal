@@ -342,6 +342,12 @@ export default function Login() {
                                         Register here
                                     </Link>
                                 </p>
+                                <p className="text-center text-slate-500 text-sm">
+                                    Are you an institution?{' '}
+                                    <Link to="/contact/register" className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline">
+                                        Register here
+                                    </Link>
+                                </p>
                             </div>
                         </form>
                     </div>

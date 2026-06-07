@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { buildCommandCenterUrl, commandCenterHeaders } from '@/lib/commandCenterApi'
 import {
     Mail,
     Lock,
@@ -17,10 +18,6 @@ import {
     Sparkles,
     AlertCircle
 } from 'lucide-react'
-
-// API configuration
-const API_URL = import.meta.env.VITE_COMMAND_CENTER_API_URL || 'https://fwmhfwprvqaovidykaqt.supabase.co/functions/v1'
-const API_KEY = import.meta.env.VITE_COMMAND_CENTER_API_KEY || ''
 
 interface VerificationResult {
     valid: boolean
@@ -124,12 +121,11 @@ export default function RecruiterRegister() {
         setError(null)
 
         try {
-            const response = await fetch(`${API_URL}/verify-recruiter-access`, {
+            const response = await fetch(buildCommandCenterUrl('/verify-recruiter-access'), {
                 method: 'POST',
-                headers: {
+                headers: commandCenterHeaders({
                     'Content-Type': 'application/json',
-                    'x-api-key': API_KEY,
-                },
+                }),
                 body: JSON.stringify({
                     email: email.trim().toLowerCase(),
                     company_name: companyName.trim(),
@@ -170,12 +166,11 @@ export default function RecruiterRegister() {
         }
 
         try {
-            const response = await fetch(`${API_URL}/portal-register`, {
+            const response = await fetch(buildCommandCenterUrl('/portal-register'), {
                 method: 'POST',
-                headers: {
+                headers: commandCenterHeaders({
                     'Content-Type': 'application/json',
-                    'x-api-key': API_KEY,
-                },
+                }),
                 body: JSON.stringify({
                     email: email.trim().toLowerCase(),
                     password,

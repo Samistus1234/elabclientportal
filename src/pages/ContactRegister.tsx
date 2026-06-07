@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { buildCommandCenterUrl, commandCenterHeaders } from '@/lib/commandCenterApi'
 import {
     Mail,
     Lock,
@@ -18,10 +19,6 @@ import {
     Users,
     AlertCircle
 } from 'lucide-react'
-
-// API configuration
-const API_URL = import.meta.env.VITE_COMMAND_CENTER_API_URL || 'https://fwmhfwprvqaovidykaqt.supabase.co/functions/v1'
-const API_KEY = import.meta.env.VITE_COMMAND_CENTER_API_KEY || ''
 
 interface VerificationResult {
     valid: boolean
@@ -129,12 +126,11 @@ export default function ContactRegister() {
         setError(null)
 
         try {
-            const response = await fetch(`${API_URL}/verify-institutional-contact-access`, {
+            const response = await fetch(buildCommandCenterUrl('/verify-institutional-contact-access'), {
                 method: 'POST',
-                headers: {
+                headers: commandCenterHeaders({
                     'Content-Type': 'application/json',
-                    'x-api-key': API_KEY,
-                },
+                }),
                 body: JSON.stringify({
                     email: emailVal.trim().toLowerCase(),
                     contact_id: contactIdVal,
@@ -167,12 +163,11 @@ export default function ContactRegister() {
         setError(null)
 
         try {
-            const response = await fetch(`${API_URL}/verify-institutional-contact-access`, {
+            const response = await fetch(buildCommandCenterUrl('/verify-institutional-contact-access'), {
                 method: 'POST',
-                headers: {
+                headers: commandCenterHeaders({
                     'Content-Type': 'application/json',
-                    'x-api-key': API_KEY,
-                },
+                }),
                 body: JSON.stringify({
                     email: email.trim().toLowerCase(),
                     contact_id: contactId || undefined,
@@ -218,12 +213,11 @@ export default function ContactRegister() {
         }
 
         try {
-            const response = await fetch(`${API_URL}/institutional-contact-portal-register`, {
+            const response = await fetch(buildCommandCenterUrl('/institutional-contact-portal-register'), {
                 method: 'POST',
-                headers: {
+                headers: commandCenterHeaders({
                     'Content-Type': 'application/json',
-                    'x-api-key': API_KEY,
-                },
+                }),
                 body: JSON.stringify({
                     email: email.trim().toLowerCase(),
                     password,

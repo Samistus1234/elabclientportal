@@ -1,5 +1,10 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import {
+    COMMAND_CENTER_API_KEY,
+    buildCommandCenterUrl,
+    commandCenterHeaders,
+} from '@/lib/commandCenterApi'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Mail,
@@ -20,9 +25,6 @@ import {
     Users
 } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
-
-// Verification API endpoint (Client Portal proxy to Command Centre)
-const VERIFY_API_URL = 'https://pvhwofaduoxirkroiblk.supabase.co/functions/v1/verify-registration'
 
 interface VerificationData {
     person: {
@@ -125,36 +127,61 @@ export default function Register() {
         setIsVerifying(true)
 
         try {
-            const response = await fetch(VERIFY_API_URL, {
+            if (!COMMAND_CENTER_API_KEY) {
+                setVerifyError('Verification service not configured (API key/auth mismatch).')
+                return
+            }
+
+            const response = await fetch(buildCommandCenterUrl('/verify-case-access'), {
                 method: 'POST',
-                headers: {
+                headers: commandCenterHeaders({
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                },
+                }),
                 body: JSON.stringify({
                     case_reference: caseReference.trim().toUpperCase(),
                     email: email.trim().toLowerCase(),
                 }),
             })
+            const contentType = response.headers.get('content-type') || ''
+            const isJsonResponse = contentType.toLowerCase().includes('application/json')
+            const payload = isJsonResponse ? await response.json().catch(() => null) : null
+            const responseText = isJsonResponse ? '' : await response.text().catch(() => '')
 
-            const data = await response.json()
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    setVerifyError('Verification service not configured (API key/auth mismatch).')
+                } else if (response.status >= 500) {
+                    setVerifyError('Verification service temporarily unavailable. Please try again shortly.')
+                } else {
+                    setVerifyError(
+                        payload?.error ||
+                        responseText ||
+                        'Verification failed. Please check your details.'
+                    )
+                }
+                return
+            }
 
-            if (!data.valid) {
-                setVerifyError(data.error || 'Verification failed. Please check your details.')
-                setIsVerifying(false)
+            if (!payload?.valid) {
+                setVerifyError(payload?.error || 'Verification failed. Please check your details.')
                 return
             }
 
             // Store verification data and proceed to step 2
             setVerificationData({
-                person: data.person,
-                case: data.case,
-                org_id: data.org_id,
+                person: payload.person,
+                case: payload.case,
+                org_id: payload.org_id,
             })
             setCurrentStep('create')
         } catch (err: any) {
             console.error('Verification error:', err)
-            setVerifyError('Unable to verify. Please try again later.')
+            const isNetworkError = err instanceof TypeError && /Failed to fetch|NetworkError|Load failed/i.test(err.message)
+            if (isNetworkError) {
+                setVerifyError('Portal cannot reach verification service. Please check your connection and try again.')
+            } else {
+                setVerifyError('Unable to verify. Please try again later.')
+            }
         } finally {
             setIsVerifying(false)
         }
