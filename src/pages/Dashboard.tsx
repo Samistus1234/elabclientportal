@@ -38,9 +38,6 @@ import ApplicationStatusChart from '@/components/ApplicationStatusChart'
 import ApplicationCard from '@/components/ApplicationCard'
 import RecentActivity from '@/components/RecentActivity'
 import TestimonialsCarousel from '@/components/TestimonialsCarousel'
-import MilestoneAchievements from '@/components/MilestoneAchievements'
-import UpcomingDeadlines from '@/components/UpcomingDeadlines'
-import DocumentChecklist from '@/components/DocumentChecklist'
 import SupportHelpSection from '@/components/SupportHelpSection'
 import SmartCrossSellRecommendations from '@/components/SmartCrossSellRecommendations'
 import { useWalkthrough } from '@/contexts/WalkthroughContext'
@@ -994,34 +991,10 @@ export default function Dashboard() {
                     <StatCard title="On Hold" value={onHoldCases} icon={Clock} color="purple" delay={0.3} />
                 </div>
 
-                {/* Smart Cross-Sell Recommendations */}
-                <div data-tour="recommendations">
-                    <SmartCrossSellRecommendations cases={cases} />
-                </div>
-
-                {/* Main Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    {/* Left Column */}
-                    <div className="lg:col-span-2 space-y-6">
-                        {cases.length > 0 && <ApplicationStatusChart cases={cases} />}
-                        <div data-tour="recent-activity">
-                            <RecentActivity cases={cases} />
-                        </div>
-                        <TestimonialsCarousel />
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="space-y-6">
-                        <MilestoneAchievements
-                            completedStages={completedCases}
-                            totalStages={cases.length || 5}
-                            daysActive={14}
-                            documentsUploaded={3}
-                        />
-                        <UpcomingDeadlines />
-                        <DocumentChecklist />
-                    </div>
-                </div>
+                {/* Status-first: Your Applications leads (see section below).
+                    Removed hardcoded/placeholder widgets (Milestones, Upcoming Deadlines,
+                    Document Checklist) that showed fake data. Cross-sell + testimonials
+                    moved to the bottom. Real status widgets render after the list. */}
 
                 {/* Applications Section */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-8" data-tour="applications">
@@ -1102,6 +1075,22 @@ export default function Dashboard() {
                         </div>
                     )}
                 </motion.div>
+
+                {/* Status detail (real data) */}
+                {cases.length > 0 && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <ApplicationStatusChart cases={cases} />
+                        <div data-tour="recent-activity">
+                            <RecentActivity cases={cases} />
+                        </div>
+                    </div>
+                )}
+
+                {/* Recommendations & testimonials (marketing — bottom) */}
+                <div className="space-y-6 mb-8" data-tour="recommendations">
+                    <SmartCrossSellRecommendations cases={cases} />
+                    <TestimonialsCarousel />
+                </div>
 
                 {/* Support Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="support-section">
