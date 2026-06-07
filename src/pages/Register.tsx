@@ -211,41 +211,39 @@ export default function Register() {
         setIsCreating(true)
 
         try {
-            // Create the user account
-            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-                email: verificationData.person.email,
-                password: password,
-                options: {
-                    data: {
-                        first_name: verificationData.person.first_name,
-                        last_name: verificationData.person.last_name,
-                        person_id: verificationData.person.id,
-                        case_id: verificationData.case.id,
-                        org_id: verificationData.org_id,
-                    }
-                }
+            // Create the account server-side: re-verifies the case, creates a
+            // PRE-CONFIRMED auth user, and links portal_users -> person/case in one step.
+            // (Avoids the old client signUp which left accounts unconfirmed + unlinked.)
+            const regResp = await fetch(buildCommandCenterUrl('/register-client'), {
+                method: 'POST',
+                headers: commandCenterHeaders({ 'Content-Type': 'application/json' }),
+                body: JSON.stringify({
+                    case_reference: verificationData.case.case_reference,
+                    email: verificationData.person.email,
+                    password,
+                }),
             })
+            const regResult = await regResp.json().catch(() => ({}))
 
-            if (signUpError) {
-                if (signUpError.message.includes('already registered')) {
-                    setCreateError('An account with this email already exists. Please sign in instead.')
-                } else {
-                    setCreateError(signUpError.message)
-                }
+            if (!regResp.ok || !regResult.success) {
+                setCreateError(regResult.error || 'Could not create your account. Please try again or contact support.')
                 setIsCreating(false)
                 return
             }
 
-            // Check if auto-confirmed or needs email confirmation
-            if (signUpData.session) {
-                // Auto logged in - redirect to dashboard
-                navigate('/dashboard', { replace: true })
-            } else {
-                // Show success message and redirect to login
+            // Account is created, confirmed, and linked — sign in to start the session.
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: verificationData.person.email,
+                password,
+            })
+
+            if (signInError) {
                 navigate('/login', {
                     replace: true,
                     state: { message: 'Account created successfully! Please sign in.' }
                 })
+            } else {
+                navigate('/dashboard', { replace: true })
             }
         } catch (err: any) {
             console.error('Account creation error:', err)
