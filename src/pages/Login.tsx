@@ -279,12 +279,12 @@ export default function Login() {
 
                             {/* Forgot Password Link */}
                             <div className="flex justify-end">
-                                <a
-                                    href="mailto:support@elabsolution.org?subject=Password%20Reset%20Request"
+                                <Link
+                                    to="/forgot-password"
                                     className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
                                 >
                                     Forgot password?
-                                </a>
+                                </Link>
                             </div>
 
                             {/* Error Message */}

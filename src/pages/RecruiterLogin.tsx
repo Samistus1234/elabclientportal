@@ -335,12 +335,12 @@ export default function RecruiterLogin() {
 
                             {/* Forgot Password Link */}
                             <div className="flex justify-end">
-                                <a
-                                    href="mailto:support@elabsolution.org?subject=Recruiter%20Portal%20Password%20Reset"
+                                <Link
+                                    to="/forgot-password"
                                     className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                                 >
                                     Forgot password?
-                                </a>
+                                </Link>
                             </div>
 
                             {/* Error Message */}

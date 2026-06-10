@@ -34,6 +34,21 @@ export async function signOut() {
     return { error }
 }
 
+// Send a password-reset email. The link returns the user to /reset-password,
+// where the recovery session is established and they set a new password.
+export async function sendPasswordReset(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+    })
+    return { error }
+}
+
+// Update the password for the currently-authenticated (recovery) user.
+export async function updatePassword(newPassword: string) {
+    const { data, error } = await supabase.auth.updateUser({ password: newPassword })
+    return { user: data.user, error }
+}
+
 export async function getSession() {
     const { data: { session }, error } = await supabase.auth.getSession()
     return { session, error }

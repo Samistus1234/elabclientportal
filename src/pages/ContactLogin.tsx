@@ -335,12 +335,12 @@ export default function ContactLogin() {
 
                             {/* Forgot Password Link */}
                             <div className="flex justify-end">
-                                <a
-                                    href="mailto:support@elabsolution.org?subject=Partner%20Portal%20Password%20Reset"
+                                <Link
+                                    to="/forgot-password"
                                     className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
                                 >
                                     Forgot password?
-                                </a>
+                                </Link>
                             </div>
 
                             {/* Error Message */}

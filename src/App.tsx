@@ -13,6 +13,8 @@ import AuthCallback from '@/pages/AuthCallback'
 import Dashboard from '@/pages/Dashboard'
 import CaseView from '@/pages/CaseView'
 import AcceptInvite from '@/pages/AcceptInvite'
+import ForgotPassword from '@/pages/ForgotPassword'
+import ResetPassword from '@/pages/ResetPassword'
 import FAQ from '@/pages/FAQ'
 import Documents from '@/pages/Documents'
 import Settings from '@/pages/Settings'
@@ -108,6 +110,14 @@ function AuthHashHandler({ children }: { children: React.ReactNode }) {
             // Check if URL has hash with auth tokens
             const hash = window.location.hash
             if (hash && hash.includes('access_token')) {
+                // Password-recovery links carry type=recovery — send them to the
+                // reset-password screen instead of logging straight into the dashboard.
+                if (hash.includes('type=recovery')) {
+                    if (location.pathname !== '/reset-password') {
+                        navigate(`/reset-password${hash}`, { replace: true })
+                    }
+                    return
+                }
                 setProcessing(true)
                 // Redirect to auth callback with the hash preserved
                 navigate(`/auth/callback${hash}`, { replace: true })
@@ -186,6 +196,8 @@ export default function App() {
                 <Route path="/contact/register" element={session ? <Navigate to="/contact/dashboard" replace /> : <ContactRegister />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/accept-invite" element={<AcceptInvite />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
