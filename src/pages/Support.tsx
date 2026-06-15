@@ -694,7 +694,7 @@ export default function Support() {
                 <div className="max-w-4xl mx-auto px-4 py-6">
                     <div className="text-center text-sm text-slate-500">
                         <p>&copy; {new Date().getFullYear()} ELAB Solutions International LLC. All rights reserved.</p>
-                        <p className="mt-1">Lagos, Nigeria | Houston, Texas, USA</p>
+                        <p className="mt-1">Lagos, Nigeria | Lexington, Kentucky, USA</p>
                         <p className="mt-2 space-x-3">
                             <Link to="/refund-policy" className="text-primary-600 hover:underline">
                                 Refund Policy
