@@ -1,3 +1,4 @@
+import AuthShell from '@/components/AuthShell'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { sendPasswordReset } from '@/lib/supabase'
@@ -36,7 +37,7 @@ export default function ForgotPassword() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50">
+        <AuthShell><div className="w-full flex items-start justify-center">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -45,11 +46,7 @@ export default function ForgotPassword() {
             >
                 {/* Logo and Header */}
                 <div className="text-center mb-8">
-                    <img
-                        src="/elab-logo.png"
-                        alt="ELAB Solutions International"
-                        className="h-16 mx-auto mb-4"
-                    />
+
                 </div>
 
                 <div className="glass-card rounded-2xl p-8">
@@ -153,6 +150,6 @@ export default function ForgotPassword() {
                     )}
                 </div>
             </motion.div>
-        </div>
+        </div></AuthShell>
     )
 }

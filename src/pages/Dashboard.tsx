@@ -1,39 +1,9 @@
+import Brand from '@/components/Brand'
 import { useEffect, useState, useMemo } from 'react'
 import { supabase, signOut } from '@/lib/supabase'
 import { fetchCaseStatus, CaseStatus } from '@/lib/caseStatusApi'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    LogOut,
-    FileText,
-    AlertCircle,
-    LayoutGrid,
-    List,
-    RefreshCw,
-    Bell,
-    Sparkles,
-    X,
-    CheckCircle,
-    Clock,
-    MessageCircle,
-    Settings,
-    Search,
-    TrendingUp,
-    Briefcase,
-    Award,
-    Calendar,
-    ChevronDown,
-    Home,
-    FolderOpen,
-    HelpCircle,
-    ChevronRight,
-    Zap,
-    Target,
-    Upload,
-    Phone,
-    Mail,
-    Activity,
-    PlayCircle
-} from 'lucide-react'
+import { LogOut, FileText, AlertCircle, LayoutGrid, List, RefreshCw, Bell, Sparkles, X, CheckCircle, Clock, MessageCircle, Settings, Search, TrendingUp, Briefcase, Award, Calendar, ChevronDown, Home, FolderOpen, HelpCircle, ChevronRight, Target, Upload, Phone, Mail, Activity, PlayCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ApplicationStatusChart from '@/components/ApplicationStatusChart'
 import ApplicationCard from '@/components/ApplicationCard'
@@ -340,10 +310,10 @@ function OnboardingProgress({ steps, onDismiss }: { steps: OnboardingStep[]; onD
 // ============================================================================
 function QuickActionsBar() {
     const actions = [
-        { icon: Upload, label: 'Upload', href: '/documents', color: 'text-blue-600', bg: 'bg-blue-100 hover:bg-blue-200' },
-        { icon: MessageCircle, label: 'Message', href: 'https://wa.me/2348165634195', external: true, color: 'text-green-600', bg: 'bg-green-100 hover:bg-green-200' },
-        { icon: Calendar, label: 'Schedule', href: 'https://calendar.app.google/ZD4U6SwmwGCvsfJT8', external: true, color: 'text-purple-600', bg: 'bg-purple-100 hover:bg-purple-200' },
-        { icon: HelpCircle, label: 'Help', href: '/faq', color: 'text-amber-600', bg: 'bg-amber-100 hover:bg-amber-200' },
+        { icon: Upload, label: 'Upload', href: '/documents', color: 'text-blue-600', bg: 'bg-white hover:bg-slate-50' },
+        { icon: MessageCircle, label: 'Message', href: 'https://wa.me/2348165634195', external: true, color: 'text-blue-600', bg: 'bg-white hover:bg-slate-50' },
+        { icon: Calendar, label: 'Schedule', href: 'https://calendar.app.google/ZD4U6SwmwGCvsfJT8', external: true, color: 'text-blue-600', bg: 'bg-white hover:bg-slate-50' },
+        { icon: HelpCircle, label: 'Help', href: '/faq', color: 'text-blue-600', bg: 'bg-white hover:bg-slate-50' },
     ]
 
     return (
@@ -351,14 +321,14 @@ function QuickActionsBar() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide"
+            className="flex items-center gap-2 mb-6 flex-wrap"
         >
             {actions.map((action, index) => {
                 const content = (
                     <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                        className={`${action.bg} rounded-xl px-4 py-3 flex items-center gap-2 transition-colors cursor-pointer`}
+                        className={`${action.bg} border border-slate-200 rounded-md px-3 py-2 flex items-center gap-2 transition-colors cursor-pointer`}
                     >
                         <action.icon className={`w-4 h-4 ${action.color}`} />
                         <span className="text-sm font-medium text-slate-700 whitespace-nowrap">{action.label}</span>
@@ -399,132 +369,7 @@ function QuickActionsBar() {
 // WELCOME SECTION
 // ============================================================================
 function WelcomeSection({ firstName, stats }: { firstName: string; stats: { total: number; active: number; completed: number } }) {
-    const getGreeting = () => {
-        const hour = new Date().getHours()
-        if (hour >= 5 && hour < 12) return 'Good morning'
-        if (hour >= 12 && hour < 17) return 'Good afternoon'
-        if (hour >= 17 && hour < 21) return 'Good evening'
-        return 'Good night'
-    }
-
-    const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-3xl mb-6"
-        >
-            {/* Animated gradient background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-primary-900 to-slate-900">
-                <motion.div
-                    animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
-                    transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute top-0 right-0 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl"
-                />
-                <motion.div
-                    animate={{ x: [0, -20, 0], y: [0, 30, 0] }}
-                    transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute bottom-0 left-0 w-80 h-80 bg-accent-500/20 rounded-full blur-3xl"
-                />
-            </div>
-
-            <div className="relative z-10 p-8 md:p-10">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
-                    {/* Left: Greeting */}
-                    <div className="flex-1">
-                        <motion.p
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-primary-300 text-sm font-medium mb-2"
-                        >
-                            {getGreeting()}
-                        </motion.p>
-                        <motion.h1
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="text-3xl md:text-4xl font-bold text-white mb-3"
-                        >
-                            Welcome back, {firstName}!
-                        </motion.h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 }}
-                            className="text-slate-400 text-lg max-w-lg"
-                        >
-                            {stats.active > 0
-                                ? `You have ${stats.active} active application${stats.active > 1 ? 's' : ''} in progress. We're here to help!`
-                                : stats.completed > 0
-                                    ? "All your applications are complete! Great job!"
-                                    : "Welcome to your personalized portal. Let's get started!"}
-                        </motion.p>
-
-                        {/* Quick stats pills */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                            className="flex items-center gap-3 mt-6"
-                        >
-                            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                                <Zap className="w-4 h-4 text-amber-400" />
-                                <span className="text-white text-sm font-medium">{stats.active} Active</span>
-                            </div>
-                            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                                <CheckCircle className="w-4 h-4 text-emerald-400" />
-                                <span className="text-white text-sm font-medium">{stats.completed} Completed</span>
-                            </div>
-                        </motion.div>
-                    </div>
-
-                    {/* Right: Progress Circle */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.3 }}
-                        className="flex-shrink-0 hidden md:block"
-                    >
-                        <div className="relative w-40 h-40">
-                            <svg className="w-full h-full transform -rotate-90">
-                                <circle cx="50%" cy="50%" r="45%" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
-                                <motion.circle
-                                    cx="50%" cy="50%" r="45%"
-                                    fill="none"
-                                    stroke="url(#progressGradient)"
-                                    strokeWidth="8"
-                                    strokeLinecap="round"
-                                    strokeDasharray={`${2 * Math.PI * 72}`}
-                                    initial={{ strokeDashoffset: 2 * Math.PI * 72 }}
-                                    animate={{ strokeDashoffset: 2 * Math.PI * 72 * (1 - progress / 100) }}
-                                    transition={{ duration: 1.5, ease: 'easeOut', delay: 0.5 }}
-                                />
-                                <defs>
-                                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#3b82f6" />
-                                        <stop offset="100%" stopColor="#06b6d4" />
-                                    </linearGradient>
-                                </defs>
-                            </svg>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <motion.span
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.8 }}
-                                    className="text-4xl font-bold text-white"
-                                >
-                                    {progress}%
-                                </motion.span>
-                                <span className="text-slate-400 text-sm">Complete</span>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            </div>
-        </motion.div>
-    )
+    return <section className="dashboard-welcome"><div><h1 className="workspace-title">Your applications</h1><p className="workspace-caption">{firstName} · ELAB client portal</p></div><div className="dashboard-totals"><span><strong>{stats.total}</strong> Total</span><span><strong>{stats.active}</strong> In progress</span><span><strong>{stats.completed}</strong> Completed</span></div></section>
 }
 
 // ============================================================================
@@ -626,6 +471,7 @@ export default function Dashboard() {
     const [pipelineStages, setPipelineStages] = useState<Record<string, PipelineStage[]>>({})
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null)
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
     const [refreshing, setRefreshing] = useState(false)
     const [showNotifications, setShowNotifications] = useState(false)
@@ -664,6 +510,8 @@ export default function Dashboard() {
             return matchesSearch && matchesStatus
         })
     }, [cases, searchQuery, statusFilter])
+
+    const selectedCase = filteredCases.find(c => c.id === selectedCaseId) || filteredCases.find(c => c.status === 'active') || filteredCases[0]
 
     // Onboarding steps — reflect what eLab actually holds for this client.
     // Documents received over WhatsApp / email / office count as done, so a
@@ -806,14 +654,14 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="min-h-screen pb-20 md:pb-12 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+        <div className="portal-dashboard min-h-screen pb-20 md:pb-12">
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-md border-b border-slate-100/50 sticky top-0 z-30">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
                     <div className="flex items-center justify-between">
                         {/* Logo */}
                         <Link to="/dashboard" className="flex items-center gap-3" data-tour="header-logo">
-                            <img src="/elab-logo.png" alt="ELAB Solutions" className="h-10 sm:h-12" />
+                            <Brand />
                         </Link>
 
                         {/* Search bar - hidden on mobile */}
@@ -995,26 +843,6 @@ export default function Dashboard() {
                     <QuickActionsBar />
                 </div>
 
-                {/* Onboarding Progress */}
-                <AnimatePresence>
-                    {showOnboarding && (
-                        <div data-tour="onboarding">
-                            <OnboardingProgress
-                                steps={onboardingSteps}
-                                onDismiss={() => setShowOnboarding(false)}
-                            />
-                        </div>
-                    )}
-                </AnimatePresence>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" data-tour="stats-cards">
-                    <StatCard title="Total Applications" value={cases.length} icon={Briefcase} color="blue" delay={0} />
-                    <StatCard title="In Progress" value={activeCases} icon={Activity} color="amber" delay={0.1} />
-                    <StatCard title="Completed" value={completedCases} icon={Award} color="green" delay={0.2} />
-                    <StatCard title="On Hold" value={onHoldCases} icon={Clock} color="purple" delay={0.3} />
-                </div>
-
                 {/* Status-first: Your Applications leads (see section below).
                     Removed hardcoded/placeholder widgets (Milestones, Upcoming Deadlines,
                     Document Checklist) that showed fake data. Cross-sell + testimonials
@@ -1024,8 +852,8 @@ export default function Dashboard() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-8" data-tour="applications">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                         <div>
-                            <h2 className="text-2xl font-bold text-slate-800">Your Applications</h2>
-                            <p className="text-slate-500 text-sm mt-1">Track the progress of all your applications</p>
+                            <h2 className="text-base font-semibold text-slate-800">Applications</h2>
+                            <p className="text-slate-500 text-sm mt-1">Select an application to see its current stage.</p>
                         </div>
 
                         <div className="flex items-center gap-3">
@@ -1052,17 +880,20 @@ export default function Dashboard() {
                                 <option value="active">In Progress</option>
                                 <option value="completed">Completed</option>
                                 <option value="on_hold">On Hold</option>
+                                <option value="cancelled">Cancelled</option>
                             </select>
 
                             {/* View toggle */}
                             <div className="flex items-center gap-1 bg-white rounded-xl p-1 border border-slate-200" data-tour="view-toggle">
                                 <button
+                                    aria-label="Split application view"
                                     onClick={() => setViewMode('list')}
                                     className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-primary-500 text-white' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
                                     <List className="w-4 h-4" />
                                 </button>
                                 <button
+                                    aria-label="Application grid view"
                                     onClick={() => setViewMode('grid')}
                                     className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-primary-500 text-white' : 'text-slate-500 hover:text-slate-700'}`}
                                 >
@@ -1087,6 +918,13 @@ export default function Dashboard() {
                             </p>
                         </motion.div>
                     ) : (
+                        viewMode === 'list' && selectedCase ? <div className={`case-workspace ${selectedCaseId ? 'has-selection' : ''}`}>
+                            <aside className="case-rail" aria-label="Choose an application">{filteredCases.map(c => <button key={c.id} aria-pressed={selectedCase.id === c.id} onClick={() => setSelectedCaseId(c.id)}><strong>{c.pipeline?.name || 'Application'}</strong><span>{c.case_reference}</span><span>{c.current_stage?.name || 'Stage not available'}</span><small>{c.status.replace(/_/g, ' ')} · Updated {new Date(c.updated_at).toLocaleDateString()}</small></button>)}</aside>
+                            <section className="selected-case" aria-label="Selected application"><button className="case-back" onClick={() => setSelectedCaseId(null)}>← Applications</button>
+                                <ApplicationCard key={selectedCase.id} caseItem={selectedCase} index={0} stages={pipelineStages[selectedCase.pipeline?.id || selectedCase.pipeline_id || '']} />
+                                <nav className="case-open-links" aria-label="Case actions"><Link to={`/case/${selectedCase.id}`}>Open case details and timeline →</Link><Link to="/documents">All documents</Link><Link to="/support">Contact support</Link></nav>
+                            </section>
+                        </div> :
                         <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : 'space-y-4'}>
                             {filteredCases.map((caseItem, index) => (
                                 <ApplicationCard
@@ -1100,6 +938,29 @@ export default function Dashboard() {
                     )}
                 </motion.div>
 
+                <details className="workspace-extra" open={isTourActive || undefined}><summary>Account checklist and application totals</summary>
+                {/* Onboarding Progress */}
+                <AnimatePresence>
+                    {showOnboarding && (
+                        <div data-tour="onboarding">
+                            <OnboardingProgress
+                                steps={onboardingSteps}
+                                onDismiss={() => setShowOnboarding(false)}
+                            />
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8" data-tour="stats-cards">
+                    <StatCard title="Total Applications" value={cases.length} icon={Briefcase} color="blue" delay={0} />
+                    <StatCard title="In Progress" value={activeCases} icon={Activity} color="amber" delay={0.1} />
+                    <StatCard title="Completed" value={completedCases} icon={Award} color="green" delay={0.2} />
+                    <StatCard title="On Hold" value={onHoldCases} icon={Clock} color="purple" delay={0.3} />
+                </div>
+
+                </details>
+                <details className="workspace-extra" open={isTourActive || undefined}><summary>Application overview and recent activity</summary>
                 {/* Status detail (real data) */}
                 {cases.length > 0 && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -1110,12 +971,15 @@ export default function Dashboard() {
                     </div>
                 )}
 
+                </details>
+                <details className="workspace-extra" open={isTourActive || undefined}><summary>Other ELAB services and client stories</summary>
                 {/* Recommendations & testimonials (marketing — bottom) */}
                 <div className="space-y-6 mb-8" data-tour="recommendations">
                     <SmartCrossSellRecommendations cases={cases} />
                     <TestimonialsCarousel />
                 </div>
 
+                </details>
                 {/* Support Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="support-section">
                     <SupportHelpSection />
@@ -1123,9 +987,9 @@ export default function Dashboard() {
                         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center mb-4 shadow-lg">
                             <Sparkles className="w-8 h-8 text-white" />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">Ready to Excel?</h3>
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">Other ELAB services</h3>
                         <p className="text-slate-500 text-sm mb-4 max-w-sm">
-                            Join thousands of healthcare professionals who have achieved their career goals with ELAB.
+                            Explore licensing, exam preparation and credential services.
                         </p>
                         <motion.a
                             href="https://www.elabsolution.org"
@@ -1142,7 +1006,7 @@ export default function Dashboard() {
 
                 {/* Footer */}
                 <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-center mt-12 pt-8 border-t border-slate-100">
-                    <p className="text-slate-400 text-sm">© 2025 ELAB Services. Empowering Healthcare Professionals Worldwide.</p>
+                    <p className="text-slate-400 text-sm">© {new Date().getFullYear()} ELAB Solutions International.</p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-6 mt-3 text-slate-400 text-xs">
                         <p>4, Addo Road, Suite 10, Stephen Taiwo Shopping Complex, Ajah, Lagos, Nigeria</p>
                         <span className="hidden sm:inline">|</span>

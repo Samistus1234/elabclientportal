@@ -1,0 +1,57 @@
+/* ELAB's existing workflows, with a restrained blue visual language. */
+.elab-brand{display:block;position:relative;overflow:hidden;width:190px;height:40px;background:#fff;flex-shrink:0}
+.elab-brand img{position:absolute;width:230px;height:230px;max-width:none;left:-16px;top:-87px;object-fit:contain}
+.portal-access{min-height:100dvh;background:#fff;color:#17253b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.access-header{height:88px;border-bottom:1px solid #e5e9ef;display:flex;align-items:center;justify-content:space-between;padding:0 5vw;gap:24px}
+.access-header>a:last-child{display:flex;align-items:center;gap:9px;font-size:13px;color:#5a687c}
+.access-layout{max-width:1200px;margin:auto;display:grid;grid-template-columns:1fr 1fr;min-height:calc(100dvh - 170px)}
+.access-introduction{padding:86px 60px 60px 30px;border-right:1px solid #e5e9ef}
+.access-introduction>p:first-child{font-size:11px;letter-spacing:.12em;color:#245cb4;font-weight:600}
+.access-introduction h1{font-size:42px;line-height:1.18;letter-spacing:-1.3px;font-weight:600;margin:24px 0}
+.access-introduction p{font-size:15px;line-height:1.8;color:#59687c;max-width:370px}
+.access-introduction>div{border-top:1px solid #e5e9ef;padding-top:25px;margin-top:64px;font-size:14px}.access-introduction>div p{font-size:13px;margin:10px 0}.access-introduction a{color:#205ebd}
+.access-layout>div{width:100%!important;padding:48px 40px!important;overflow:visible!important;align-items:flex-start!important}
+.portal-access [class*='backdrop-blur']{backdrop-filter:none;background:white;border:0;box-shadow:none;border-radius:0}
+.portal-access [class*='shadow']{box-shadow:none!important}
+.portal-access [class*='bg-gradient']{background-image:none!important;background-color:#245fb7}
+.portal-access [class*='bg-clip-text']{background:none!important;color:#245fb7}
+.portal-access form button[type='submit']{background:#245fb7!important;border-radius:5px;box-shadow:none}
+.portal-access input{border-radius:5px;background:white;border:1px solid #cfd7e2;box-shadow:none}
+.portal-access h2{font-size:25px;letter-spacing:-.5px;font-weight:600}
+.portal-access [class*='rounded-3xl']{padding:0!important;border:0;box-shadow:none}
+.portal-access [class*='rounded-2xl']{border-radius:5px}
+.portal-access [class*='blur-3xl']{display:none}
+.portal-access .w-12.h-12{display:none}
+.portal-access button:focus-visible,.portal-access a:focus-visible{outline:3px solid #8ab7f9;outline-offset:3px}
+.access-footer{border-top:1px solid #e5e9ef;padding:24px 5vw;font-size:12px;color:#627086;display:flex;justify-content:space-between;gap:20px}.access-footer nav{display:flex;gap:22px}
+.portal-dashboard{background:white!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.portal-dashboard>header{background:#fff!important;backdrop-filter:none;border-bottom:1px solid #e5e9ef}
+.portal-dashboard [class*='shadow']{box-shadow:none!important}.portal-dashboard .glass-card{background:#fff;border:1px solid #e2e7ee;backdrop-filter:none}
+.portal-dashboard [class*='blur-3xl']{display:none}
+.portal-dashboard [class*='rounded-3xl'],.portal-dashboard [class*='rounded-2xl']{border-radius:6px}
+.portal-dashboard .workspace-title{font-size:26px;font-weight:600;letter-spacing:-.6px;margin-bottom:6px}
+.portal-dashboard .workspace-caption{font-size:13px;color:#617087}
+.portal-dashboard .dashboard-welcome{padding:10px 0 24px;border-bottom:1px solid #e5e9ef;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+.dashboard-totals{font-size:13px;color:#596a80;display:flex;gap:20px}.dashboard-totals strong{color:#23344e;font-weight:600;margin-right:4px}
+.portal-dashboard details.workspace-extra{border-top:1px solid #e5e9ef;padding:20px 0;margin-top:24px}.workspace-extra>summary{cursor:pointer;font-size:14px;color:#345682;font-weight:500;margin-bottom:18px}
+.case-workspace{display:grid;grid-template-columns:300px minmax(0,1fr);border:1px solid #e2e7ee;border-radius:6px;overflow:hidden}.case-rail{background:#f7f9fb;border-right:1px solid #e2e7ee}.case-rail button{width:100%;text-align:left;padding:20px;border-bottom:1px solid #e2e7ee;border-left:3px solid transparent;display:block}.case-rail button[aria-pressed=true]{background:#edf3fb;border-left-color:#245fb7}.case-rail strong{display:block;font-size:14px;font-weight:600;color:#243550}.case-rail span{display:block;font-size:12px;color:#617087;margin-top:6px}.case-rail small{display:block;font-size:11px;color:#617087;margin-top:8px}.selected-case{padding:24px;min-width:0}.selected-case .glass-card{border:0}.case-open-links{display:flex;gap:24px;flex-wrap:wrap;border-top:1px solid #e5e9ef;padding-top:20px;font-size:13px;color:#245fb7}
+@media(max-width:800px){.access-layout{grid-template-columns:1fr;min-height:calc(100dvh - 170px)}.access-introduction{display:none}.access-layout>div{padding:40px 24px!important}.access-header{height:74px;padding:0 24px}.access-footer{flex-direction:column;padding:24px}.elab-brand{width:150px;height:34px}.elab-brand img{width:180px;height:180px;left:-12px;top:-68px}.case-workspace{grid-template-columns:1fr}.case-rail{border-right:0}.selected-case{padding:16px}.dashboard-welcome{align-items:flex-start!important;flex-direction:column}.dashboard-totals{gap:15px}}
+.application-record{padding:8px 0 24px;color:#21334e}.record-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}.record-heading h2{font-size:24px;font-weight:600;letter-spacing:-.5px;line-height:1.3}.record-status{background:#f0f4f9;color:#455976;border-radius:4px;padding:5px 9px;font-size:12px;white-space:nowrap}.record-status.status-cancelled{background:#f2f3f6;color:#677084}.record-status.status-on_hold{background:#fff5df;color:#7c591e}.record-status.status-completed{background:#edf6ef;color:#326d42}.record-reference{font-size:12px;color:#65768c;margin-top:12px}.record-stage{margin:28px 0 14px}.record-stage p{font-size:12px;color:#64758b}.record-stage h3{font-size:16px;font-weight:500;margin-top:6px}.record-progress{display:flex;align-items:center;gap:20px;font-size:13px}.record-progress progress{appearance:none;height:5px;width:100%;border:0;background:#e8edf5;border-radius:4px;overflow:hidden}.record-progress progress::-webkit-progress-bar{background:#e8edf5}.record-progress progress::-webkit-progress-value{background:#245fb7}.record-progress progress::-moz-progress-bar{background:#245fb7}.record-note{font-size:11px;color:#66778e;margin-top:8px;line-height:1.7}.record-stages{margin-top:18px;font-size:13px;color:#245fb7}.record-stages summary{cursor:pointer}.record-stages ol{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px 0;color:#65758b}.record-stages li{display:flex;gap:10px}.record-stages li>span{font-size:11px;background:#f0f3f8;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}.record-stages li[aria-current=step]{color:#245fb7;font-weight:600}.record-stages small{display:block;font-size:10px;font-weight:400;margin-top:3px}.record-dates{display:flex;gap:40px;margin:28px 0 24px;padding-top:20px;border-top:1px solid #e5e9ef;font-size:12px}.record-dates dt{color:#66778e;margin-bottom:5px}.record-details{font-size:13px;color:#245fb7}
+.portal-dashboard .application-record [class*='bg-gradient']{background:transparent}
+@media(max-width:680px){.record-heading{flex-direction:column;gap:10px}.record-heading h2{font-size:22px}.record-stages ol{grid-template-columns:1fr}.record-dates{gap:24px}}
+.case-back{display:none}
+@media(max-width:800px){.case-workspace:not(.has-selection) .selected-case{display:none}.case-workspace.has-selection .case-rail{display:none}.case-back{display:block;margin-bottom:24px;font-size:13px;color:#245fb7}}
+html.dark .portal-dashboard{background:#101827!important;color:#e3ebf8}html.dark .portal-dashboard>header{background:#101827!important;border-color:#30405a}html.dark .dashboard-welcome,html.dark .case-workspace,html.dark .case-rail,html.dark .case-rail button,html.dark .record-dates,html.dark .case-open-links,html.dark .workspace-extra{border-color:#30405a}html.dark .case-rail{background:#152034}html.dark .case-rail button[aria-pressed=true]{background:#203450}html.dark .case-rail strong,html.dark .application-record,html.dark .dashboard-totals strong{color:#e3ebf8}html.dark .case-rail span,html.dark .case-rail small,html.dark .record-reference,html.dark .record-stage p,html.dark .record-note,html.dark .record-dates dt,html.dark .workspace-caption,html.dark .dashboard-totals{color:#a8b7cc}html.dark .record-details,html.dark .case-open-links,html.dark .case-back,html.dark .record-stages,html.dark .workspace-extra>summary{color:#8ab7ff}html.dark .portal-dashboard .glass-card{background:#152034;border-color:#30405a}
+@media(prefers-reduced-motion:reduce){.portal-dashboard *,.portal-access *{animation:none!important;transition:none!important}}
+.portal-access a[class*='text-purple'],.portal-access a[class*='text-emerald'],.portal-access a[class*='text-green']{color:#245fb7}
+.portal-access [class*='bg-gradient']{background-color:transparent}
+.portal-access [class*='bg-gradient'][class*='text-white']{background-color:#245fb7}
+.portal-access .access-layout>div{background:#fff!important}
+.portal-access .absolute[class*='blur']{display:none}
+.portal-access [class*='bg-gradient'][class~='from-green-50'],.portal-access [class*='bg-gradient'][class~='from-emerald-50']{background:#f1f7f3}
+.portal-access .access-layout h1{font-size:25px;line-height:1.3;font-weight:600;letter-spacing:-.5px}
+.portal-access .access-introduction h1{font-size:42px;line-height:1.18;letter-spacing:-1.3px}
+
+.portal-access .w-10.h-10{display:none}
+
+.portal-dashboard header button[class*='bg-gradient']{background:#f1f5fb;color:#245fb7}.portal-dashboard header div[class*='bg-gradient']{background:#245fb7}

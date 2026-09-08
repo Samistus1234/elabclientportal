@@ -1,3 +1,4 @@
+import AuthShell from '@/components/AuthShell'
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import {
@@ -6,24 +7,7 @@ import {
     commandCenterHeaders,
 } from '@/lib/commandCenterApi'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-    Mail,
-    Lock,
-    Eye,
-    EyeOff,
-    ArrowRight,
-    ArrowLeft,
-    FileText,
-    CheckCircle,
-    AlertCircle,
-    Loader2,
-    User,
-    Shield,
-    Sparkles,
-    Globe,
-    Award,
-    Users
-} from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, FileText, CheckCircle, AlertCircle, Loader2, User, Shield } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 
 interface VerificationData {
@@ -43,56 +27,6 @@ interface VerificationData {
 }
 
 type Step = 'verify' | 'create'
-
-// Animated floating orb component
-function FloatingOrb({ className, delay = 0 }: { className: string; delay?: number }) {
-    return (
-        <motion.div
-            className={`absolute rounded-full blur-3xl opacity-30 ${className}`}
-            animate={{
-                y: [0, -30, 0],
-                x: [0, 20, 0],
-                scale: [1, 1.1, 1],
-            }}
-            transition={{
-                duration: 8,
-                repeat: Infinity,
-                delay,
-                ease: 'easeInOut',
-            }}
-        />
-    )
-}
-
-// Grid pattern background
-function GridPattern() {
-    return (
-        <div className="absolute inset-0 overflow-hidden opacity-[0.03]">
-            <div
-                className="absolute inset-0"
-                style={{
-                    backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                                      linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-                    backgroundSize: '50px 50px',
-                }}
-            />
-        </div>
-    )
-}
-
-// Feature badge component
-function FeatureBadge({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2"
-        >
-            <Icon className="w-4 h-4 text-cyan-300" />
-            <span className="text-white/90 text-sm">{text}</span>
-        </motion.div>
-    )
-}
 
 export default function Register() {
     const navigate = useNavigate()
@@ -262,95 +196,10 @@ export default function Register() {
     }
 
     return (
-        <div className="min-h-screen flex">
-            {/* Left Panel - Branding */}
-            <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-slate-900 via-blue-900 to-cyan-900 overflow-hidden">
-                {/* Animated background elements */}
-                <FloatingOrb className="w-96 h-96 bg-blue-500 -top-20 -left-20" delay={0} />
-                <FloatingOrb className="w-80 h-80 bg-cyan-500 top-1/2 right-0" delay={2} />
-                <FloatingOrb className="w-72 h-72 bg-purple-500 bottom-0 left-1/4" delay={4} />
-
-                <GridPattern />
-
-                {/* Content */}
-                <div className="relative z-10 flex flex-col justify-between w-full p-12">
-                    {/* Logo */}
-                    <div>
-                        <img
-                            src="/elab-logo.png"
-                            alt="ELAB Solutions International"
-                            className="h-14 brightness-0 invert"
-                        />
-                    </div>
-
-                    {/* Main content */}
-                    <div className="space-y-8">
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
-                                Join ELAB
-                                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
-                                    Client Portal
-                                </span>
-                            </h1>
-                            <p className="text-lg text-white/70 max-w-md">
-                                Create your account to access your applications, track progress, and get real-time updates on your healthcare career journey.
-                            </p>
-                        </motion.div>
-
-                        {/* Feature badges */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.4 }}
-                            className="flex flex-wrap gap-3"
-                        >
-                            <FeatureBadge icon={Shield} text="Secure Portal" />
-                            <FeatureBadge icon={Globe} text="24/7 Access" />
-                            <FeatureBadge icon={Sparkles} text="Real-time Updates" />
-                        </motion.div>
-                    </div>
-
-                    {/* Stats */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
-                        className="flex gap-8"
-                    >
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <Users className="w-5 h-5 text-cyan-400" />
-                                <span className="text-2xl font-bold text-white">10K+</span>
-                            </div>
-                            <p className="text-white/50 text-sm">Active Clients</p>
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <Award className="w-5 h-5 text-cyan-400" />
-                                <span className="text-2xl font-bold text-white">95%</span>
-                            </div>
-                            <p className="text-white/50 text-sm">Success Rate</p>
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <Globe className="w-5 h-5 text-cyan-400" />
-                                <span className="text-2xl font-bold text-white">50+</span>
-                            </div>
-                            <p className="text-white/50 text-sm">Countries</p>
-                        </div>
-                    </motion.div>
-                </div>
-            </div>
-
-            {/* Right Panel - Registration Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-slate-50 via-white to-blue-50 relative overflow-hidden">
+        <AuthShell><div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-slate-50 via-white to-blue-50 relative overflow-hidden">
                 {/* Subtle background orbs for right panel */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-50" />
-                <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-100 rounded-full blur-3xl opacity-40" />
+
+
 
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -359,13 +208,7 @@ export default function Register() {
                     className="w-full max-w-md relative z-10"
                 >
                     {/* Mobile Logo */}
-                    <div className="lg:hidden text-center mb-8">
-                        <img
-                            src="/elab-logo.png"
-                            alt="ELAB Solutions International"
-                            className="h-12 mx-auto mb-4"
-                        />
-                    </div>
+
 
                     {/* Header */}
                     <div className="text-center mb-6">
@@ -473,7 +316,7 @@ export default function Register() {
                                                         onChange={(e) => setEmail(e.target.value)}
                                                         onFocus={() => setFocusedField('email')}
                                                         onBlur={() => setFocusedField(null)}
-                                                        placeholder="elab@gmail.com"
+                                                        placeholder="you@example.com"
                                                         required
                                                         className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all outline-none text-slate-800 placeholder:text-slate-400"
                                                     />
@@ -595,6 +438,7 @@ export default function Register() {
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowPassword(!showPassword)}
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
                                                         className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                                     >
                                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -627,6 +471,7 @@ export default function Register() {
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                                                         className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                                     >
                                                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -692,7 +537,6 @@ export default function Register() {
                         </p>
                     </div>
                 </motion.div>
-            </div>
-        </div>
+            </div></AuthShell>
     )
 }

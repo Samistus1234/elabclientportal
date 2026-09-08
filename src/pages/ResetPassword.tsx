@@ -1,3 +1,4 @@
+import AuthShell from '@/components/AuthShell'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, updatePassword } from '@/lib/supabase'
@@ -193,7 +194,7 @@ export default function ResetPassword() {
 
     // Ready - show the new-password form
     return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50">
+        <AuthShell><div className="w-full flex items-start justify-center">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -201,7 +202,7 @@ export default function ResetPassword() {
                 className="w-full max-w-md"
             >
                 <div className="text-center mb-8">
-                    <img src="/elab-logo.png" alt="ELAB Solutions International" className="h-16 mx-auto mb-4" />
+
                     <h1 className="text-2xl font-bold text-slate-800 mb-2">Set a new password</h1>
                     <p className="text-slate-600">Choose a new password for your account.</p>
                 </div>
@@ -229,6 +230,7 @@ export default function ResetPassword() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                 >
                                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -256,6 +258,7 @@ export default function ResetPassword() {
                                 <button
                                     type="button"
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                 >
                                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -292,6 +295,6 @@ export default function ResetPassword() {
                     </form>
                 </div>
             </motion.div>
-        </div>
+        </div></AuthShell>
     )
 }

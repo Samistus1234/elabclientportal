@@ -1,24 +1,9 @@
+import AuthShell from '@/components/AuthShell'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { buildCommandCenterUrl, commandCenterHeaders } from '@/lib/commandCenterApi'
-import {
-    Mail,
-    Lock,
-    Building2,
-    ArrowRight,
-    ArrowLeft,
-    Eye,
-    EyeOff,
-    CheckCircle2,
-    User,
-    Shield,
-    FileCheck,
-    Globe,
-    Sparkles,
-    Users,
-    AlertCircle
-} from 'lucide-react'
+import { Mail, Lock, Building2, ArrowRight, ArrowLeft, Eye, EyeOff, CheckCircle2, User, Shield, AlertCircle } from 'lucide-react'
 
 interface VerificationResult {
     valid: boolean
@@ -38,56 +23,6 @@ interface VerificationResult {
     }
     org_id?: string
     portal_invited_at?: string
-}
-
-// Animated floating orb component
-function FloatingOrb({ className, delay = 0 }: { className: string; delay?: number }) {
-    return (
-        <motion.div
-            className={`absolute rounded-full blur-3xl opacity-30 ${className}`}
-            animate={{
-                y: [0, -30, 0],
-                x: [0, 20, 0],
-                scale: [1, 1.1, 1],
-            }}
-            transition={{
-                duration: 8,
-                repeat: Infinity,
-                delay,
-                ease: 'easeInOut',
-            }}
-        />
-    )
-}
-
-// Grid pattern background
-function GridPattern() {
-    return (
-        <div className="absolute inset-0 overflow-hidden opacity-[0.03]">
-            <div
-                className="absolute inset-0"
-                style={{
-                    backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
-                                      linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-                    backgroundSize: '50px 50px',
-                }}
-            />
-        </div>
-    )
-}
-
-// Feature badge component
-function FeatureBadge({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2"
-        >
-            <Icon className="w-4 h-4 text-emerald-300" />
-            <span className="text-white/90 text-sm">{text}</span>
-        </motion.div>
-    )
 }
 
 export default function ContactRegister() {
@@ -242,99 +177,10 @@ export default function ContactRegister() {
     }
 
     return (
-        <div className="min-h-screen flex">
-            {/* Left Panel - Branding */}
-            <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900 overflow-hidden">
-                {/* Animated background elements */}
-                <FloatingOrb className="w-96 h-96 bg-emerald-500 -top-20 -left-20" delay={0} />
-                <FloatingOrb className="w-80 h-80 bg-teal-500 top-1/2 right-0" delay={2} />
-                <FloatingOrb className="w-72 h-72 bg-cyan-500 bottom-0 left-1/4" delay={4} />
-
-                <GridPattern />
-
-                {/* Content */}
-                <div className="relative z-10 flex flex-col justify-between w-full p-12">
-                    {/* Logo */}
-                    <div>
-                        <img
-                            src="/elab-logo.png"
-                            alt="ELAB Solutions International"
-                            className="h-14 brightness-0 invert"
-                        />
-                    </div>
-
-                    {/* Main content */}
-                    <div className="space-y-8">
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-emerald-300 text-sm font-medium mb-4">
-                                <Building2 className="w-4 h-4" />
-                                Institutional Partners
-                            </div>
-                            <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-4">
-                                Join Our
-                                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
-                                    Verification Network
-                                </span>
-                            </h1>
-                            <p className="text-lg text-white/70 max-w-md">
-                                Register as an institutional partner to process verification requests, authenticate documents, and support healthcare professionals.
-                            </p>
-                        </motion.div>
-
-                        {/* Feature badges */}
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.4 }}
-                            className="flex flex-wrap gap-3"
-                        >
-                            <FeatureBadge icon={FileCheck} text="Document Verification" />
-                            <FeatureBadge icon={Shield} text="Secure Portal" />
-                            <FeatureBadge icon={Sparkles} text="Fast Processing" />
-                        </motion.div>
-                    </div>
-
-                    {/* Stats */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
-                        className="flex gap-8"
-                    >
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <Building2 className="w-5 h-5 text-emerald-400" />
-                                <span className="text-2xl font-bold text-white">200+</span>
-                            </div>
-                            <p className="text-white/50 text-sm">Partner Institutions</p>
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <Users className="w-5 h-5 text-emerald-400" />
-                                <span className="text-2xl font-bold text-white">50K+</span>
-                            </div>
-                            <p className="text-white/50 text-sm">Verifications</p>
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <Globe className="w-5 h-5 text-emerald-400" />
-                                <span className="text-2xl font-bold text-white">15+</span>
-                            </div>
-                            <p className="text-white/50 text-sm">Countries</p>
-                        </div>
-                    </motion.div>
-                </div>
-            </div>
-
-            {/* Right Panel - Registration Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-slate-50 via-white to-emerald-50 relative overflow-hidden">
+        <AuthShell><div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-slate-50 via-white to-emerald-50 relative overflow-hidden">
                 {/* Subtle background orbs for right panel */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100 rounded-full blur-3xl opacity-50" />
-                <div className="absolute bottom-0 left-0 w-80 h-80 bg-teal-100 rounded-full blur-3xl opacity-40" />
+
+
 
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -343,13 +189,7 @@ export default function ContactRegister() {
                     className="w-full max-w-md relative z-10"
                 >
                     {/* Mobile Logo */}
-                    <div className="lg:hidden text-center mb-8">
-                        <img
-                            src="/elab-logo.png"
-                            alt="ELAB Solutions International"
-                            className="h-12 mx-auto mb-4"
-                        />
-                    </div>
+
 
                     {/* Header */}
                     <div className="text-center mb-6">
@@ -569,6 +409,7 @@ export default function ContactRegister() {
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowPassword(!showPassword)}
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
                                                         className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                                     >
                                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -600,6 +441,7 @@ export default function ContactRegister() {
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                                                         className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                                     >
                                                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -664,7 +506,6 @@ export default function ContactRegister() {
                         </a>
                     </p>
                 </motion.div>
-            </div>
-        </div>
+            </div></AuthShell>
     )
 }

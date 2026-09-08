@@ -1,58 +1,9 @@
+import AuthShell from '@/components/AuthShell'
 import { useState } from 'react'
 import { signInWithPassword, getPortalUserInfo } from '@/lib/supabase'
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Shield, Clock, Headphones, CheckCircle, Sparkles } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Headphones, CheckCircle, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useNavigate, Link } from 'react-router-dom'
-
-// Floating orb component for background
-function FloatingOrb({ className, delay = 0 }: { className: string; delay?: number }) {
-    return (
-        <motion.div
-            className={`absolute rounded-full blur-3xl opacity-30 ${className}`}
-            animate={{
-                y: [0, -30, 0],
-                x: [0, 20, 0],
-                scale: [1, 1.1, 1],
-            }}
-            transition={{
-                duration: 8,
-                repeat: Infinity,
-                delay,
-                ease: 'easeInOut',
-            }}
-        />
-    )
-}
-
-// Animated grid pattern
-function GridPattern() {
-    return (
-        <div className="absolute inset-0 overflow-hidden opacity-[0.03]">
-            <div
-                className="absolute inset-0"
-                style={{
-                    backgroundImage: `linear-gradient(rgba(59, 130, 246, 0.5) 1px, transparent 1px),
-                                      linear-gradient(90deg, rgba(59, 130, 246, 0.5) 1px, transparent 1px)`,
-                    backgroundSize: '60px 60px',
-                }}
-            />
-        </div>
-    )
-}
-
-// Feature badge component
-function FeatureBadge({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20"
-        >
-            <Icon className="w-4 h-4 text-cyan-300" />
-            <span className="text-sm text-white/90">{text}</span>
-        </motion.div>
-    )
-}
 
 export default function Login() {
     const navigate = useNavigate()
@@ -92,105 +43,11 @@ export default function Login() {
     }
 
     return (
-        <div className="min-h-screen flex">
-            {/* Left Panel - Branding */}
-            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-                {/* Animated background elements */}
-                <FloatingOrb className="w-96 h-96 bg-blue-500 -top-20 -left-20" delay={0} />
-                <FloatingOrb className="w-80 h-80 bg-cyan-500 top-1/2 -right-20" delay={2} />
-                <FloatingOrb className="w-64 h-64 bg-purple-500 bottom-20 left-1/3" delay={4} />
-                <FloatingOrb className="w-72 h-72 bg-indigo-500 top-1/4 right-1/4" delay={1} />
-
-                <GridPattern />
-
-                {/* Content */}
-                <div className="relative z-10 flex flex-col justify-between p-12 w-full">
-                    {/* Logo */}
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                    >
-                        <img
-                            src="/elab-logo.png"
-                            alt="ELAB Solutions"
-                            className="h-12 brightness-0 invert"
-                        />
-                    </motion.div>
-
-                    {/* Main Content */}
-                    <div className="max-w-lg">
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.2 }}
-                        >
-                            <div className="flex items-center gap-2 mb-6">
-                                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
-                                <span className="text-cyan-400 text-sm font-medium tracking-wider uppercase">Welcome Back</span>
-                                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
-                            </div>
-
-                            <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
-                                Your Healthcare
-                                <span className="block bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent">
-                                    Career Journey
-                                </span>
-                                Starts Here
-                            </h1>
-
-                            <p className="text-lg text-slate-300 mb-8 leading-relaxed">
-                                Track your credential verification, exam bookings, and licensing applications
-                                all in one secure place. Join thousands of healthcare professionals
-                                achieving their international career goals.
-                            </p>
-                        </motion.div>
-
-                        {/* Feature badges */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.4 }}
-                            className="flex flex-wrap gap-3"
-                        >
-                            <FeatureBadge icon={Shield} text="Bank-grade Security" />
-                            <FeatureBadge icon={Clock} text="Real-time Updates" />
-                            <FeatureBadge icon={Headphones} text="24/7 Support" />
-                        </motion.div>
-                    </div>
-
-                    {/* Bottom stats */}
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.6, delay: 0.6 }}
-                        className="flex gap-12"
-                    >
-                        <div>
-                            <p className="text-3xl font-bold text-white">10K+</p>
-                            <p className="text-slate-400 text-sm">Active Clients</p>
-                        </div>
-                        <div>
-                            <p className="text-3xl font-bold text-white">95%</p>
-                            <p className="text-slate-400 text-sm">Success Rate</p>
-                        </div>
-                        <div>
-                            <p className="text-3xl font-bold text-white">50+</p>
-                            <p className="text-slate-400 text-sm">Countries</p>
-                        </div>
-                    </motion.div>
-                </div>
-
-                {/* Decorative elements */}
-                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-            </div>
-
-            {/* Right Panel - Login Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
+        <AuthShell><div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
                 {/* Background for right panel */}
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-cyan-50/50" />
-                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full blur-3xl opacity-50 -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-purple-100 to-pink-100 rounded-full blur-3xl opacity-40 translate-y-1/2 -translate-x-1/2" />
+
+
+
 
                 <motion.div
                     initial={{ opacity: 0, x: 20 }}
@@ -199,15 +56,7 @@ export default function Login() {
                     className="w-full max-w-md relative z-10"
                 >
                     {/* Mobile logo */}
-                    <div className="lg:hidden text-center mb-8">
-                        <img
-                            src="/elab-logo.png"
-                            alt="ELAB Solutions"
-                            className="h-14 mx-auto mb-4"
-                        />
-                        <h1 className="text-2xl font-bold text-slate-800">Client Portal</h1>
-                        <p className="text-slate-500 text-sm mt-1">Track your application status</p>
-                    </div>
+
 
                     {/* Form Card */}
                     <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl shadow-slate-200/50 border border-white/50">
@@ -232,7 +81,7 @@ export default function Login() {
                                     Email address
                                 </label>
                                 <div className="relative group">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
+
                                     <div className="relative">
                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                                         <input
@@ -240,7 +89,7 @@ export default function Login() {
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="elab@gmail.com"
+                                            placeholder="you@example.com"
                                             required
                                             className="w-full pl-12 pr-4 py-3.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 transition-all outline-none text-slate-800 placeholder:text-slate-400 bg-white"
                                         />
@@ -254,7 +103,7 @@ export default function Login() {
                                     Password
                                 </label>
                                 <div className="relative group">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity -m-0.5" />
+
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                                         <input
@@ -269,6 +118,7 @@ export default function Login() {
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
                                             className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                                         >
                                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -309,7 +159,7 @@ export default function Login() {
                                 whileTap={{ scale: 0.99 }}
                                 className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white font-semibold hover:from-blue-700 hover:via-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-blue-500/30 relative overflow-hidden group"
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+
                                 {isLoading ? (
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                 ) : (
@@ -334,7 +184,7 @@ export default function Login() {
                                     className="w-full py-3 px-4 rounded-xl border-2 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 font-medium flex items-center justify-center gap-2 transition-all"
                                 >
                                     <CheckCircle className="w-4 h-4 text-blue-500" />
-                                    Create a new account
+                                    Activate your account
                                 </Link>
                                 <p className="text-center text-slate-500 text-sm">
                                     Are you a recruiter?{' '}
@@ -386,7 +236,6 @@ export default function Login() {
                         </div>
                     </motion.div>
                 </motion.div>
-            </div>
-        </div>
+            </div></AuthShell>
     )
 }
