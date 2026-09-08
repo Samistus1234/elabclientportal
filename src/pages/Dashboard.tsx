@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { supabase, signOut } from '@/lib/supabase'
+import { fetchCaseStatus, CaseStatus } from '@/lib/caseStatusApi'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     LogOut,
@@ -97,6 +98,8 @@ interface PersonData {
     first_name: string
     last_name: string
     email: string
+    primary_email?: string
+    secondary_email?: string
 }
 
 interface PipelineStage {
@@ -630,6 +633,7 @@ export default function Dashboard() {
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
     const [showOnboarding, setShowOnboarding] = useState(true)
+    const [caseStatuses, setCaseStatuses] = useState<CaseStatus[]>([])
 
     // Walkthrough tour
     const { startTour, isActive: isTourActive } = useWalkthrough()
@@ -661,12 +665,21 @@ export default function Dashboard() {
         })
     }, [cases, searchQuery, statusFilter])
 
-    // Onboarding steps
+    // Onboarding steps — reflect what eLab actually holds for this client.
+    // Documents received over WhatsApp / email / office count as done, so a
+    // client never sees "Upload Documents" pending when we already have them.
+    const docsOnFile = caseStatuses.some(s => (s.documents_received_count || 0) > 0)
     const onboardingSteps: OnboardingStep[] = [
         { id: '1', title: 'Profile Setup', description: 'Complete your profile', completed: true },
-        { id: '2', title: 'Upload Documents', description: 'Add required files', completed: false, href: '/documents' },
+        {
+            id: '2',
+            title: docsOnFile ? 'Documents Received' : 'Upload Documents',
+            description: docsOnFile ? 'We have your documents on file' : 'Add required files',
+            completed: docsOnFile,
+            href: '/documents',
+        },
         { id: '3', title: 'Review Application', description: 'Check your status', completed: cases.length > 0 },
-        { id: '4', title: 'Contact Advisor', description: 'Get personalized help', completed: false, href: '/support' },
+        { id: '4', title: 'Contact Advisor', description: 'Get personalized help', completed: cases.length > 0, href: '/support' },
     ]
 
     useEffect(() => {
@@ -706,6 +719,17 @@ export default function Dashboard() {
             }
 
             setPerson(personInfo)
+
+            // Reflect documents eLab already holds for this client
+            // (WhatsApp / email / office uploads) — non-blocking, fails soft.
+            fetchCaseStatus([
+                user.email,
+                (personInfo as any)?.email,
+                (personInfo as any)?.primary_email,
+                (personInfo as any)?.secondary_email,
+            ])
+                .then(setCaseStatuses)
+                .catch(() => setCaseStatuses([]))
 
             const { data: casesData, error: casesError } = await supabase.rpc('get_my_synced_cases')
             if (casesError) throw casesError

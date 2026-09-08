@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { fetchCaseStatus, CaseStatus, sourceKindLabel } from '@/lib/caseStatusApi'
+import { buildChecklist } from '@/lib/documentChecklist'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowLeft,
@@ -115,6 +117,7 @@ export default function Documents() {
     const [selectedCategory, setSelectedCategory] = useState<string>('all')
     const [isDragging, setIsDragging] = useState(false)
     const [personId, setPersonId] = useState<string | null>(null)
+    const [caseStatuses, setCaseStatuses] = useState<CaseStatus[]>([])
 
     useEffect(() => {
         loadDocuments()
@@ -128,13 +131,25 @@ export default function Documents() {
             // Get person ID for linking
             const { data: personData } = await supabase
                 .from('persons')
-                .select('id')
+                .select('id, email, primary_email, secondary_email')
                 .or(`email.eq.${user.email},primary_email.eq.${user.email}`)
                 .single()
 
             if (personData) {
                 setPersonId(personData.id)
             }
+
+            // Documents eLab already holds for this client (WhatsApp / email /
+            // office uploads) so the checklist reflects reality, not just
+            // in-portal uploads.
+            fetchCaseStatus([
+                user.email,
+                personData?.email,
+                personData?.primary_email,
+                personData?.secondary_email,
+            ])
+                .then(setCaseStatuses)
+                .catch(() => setCaseStatuses([]))
 
             // Load documents for this user
             const { data: docs, error: docsError } = await supabase
@@ -323,6 +338,22 @@ export default function Documents() {
         ? documents
         : documents.filter(d => d.name.toLowerCase().includes(selectedCategory.toLowerCase()))
 
+    // Documents eLab has on file for this client, from the Command Centre.
+    const primaryStatus =
+        caseStatuses.find(s => (s.documents_received_count || 0) > 0) || caseStatuses[0] || null
+    const receivedDocs = primaryStatus?.documents || []
+    const checklist = buildChecklist({
+        pipelineSlug: primaryStatus?.pipeline_slug,
+        profession: primaryStatus?.profession,
+        includeExperience: primaryStatus?.include_experience,
+        receivedDocs,
+        portalDocs: documents,
+    })
+    const formatDate = (iso: string | null) =>
+        iso
+            ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+            : ''
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
@@ -396,6 +427,25 @@ export default function Documents() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                {/* Received-documents banner */}
+                {receivedDocs.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3"
+                    >
+                        <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                            <p className="text-emerald-800 font-medium">We have your documents on file</p>
+                            <p className="text-sm text-emerald-700 mt-0.5">
+                                Our team already received {receivedDocs.length} document{receivedDocs.length === 1 ? '' : 's'} for your
+                                application. You do not need to upload them again — use the box below only if we ask you for
+                                something extra.
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Upload Area */}
                 <motion.div
@@ -499,32 +549,65 @@ export default function Documents() {
                     transition={{ delay: 0.1 }}
                     className="bg-white rounded-2xl shadow-sm p-6 mb-8"
                 >
-                    <h3 className="font-semibold text-slate-800 mb-4">Required Documents</h3>
+                    <h3 className="font-semibold text-slate-800 mb-1">Required Documents</h3>
+                    <p className="text-xs text-slate-400 mb-4">
+                        A tick means eLab already has it — whether you uploaded it here or sent it to us on WhatsApp or email.
+                    </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {documentCategories.filter(c => c.required).map(category => {
-                            const uploaded = documents.some(d =>
-                                d.name.toLowerCase().includes(category.id.replace('_', ' '))
-                            )
-                            return (
-                                <div
-                                    key={category.id}
-                                    className={`flex items-center gap-3 p-3 rounded-xl ${
-                                        uploaded ? 'bg-green-50' : 'bg-slate-50'
-                                    }`}
-                                >
-                                    {uploaded ? (
-                                        <CheckCircle className="w-5 h-5 text-green-600" />
-                                    ) : (
-                                        <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
-                                    )}
-                                    <span className={`text-sm ${uploaded ? 'text-green-700' : 'text-slate-600'}`}>
-                                        {category.name}
-                                    </span>
-                                </div>
-                            )
-                        })}
+                        {checklist.map(item => (
+                            <div
+                                key={item.id}
+                                className={`flex items-center gap-3 p-3 rounded-xl ${
+                                    item.received ? 'bg-green-50' : 'bg-slate-50'
+                                }`}
+                            >
+                                {item.received ? (
+                                    <CheckCircle className="w-5 h-5 text-green-600" />
+                                ) : (
+                                    <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
+                                )}
+                                <span className={`text-sm ${item.received ? 'text-green-700' : 'text-slate-600'}`}>
+                                    {item.name}
+                                </span>
+                            </div>
+                        ))}
                     </div>
                 </motion.div>
+
+                {/* Documents eLab has received */}
+                {receivedDocs.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 }}
+                        className="bg-white rounded-2xl shadow-sm overflow-hidden mb-8"
+                    >
+                        <div className="p-6 border-b border-slate-100">
+                            <h3 className="font-semibold text-slate-800">
+                                Documents eLab has received ({receivedDocs.length})
+                            </h3>
+                            <p className="text-sm text-slate-500 mt-1">
+                                These are already with our team{primaryStatus?.case_reference ? ` for case ${primaryStatus.case_reference}` : ''} — no action needed from you.
+                            </p>
+                        </div>
+                        <ul className="divide-y divide-slate-100">
+                            {receivedDocs.map(doc => (
+                                <li key={doc.id} className="p-4 sm:p-6 flex items-start gap-3">
+                                    <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-medium text-slate-700 truncate">
+                                            {doc.label || doc.name}
+                                        </p>
+                                        <p className="text-xs text-slate-400 mt-0.5">
+                                            {sourceKindLabel(doc.source_kind)}
+                                            {doc.uploaded_at ? ` • ${formatDate(doc.uploaded_at)}` : ''}
+                                        </p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    </motion.div>
+                )}
 
                 {/* Documents List */}
                 <motion.div
