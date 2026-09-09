@@ -860,7 +860,7 @@ export default function PayInvoice() {
                                                         type="email"
                                                         value={proofForm.payerEmail}
                                                         onChange={(e) => setProofForm({ ...proofForm, payerEmail: e.target.value })}
-                                                        placeholder="your@email.com"
+                                                        placeholder="jacinta@gmail.com"
                                                         className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220] placeholder:text-[#c4c0b8]"
                                                     />
                                                 </div>
@@ -1218,7 +1218,7 @@ export default function PayInvoice() {
                                                 type="email"
                                                 value={proofForm.payerEmail}
                                                 onChange={(e) => setProofForm({ ...proofForm, payerEmail: e.target.value })}
-                                                placeholder="your@email.com"
+                                                placeholder="jacinta@gmail.com"
                                                 className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220] placeholder:text-[#c4c0b8]"
                                             />
                                         </div>

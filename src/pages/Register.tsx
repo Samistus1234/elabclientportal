@@ -316,7 +316,7 @@ export default function Register() {
                                                         onChange={(e) => setEmail(e.target.value)}
                                                         onFocus={() => setFocusedField('email')}
                                                         onBlur={() => setFocusedField(null)}
-                                                        placeholder="you@example.com"
+                                                        placeholder="jacinta@gmail.com"
                                                         required
                                                         className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all outline-none text-slate-800 placeholder:text-slate-400"
                                                     />
