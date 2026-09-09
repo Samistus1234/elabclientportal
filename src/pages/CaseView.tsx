@@ -12,7 +12,6 @@ import {
     Sparkles,
     RefreshCw,
     Calendar,
-    TrendingUp,
     Target,
     Zap,
     ChevronRight,
@@ -160,31 +159,8 @@ interface StatCardProps {
     subtext?: string
 }
 
-function StatCard({ label, value, icon: Icon, color, subtext }: StatCardProps) {
-    const colorConfig = {
-        blue: { bg: 'bg-blue-50', iconBg: 'bg-blue-500', text: 'text-blue-600' },
-        green: { bg: 'bg-emerald-50', iconBg: 'bg-emerald-500', text: 'text-emerald-600' },
-        amber: { bg: 'bg-amber-50', iconBg: 'bg-amber-500', text: 'text-amber-600' },
-        purple: { bg: 'bg-purple-50', iconBg: 'bg-purple-500', text: 'text-purple-600' },
-        red: { bg: 'bg-red-50', iconBg: 'bg-red-500', text: 'text-red-600' },
-    }
-    const config = colorConfig[color]
-
-    return (
-        <motion.div
-            whileHover={{ y: -2 }}
-            className={`${config.bg} rounded-2xl p-4 border border-white/50`}
-        >
-            <div className="flex items-center gap-3 mb-2">
-                <div className={`${config.iconBg} w-8 h-8 rounded-lg flex items-center justify-center`}>
-                    <Icon className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-slate-500 text-sm">{label}</span>
-            </div>
-            <p className={`text-2xl font-bold ${config.text}`}>{value}</p>
-            {subtext && <p className="text-slate-400 text-xs mt-1">{subtext}</p>}
-        </motion.div>
-    )
+function StatCard({ label, value, subtext }: StatCardProps) {
+    return <div className="case-fact"><dt>{label}</dt><dd>{value}<small>{subtext}</small></dd></div>
 }
 
 // ============================================================================
@@ -192,7 +168,7 @@ function StatCard({ label, value, icon: Icon, color, subtext }: StatCardProps) {
 // ============================================================================
 function CaseViewSkeleton() {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+        <div className="portal-inner inner-case min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
             {/* Header skeleton */}
             <header className="bg-white/80 backdrop-blur-md border-b border-slate-100">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
@@ -589,18 +565,11 @@ export default function CaseView() {
         return 1
     }
 
-    const getProgress = () => {
-        if (pipelineStages.length === 0) return 0
-        const currentIndex = pipelineStages.findIndex(s => s.id === caseData?.current_stage?.id)
-        if (currentIndex === -1) return 10
-        return Math.round(((currentIndex + 1) / pipelineStages.length) * 100)
-    }
-
     if (loading) return <CaseViewSkeleton />
 
     if (error || !caseData) {
         return (
-            <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+            <div className="portal-inner inner-case min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -626,16 +595,15 @@ export default function CaseView() {
     const statusConfig = getStatusConfig(caseData.status)
     const daysInStage = getDaysInStage()
     const totalDays = getTotalDays()
-    const progress = getProgress()
 
     return (
-        <div className="min-h-screen pb-24 md:pb-12 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+        <div className="portal-inner inner-case min-h-screen pb-24 md:pb-12 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-20">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
                     {/* Breadcrumbs */}
                     <nav className="flex items-center gap-2 text-sm mb-4" data-tour="breadcrumbs">
-                        <Link to="/dashboard" className="text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1">
+                        <Link to="/dashboard" aria-label="Dashboard" className="text-slate-500 hover:text-primary-600 transition-colors flex items-center gap-1">
                             <Home className="w-4 h-4" />
                             <span className="hidden sm:inline">Dashboard</span>
                         </Link>
@@ -652,7 +620,7 @@ export default function CaseView() {
                                 <Sparkles className="w-7 h-7 text-white" />
                             </div>
                             <div className="min-w-0">
-                                <h1 className="text-xl sm:text-2xl font-bold text-slate-800 truncate">
+                                <h1 className="case-page-title text-slate-800">
                                     {caseData.pipeline?.name || 'Application'}
                                 </h1>
                                 <div className="flex items-center gap-3 mt-1">
@@ -676,6 +644,7 @@ export default function CaseView() {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleRefresh}
+                                aria-label="Refresh application"
                                 disabled={refreshing}
                                 className="p-2.5 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors"
                             >
@@ -693,17 +662,16 @@ export default function CaseView() {
             {/* Main Content */}
             <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
                 {/* Quick Stats */}
-                <motion.div
+                <motion.dl
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+                    className="case-facts"
                     data-tour="quick-stats"
                 >
-                    <StatCard label="Progress" value={`${progress}%`} icon={TrendingUp} color="blue" subtext={`${pipelineStages.length} total stages`} />
-                    <StatCard label="Current Stage" value={daysInStage} icon={Zap} color="amber" subtext={daysInStage === 1 ? 'day' : 'days'} />
+                    <StatCard label="Time in current stage" value={daysInStage} icon={Zap} color="amber" subtext={daysInStage === 1 ? 'day' : 'days'} />
                     <StatCard label="Total Duration" value={totalDays} icon={Calendar} color="purple" subtext={totalDays === 1 ? 'day' : 'days'} />
                     <StatCard label="Stage Transitions" value={stageHistory.length} icon={Activity} color="green" subtext="updates recorded" />
-                </motion.div>
+                </motion.dl>
 
                 {/* Stage Progress Visualization */}
                 {pipelineStages.length > 0 && (
@@ -711,7 +679,7 @@ export default function CaseView() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
-                        className="glass-card rounded-2xl p-6 mb-6"
+                        className="case-progress-section"
                         data-tour="stage-progress"
                     >
                         <div className="flex items-center gap-3 mb-6">
@@ -736,13 +704,14 @@ export default function CaseView() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 }}
-                    className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide"
+                    className="case-section-tabs"
                     data-tour="tabs-nav"
                 >
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
+                            aria-pressed={activeTab === tab.id}
                             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all ${
                                 activeTab === tab.id
                                     ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'

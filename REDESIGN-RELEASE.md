@@ -19,3 +19,11 @@ Based on production commit 144b90dcef93570e94eae5337624ac6b63930ca1.
 - No test emails, new accounts, passwords, document uploads or database mutations submitted.
 
 Production deployment and post-deploy checks are pending until release execution finishes.
+
+## Inner-page consistency pass — 2026-09-09
+
+Local source now includes the case page, shared stage visualization, documents, support, FAQ and settings refinements. Replaced rainbow summary tiles with compact facts, kept one primary stage-position indicator, and made the generated case summary a keyboard-accessible disclosure. Stage list, timeline, document links and case support remain accessible. Official branding is used on documents, FAQ and support. FAQ filters retain their text on mobile; settings switches now have accessible names and states.
+
+Validation: production build and git diff whitespace checks pass. Fourteen existing named action handlers across case, documents, support and settings compare unchanged against the previous commit. Browser checks covered signed-in case tabs and stage disclosure, documents, FAQ disclosure, support form/tracking views, and settings light/dark appearance. No support tickets, uploads or account mutations were submitted. The original light preference was restored.
+
+These inner-page changes are local only. The earlier staged deployment does not contain this pass and must be rebuilt before release. The custom production domain has not been switched by this pass.

@@ -1,3 +1,4 @@
+import Brand from '@/components/Brand'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
@@ -295,7 +296,7 @@ export default function FAQ() {
         : faqCategories
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="portal-inner inner-faq min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-md border-b border-slate-100/50 sticky top-0 z-20">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
@@ -307,11 +308,7 @@ export default function FAQ() {
                             <ArrowLeft className="w-5 h-5" />
                             <span className="font-medium">Back to Dashboard</span>
                         </Link>
-                        <img
-                            src="/elab-logo.png"
-                            alt="ELAB Solutions International"
-                            className="h-10"
-                        />
+                        <Brand />
                     </div>
                 </div>
             </header>
@@ -355,6 +352,7 @@ export default function FAQ() {
                 >
                     <div className="flex gap-2 min-w-max">
                         <button
+                            aria-pressed={activeCategory === null}
                             onClick={() => setActiveCategory(null)}
                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                                 activeCategory === null
@@ -367,6 +365,7 @@ export default function FAQ() {
                         {faqCategories.map(category => (
                             <button
                                 key={category.id}
+                                aria-pressed={activeCategory === category.id}
                                 onClick={() => setActiveCategory(category.id)}
                                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
                                     activeCategory === category.id
@@ -375,7 +374,7 @@ export default function FAQ() {
                                 }`}
                             >
                                 <category.icon className="w-4 h-4" />
-                                <span className="hidden sm:inline">{category.title}</span>
+                                <span>{category.title}</span>
                             </button>
                         ))}
                     </div>
@@ -395,7 +394,7 @@ export default function FAQ() {
                             className="bg-white rounded-2xl shadow-sm overflow-hidden scroll-mt-24"
                         >
                             {/* Category Header */}
-                            <div className={`${category.bgColor} px-6 py-4 flex items-center gap-3`}>
+                            <div className="faq-category-heading px-6 py-4 flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-xl bg-white/80 flex items-center justify-center">
                                     <category.icon className={`w-5 h-5 ${category.color}`} />
                                 </div>

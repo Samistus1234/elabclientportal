@@ -1,3 +1,4 @@
+import Brand from '@/components/Brand'
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
@@ -356,7 +357,7 @@ export default function Documents() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+            <div className="portal-inner inner-documents min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="w-12 h-12 text-primary-500 animate-spin" />
                     <p className="text-slate-600">Loading your documents...</p>
@@ -366,7 +367,7 @@ export default function Documents() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="portal-inner inner-documents min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-md border-b border-slate-100/50 sticky top-0 z-20">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
@@ -378,11 +379,7 @@ export default function Documents() {
                             <ArrowLeft className="w-5 h-5" />
                             <span className="font-medium">Back to Dashboard</span>
                         </Link>
-                        <img
-                            src="/elab-logo.png"
-                            alt="ELAB Solutions International"
-                            className="h-10"
-                        />
+                        <Brand />
                     </div>
                 </div>
             </header>

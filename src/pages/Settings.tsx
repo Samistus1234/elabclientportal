@@ -54,7 +54,7 @@ export default function Settings() {
     }
 
     return (
-        <div className={`min-h-screen transition-colors duration-300 ${isDark
+        <div className={`portal-inner inner-settings ${isDark ? 'inner-dark' : ''} min-h-screen transition-colors duration-300 ${isDark
             ? 'bg-slate-900'
             : 'bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50'
             }`}>
@@ -65,6 +65,7 @@ export default function Settings() {
                         <div className="flex items-center gap-3">
                             <Link
                                 to="/dashboard"
+                                aria-label="Back to dashboard"
                                 className={`p-2 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'} transition-colors`}
                             >
                                 <ArrowLeft className={`w-5 h-5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`} />
@@ -119,6 +120,7 @@ export default function Settings() {
                                 )}
                             </div>
                             <button
+                                aria-label="Choose profile image"
                                 onClick={() => fileInputRef.current?.click()}
                                 className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary-500 hover:bg-primary-600 rounded-full flex items-center justify-center text-white shadow-lg transition-colors"
                             >
@@ -171,6 +173,7 @@ export default function Settings() {
                         ].map(({ value, icon: Icon, label }) => (
                             <button
                                 key={value}
+                                aria-pressed={preferences.theme === value}
                                 onClick={() => {
                                     setTheme(value as 'light' | 'dark' | 'system')
                                     showSavedFeedback()
@@ -231,6 +234,7 @@ export default function Settings() {
                                 </div>
                             </div>
                             <button
+                                role="switch" aria-label="Application updates" aria-checked={preferences.receiveUpdates}
                                 onClick={() => handlePreferenceChange('receiveUpdates', !preferences.receiveUpdates)}
                                 className={`relative w-14 h-8 rounded-full transition-colors ${preferences.receiveUpdates
                                     ? 'bg-green-500'
@@ -255,6 +259,7 @@ export default function Settings() {
                                 </div>
                             </div>
                             <button
+                                role="switch" aria-label="Email notifications" aria-checked={preferences.emailNotifications}
                                 onClick={() => handlePreferenceChange('emailNotifications', !preferences.emailNotifications)}
                                 className={`relative w-14 h-8 rounded-full transition-colors ${preferences.emailNotifications
                                     ? 'bg-blue-500'
@@ -279,6 +284,7 @@ export default function Settings() {
                                 </div>
                             </div>
                             <button
+                                role="switch" aria-label="SMS or WhatsApp notifications" aria-checked={preferences.smsNotifications}
                                 onClick={() => handlePreferenceChange('smsNotifications', !preferences.smsNotifications)}
                                 className={`relative w-14 h-8 rounded-full transition-colors ${preferences.smsNotifications
                                     ? 'bg-purple-500'

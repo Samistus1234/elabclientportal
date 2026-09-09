@@ -70,7 +70,7 @@ export default function AISummaryCard({ caseId, caseData }: AISummaryCardProps) 
     const [summary, setSummary] = useState<AISummary | null>(null)
     const [loading, setLoading] = useState(true)
     const [, setError] = useState<string | null>(null)
-    const [expanded, setExpanded] = useState(true)
+    const [expanded, setExpanded] = useState(false)
 
     useEffect(() => {
         generateSummary()
@@ -166,22 +166,19 @@ export default function AISummaryCard({ caseId, caseData }: AISummaryCardProps) 
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card rounded-2xl overflow-hidden"
+            className="case-summary glass-card rounded-2xl overflow-hidden"
         >
             {/* Header */}
             <div
                 className="p-6 cursor-pointer hover:bg-slate-50/50 transition-colors"
-                onClick={() => setExpanded(!expanded)}
+
             >
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-400 to-accent-600 flex items-center justify-center shadow-lg shadow-accent-200">
-                            <Sparkles className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-slate-800">Case Summary</h3>
-                            <p className="text-slate-500 text-xs">Your application overview</p>
-                        </div>
+                        <button type="button" className="text-left" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
+                            <span className="font-semibold text-slate-800">Case summary</span>
+                            <span className="block text-slate-500 text-xs mt-1">Summary and suggested next steps</span>
+                        </button>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
@@ -191,14 +188,17 @@ export default function AISummaryCard({ caseId, caseData }: AISummaryCardProps) 
                             }}
                             className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
                             title="Refresh summary"
+                            aria-label="Refresh summary"
                         >
                             <RefreshCw className="w-4 h-4" />
                         </button>
+                        <button type="button" aria-label={expanded ? "Collapse case summary" : "Expand case summary"} aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>
                         {expanded ? (
                             <ChevronUp className="w-5 h-5 text-slate-400" />
                         ) : (
                             <ChevronDown className="w-5 h-5 text-slate-400" />
                         )}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -214,7 +214,7 @@ export default function AISummaryCard({ caseId, caseData }: AISummaryCardProps) 
                     {/* Progress Bar */}
                     <div className="mb-6">
                         <div className="flex items-center justify-between text-sm mb-2">
-                            <span className="text-slate-600">Estimated Progress</span>
+                            <span className="text-slate-600">Generated progress estimate</span>
                             <span className="font-semibold text-primary-600">{summary.estimatedProgress}%</span>
                         </div>
                         <div className="h-3 bg-slate-100 rounded-full overflow-hidden">

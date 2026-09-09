@@ -3,6 +3,8 @@ import { Send, CheckCircle, Search, HelpCircle, ArrowLeft, Loader2, Paperclip, X
 import { motion } from 'framer-motion'
 import { Link, useSearchParams } from 'react-router-dom'
 
+import Brand from '@/components/Brand'
+
 type PortalView = "form" | "success" | "track"
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
@@ -271,17 +273,17 @@ export default function Support() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50">
+        <div className="portal-inner inner-support min-h-screen bg-gradient-to-br from-blue-50 via-sky-50 to-cyan-50">
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-sm border-b shadow-sm sticky top-0 z-10">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <Link to="/login" className="text-slate-500 hover:text-slate-700">
+                            <Link to="/login" aria-label="Back to sign in" className="text-slate-500 hover:text-slate-700">
                                 <ArrowLeft className="w-5 h-5" />
                             </Link>
                             <div>
-                                <h1 className="text-xl font-bold text-slate-800">ELAB Solutions</h1>
+                                <Brand />
                                 <p className="text-xs text-slate-500">Client Support Portal</p>
                             </div>
                         </div>
