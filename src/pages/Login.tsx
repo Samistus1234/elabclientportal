@@ -89,7 +89,7 @@ export default function Login() {
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="you@example.com"
+                                            placeholder="jacinta@gmail.com"
                                             required
                                             className="w-full pl-12 pr-4 py-3.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 transition-all outline-none text-slate-800 placeholder:text-slate-400 bg-white"
                                         />
