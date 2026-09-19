@@ -37,8 +37,17 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 // Paystack integration
 const PAYSTACK_PUBLIC_KEY = 'pk_live_611141c01b9589d73ff5eff313fc899d7377c534'
 
-// Paystack USD payment link (for international payments)
-const PAYSTACK_USD_PAYMENT_LINK = 'https://paystack.shop/pay/elab-usd-payment'
+// Retired: the USD Paystack payment-link path sent `total * 100` for a USD amount,
+// which the gateway reads as whole dollars (the 100x quote clients hit). USD card
+// charging is disabled; clients on USD invoices pay by Bank Transfer or by card in
+// the invoice's NGN line.
+
+// Card charging is restricted to this currency. Paystack takes `amount` in the
+// SUBUNIT of the charged currency, which is verified for NGN (kobo); for USD the
+// gateway renders/charges 100x the card total (a USD 31.47 card total quoted
+// "USD 3,147" and every card attempt was declined). Any other currency must go
+// through Bank Transfer, which carries no processing fee.
+const CARD_SETTLEMENT_CURRENCY = 'NGN'
 
 // Paystack fee calculation
 // NGN: 1.5% + ₦100 (capped at ₦2,000)
@@ -158,6 +167,15 @@ export default function PayInvoice() {
     const [paymentSuccess, setPaymentSuccess] = useState(false)
     const [paymentReference, setPaymentReference] = useState<string | null>(null)
     const [cardCurrency, setCardCurrency] = useState<'primary' | 'secondary'>('primary')
+    const [cardNotice, setCardNotice] = useState<string | null>(null)
+
+    // Preselect the currency we can actually charge: the NGN card total when the
+    // invoice offers one, so a USD invoice defaults to the card path that works.
+    useEffect(() => {
+        if (!invoice) return
+        if ((invoice.currency || 'NGN') === CARD_SETTLEMENT_CURRENCY) setCardCurrency('primary')
+        else if (invoice.secondary_currency === CARD_SETTLEMENT_CURRENCY && invoice.secondary_total) setCardCurrency('secondary')
+    }, [invoice])
 
     useEffect(() => {
         loadInvoice()
@@ -273,6 +291,13 @@ export default function PayInvoice() {
         const payCurrency = useSecondary ? invoice.secondary_currency! : (invoice.currency || 'NGN')
         const payAmount = useSecondary ? getSecondaryAmountDue() : invoice.amount_due
 
+        // Hard guard: never hand a non-NGN amount to Paystack. Sending a USD total
+        // x100 is what produced the 100x card quote clients reported.
+        if (payCurrency !== CARD_SETTLEMENT_CURRENCY) {
+            setCardNotice(`Card payment is available in ${CARD_SETTLEMENT_CURRENCY} only. For ${payCurrency} invoices please use Bank Transfer — no processing fee.`)
+            return
+        }
+
         setPaymentLoading(true)
 
         try {
@@ -346,29 +371,6 @@ export default function PayInvoice() {
             alert('Failed to load payment gateway. Please try again or use bank transfer.')
             setPaymentLoading(false)
         }
-    }
-
-    // Handle USD payment via Paystack payment link
-    const handlePayWithUSDLink = () => {
-        if (!invoice) return
-
-        const payerEmail = proofForm.payerEmail || invoice.customer_email || ''
-        const feeInfo = calculatePaystackFee(invoice.amount_due, 'USD')
-
-        // Build payment link URL with query parameters
-        // Paystack payment links accept: amount (in cents), email, and custom_fields
-        const params = new URLSearchParams({
-            amount: String(Math.round(feeInfo.total * 100)), // Amount in cents
-            email: payerEmail,
-            'metadata[invoice_id]': invoice.id,
-            'metadata[invoice_number]': invoice.invoice_number,
-            'metadata[customer_name]': invoice.customer_name || '',
-            'metadata[invoice_amount]': String(invoice.amount_due),
-            'metadata[processing_fee]': String(feeInfo.fee)
-        })
-
-        // Open Paystack USD payment link in new tab
-        window.open(`${PAYSTACK_USD_PAYMENT_LINK}?${params.toString()}`, '_blank')
     }
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -763,6 +765,7 @@ export default function PayInvoice() {
                                         const selectedAmount = cardCurrency === 'secondary' && hasSecondary ? secondaryAmountDue : invoice.amount_due
                                         const feeInfo = calculatePaystackFee(selectedAmount, selectedCurrency)
                                         const isUSDSelected = selectedCurrency === 'USD'
+                                        const cardPayable = selectedCurrency === CARD_SETTLEMENT_CURRENCY
                                         return (
                                             <div className="p-6 sm:p-8">
                                                 <div className="text-center mb-6">
@@ -866,15 +869,26 @@ export default function PayInvoice() {
                                                 </div>
 
                                                 {/* Pay Button */}
-                                                {isUSDSelected ? (
-                                                    <button
-                                                        onClick={handlePayWithUSDLink}
-                                                        disabled={!proofForm.payerEmail}
-                                                        className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
-                                                    >
-                                                        PAY {formatCurrency(feeInfo.total, selectedCurrency)}
-                                                        <ArrowRight className="w-4 h-4" />
-                                                    </button>
+                                                {cardNotice && (
+                                                    <div className="border border-red-200 bg-red-50 px-4 py-3 text-[12px] leading-relaxed text-red-800 mb-4">
+                                                        {cardNotice}
+                                                    </div>
+                                                )}
+
+                                                {!cardPayable ? (
+                                                    <>
+                                                        <div className="border border-amber-300 bg-amber-50 px-4 py-3 text-[12px] leading-relaxed text-amber-900 mb-4">
+                                                            Card payment is available in {CARD_SETTLEMENT_CURRENCY} only.
+                                                            {" "}For {selectedCurrency} please use <strong>Bank Transfer</strong> ({formatCurrency(selectedAmount, selectedCurrency)}, no fee)
+                                                            {hasSecondary && invoice.secondary_currency === CARD_SETTLEMENT_CURRENCY ? <> — or select <strong>{invoice.secondary_currency}</strong> above to pay by card</> : null}.
+                                                        </div>
+                                                        <button
+                                                            disabled
+                                                            className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 flex items-center justify-center gap-2.5 opacity-40 cursor-not-allowed text-sm tracking-wide"
+                                                        >
+                                                            CARD PAYMENT UNAVAILABLE IN {selectedCurrency}
+                                                        </button>
+                                                    </>
                                                 ) : (
                                                     <button
                                                         onClick={handlePayWithCard}
