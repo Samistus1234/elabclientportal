@@ -13,10 +13,8 @@ import {
     Image,
     File,
     CheckCircle,
-    Clock,
     AlertCircle,
     X,
-    Eye,
     Loader2,
     FolderOpen,
     CloudUpload
@@ -33,8 +31,6 @@ interface Document {
     type?: string
     label?: string
     source?: string
-    /** Not a column on `documents`; the renderer falls back to 'pending'. */
-    status?: 'pending' | 'approved' | 'rejected' | 'needs_revision'
 }
 
 interface UploadingFile {
@@ -66,33 +62,6 @@ const documentCategories = [
     { id: 'good_standing', name: 'Good Standing Certificate', required: false },
     { id: 'other', name: 'Other Documents', required: false }
 ]
-
-const statusConfig = {
-    pending: {
-        icon: Clock,
-        color: 'text-amber-600',
-        bg: 'bg-amber-100',
-        label: 'Pending Review'
-    },
-    needs_revision: {
-        icon: Eye,
-        color: 'text-blue-600',
-        bg: 'bg-blue-100',
-        label: 'Needs Revision'
-    },
-    approved: {
-        icon: CheckCircle,
-        color: 'text-green-600',
-        bg: 'bg-green-100',
-        label: 'Approved'
-    },
-    rejected: {
-        icon: AlertCircle,
-        color: 'text-red-600',
-        bg: 'bg-red-100',
-        label: 'Rejected'
-    }
-}
 
 function getFileIcon(fileType: string) {
     if (fileType.startsWith('image/')) return Image
@@ -528,8 +497,6 @@ export default function Documents() {
                         <div className="divide-y divide-slate-100">
                             {filteredDocuments.map((doc, index) => {
                                 const FileIcon = getFileIcon(doc.mime_type || '')
-                                const status = statusConfig[doc.status || 'pending'] || statusConfig.pending
-                                const StatusIcon = status.icon
 
                                 return (
                                     <motion.div
@@ -556,12 +523,6 @@ export default function Documents() {
                                                         {new Date(doc.uploaded_at).toLocaleDateString()}
                                                     </span>
                                                 </div>
-                                            </div>
-                                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${status.bg}`}>
-                                                <StatusIcon className={`w-4 h-4 ${status.color}`} />
-                                                <span className={`text-xs font-medium ${status.color}`}>
-                                                    {status.label}
-                                                </span>
                                             </div>
                                         </div>
                                         {doc.notes && (

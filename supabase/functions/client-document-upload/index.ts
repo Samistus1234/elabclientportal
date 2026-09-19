@@ -6,6 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { resolvePersonId } from "../_shared/resolvePerson.ts";
 import { resolveCaseId } from "../_shared/resolveCase.ts";
 import { hasUnsafePathSegments } from "../_shared/hasUnsafePathSegments.ts";
+import { shouldUsePortalUserPersonId } from "../_shared/resolveIdentitySource.ts";
 
 const BUCKET = "case-documents";
 
@@ -55,41 +56,69 @@ serve(async (req) => {
 
     const email = user.email.toLowerCase();
 
-    // F3: the email is attacker-influenced and must never be interpolated
-    // into PostgREST filter grammar (the old `.or(\`email.eq.${email},...\`)`
-    // let a comma or paren in the address inject extra predicates and match
-    // a different person). Three plain .eq() lookups, merged by id, achieve
-    // the same "any of these three columns" match with no string building.
-    const [emailMatch, primaryMatch, secondaryMatch] = await Promise.all([
-      admin.from("persons").select("id").eq("email", email),
-      admin.from("persons").select("id").eq("primary_email", email),
-      admin.from("persons").select("id").eq("secondary_email", email),
-    ]);
+    // M1: portal_users carries an authoritative auth_user_id -> person_id
+    // link. Prefer it — it's unambiguous and needs no email parsing. Only
+    // when there is no active, person-linked portal_users row do we fall
+    // back to the pre-existing email-merge path (some auth users predate
+    // portal_users, and institutional_contact rows have a null person_id
+    // by design — they are not document-uploading clients).
+    let personId: string | null = null;
+    let resolvedVia: "portal_users" | "email" | null = null;
 
-    // F8: a genuine query failure must surface as 500, not as "no matching
-    // client record" (a 403 would misreport a database fault as an identity
-    // problem).
-    const personLookupError = emailMatch.error ?? primaryMatch.error ?? secondaryMatch.error;
-    if (personLookupError) {
-      console.error("[client-document-upload] person lookup failed", personLookupError);
+    const { data: portalUserRow, error: portalUserError } = await admin
+      .from("portal_users")
+      .select("person_id, is_active")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+
+    if (portalUserError) {
+      console.error("[client-document-upload] portal_users lookup failed", portalUserError);
       return json({ error: "Something went wrong. Please try again." }, 500);
     }
 
-    const personRowsById = new Map<string, { id: string }>();
-    for (const row of [
-      ...(emailMatch.data ?? []),
-      ...(primaryMatch.data ?? []),
-      ...(secondaryMatch.data ?? []),
-    ]) {
-      personRowsById.set(row.id, row);
+    if (shouldUsePortalUserPersonId(portalUserRow)) {
+      personId = (portalUserRow as { person_id: string }).person_id;
+      resolvedVia = "portal_users";
+    } else {
+      // F3: the email is attacker-influenced and must never be interpolated
+      // into PostgREST filter grammar (the old `.or(\`email.eq.${email},...\`)`
+      // let a comma or paren in the address inject extra predicates and match
+      // a different person). Three plain .eq() lookups, merged by id, achieve
+      // the same "any of these three columns" match with no string building.
+      const [emailMatch, primaryMatch, secondaryMatch] = await Promise.all([
+        admin.from("persons").select("id").eq("email", email),
+        admin.from("persons").select("id").eq("primary_email", email),
+        admin.from("persons").select("id").eq("secondary_email", email),
+      ]);
+
+      // F8: a genuine query failure must surface as 500, not as "no matching
+      // client record" (a 403 would misreport a database fault as an identity
+      // problem).
+      const personLookupError = emailMatch.error ?? primaryMatch.error ?? secondaryMatch.error;
+      if (personLookupError) {
+        console.error("[client-document-upload] person lookup failed", personLookupError);
+        return json({ error: "Something went wrong. Please try again." }, 500);
+      }
+
+      const personRowsById = new Map<string, { id: string }>();
+      for (const row of [
+        ...(emailMatch.data ?? []),
+        ...(primaryMatch.data ?? []),
+        ...(secondaryMatch.data ?? []),
+      ]) {
+        personRowsById.set(row.id, row);
+      }
+
+      personId = resolvePersonId(Array.from(personRowsById.values()));
+      resolvedVia = "email";
     }
 
-    const personId = resolvePersonId(Array.from(personRowsById.values()));
     if (!personId) {
       // F10: log the auth user id, never the email address.
-      console.error("[client-document-upload] no unique person for user", user.id);
+      console.error("[client-document-upload] no unique person for user", user.id, "via", resolvedVia);
       return json({ error: "We could not match your account to a client record." }, 403);
     }
+    console.log("[client-document-upload] resolved person for user", user.id, "via", resolvedVia);
 
     const action = new URL(req.url).searchParams.get("action");
 
@@ -121,7 +150,16 @@ serve(async (req) => {
       // F6/F9: runtime checks, not a TS cast — `body as {...}` vanishes at
       // runtime, so a wrong-shaped value (e.g. {"path": 123}) must be caught
       // here rather than throwing at path.startsWith further down.
-      if (typeof path !== "string" || !path || typeof name !== "string" || !name) {
+      //
+      // M2: only `path` is validated here. `name` is deliberately NOT
+      // rejected at this point — a `.pdf`-named file yields an empty `name`
+      // after the browser strips its extension, and that object has already
+      // been PUT to storage by the time commit runs. Validating `name` here,
+      // before the existence check below confirms the object is real, would
+      // 400 without ever cleaning up the bytes that are already sitting in
+      // the bucket. `name` is checked further down, once existence is
+      // confirmed and a cleanup path is available.
+      if (typeof path !== "string" || !path) {
         return json({ error: "path and name are required" }, 400);
       }
 
@@ -180,6 +218,30 @@ serve(async (req) => {
       const mimeType = typeof object.metadata?.mimetype === "string" ? object.metadata.mimetype : null;
       const sizeBytes = typeof object.metadata?.size === "number" ? object.metadata.size : null;
 
+      // M2: from this point on, the object is CONFIRMED to exist in storage.
+      // Any error response returned past this point must clean it up first —
+      // otherwise a commit failure leaves a permanent orphan in the bucket
+      // staff browse. Failures BEFORE this point (bad body, unsafe path,
+      // path/person mismatch, "object not found") must never delete anything:
+      // a caller who fails those checks has not proven they own an object,
+      // so letting them trigger a delete would be a way to delete someone
+      // else's file.
+      const deleteOrphan = async () => {
+        const { error: removeError } = await admin.storage.from(BUCKET).remove([path]);
+        if (removeError) {
+          console.error("[client-document-upload] failed to clean up orphaned object", { path, removeError });
+        }
+      };
+
+      // M2: the deferred half of the F6/F9 body validation. A `.pdf`-named
+      // file strips to an empty `name` (see comment above), and that upload
+      // is real and sitting in storage right now — reject it here, but clean
+      // up first instead of leaving it orphaned.
+      if (typeof name !== "string" || !name) {
+        await deleteOrphan();
+        return json({ error: "path and name are required" }, 400);
+      }
+
       const { data: caseRows, error: casesError } = await admin
         .from("cases")
         .select("id, status")
@@ -189,6 +251,7 @@ serve(async (req) => {
       // file the document unlinked when the query itself broke.
       if (casesError) {
         console.error("[client-document-upload] case lookup failed", casesError);
+        await deleteOrphan();
         return json({ error: "Something went wrong. Please try again." }, 500);
       }
 
@@ -213,6 +276,7 @@ serve(async (req) => {
 
       if (error) {
         console.error("[client-document-upload] insert failed", error);
+        await deleteOrphan();
         return json({ error: "Could not record the document." }, 500);
       }
       return json({ document: doc });

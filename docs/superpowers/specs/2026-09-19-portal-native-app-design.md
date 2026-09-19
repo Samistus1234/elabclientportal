@@ -126,7 +126,7 @@ in the CC Supabase project.
 
 `handleFiles(files: File[])` in `src/pages/Documents.tsx` is already the single funnel
 for drag/drop and the file picker. **Camera feeds that funnel; it does not get its own
-path** — otherwise validation, progress UI, storage path and the `client_documents` row
+path** — otherwise validation, progress UI, storage path and the `documents` row
 drift apart within two releases.
 
 - Native-only "Take photo" button via `@capacitor/camera`, requesting JPEG directly
