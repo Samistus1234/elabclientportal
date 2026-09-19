@@ -131,9 +131,14 @@ checklist's `is_received`, which is the state staff actually act on.
    holds only 110 objects and is something else.
 2. ~~Case resolution~~ — **resolved: exactly-one-active-case, else NULL.** If the person has
    precisely one case with `status='active'`, attach its `case_id`; with zero or several,
-   leave `case_id` NULL for staff to file. The distribution makes this cheap: **957 persons
-   have exactly one active case, 83 have two or more** — so this resolves ~92% automatically
-   and fails safe for the rest. Guessing among several cases would file a passport against
+   leave `case_id` NULL for staff to file. **Corrected 2026-09-20 — the original figure here was wrong.**
+   It said "957 have exactly one active case, 83 have two or more, so this resolves ~92%",
+   which silently excluded the **617 persons with ZERO active cases**, who also get
+   `case_id` NULL. The real distribution is **957 resolve, 617 zero-active unfiled, 83
+   many-active unfiled** — so **700 of 1,657 persons (42%) land unfiled**, not 8%.
+   (The `on_hold` status is irrelevant in practice: the database contains zero such cases.)
+   This does not change the decision — guessing among cases is still worse than leaving one
+   unfiled — but it changes the consequence, and see the release gate below. Guessing among several cases would file a passport against
    the wrong application, which is worse than leaving it unfiled.
 3. ~~Checklist matching~~ — **resolved: deferred to a later iteration.** v1 does not write
    `case_document_checklist`. Marking `is_received` on a guessed row tells staff a document
@@ -148,6 +153,26 @@ The `documents` bucket is **public** and holds 110 objects. Not this project's t
 not necessarily a problem — but a public bucket in a system handling passports and
 licensing certificates is worth an explicit look. Out of scope here; raised so it is not
 lost.
+
+## RELEASE GATE — staff cannot see unfiled uploads
+
+Found by the final whole-branch review, 2026-09-20, and verified.
+
+An upload with `case_id` NULL is written successfully, reported to the client as successful,
+and **is visible on no staff screen**. Every Command Centre read of `documents` filters by
+case: `src/pages/CaseDetail.tsx:176` (`.eq('case_id', id)`), `src/lib/documents/documentService.ts:97`
+(`getDocuments(caseId)`), and `src/pages/PersonDetail.tsx` never loads documents at all.
+
+Combined with the corrected 42% figure above, that is this spec's own stated failure mode —
+"a client uploads a passport, it lands where no staff screen reads, and the case stalls while
+everyone believes it arrived" — reintroduced one layer up.
+
+The fix lives in the **Command Centre repo**, which this plan does not touch, so it is out of
+scope here. It is a gate on *announcing* the feature, not on deploying or merging it:
+
+- Deploying and merging this branch is safe. Nothing regresses; upload goes from broken to working.
+- **Do not tell clients the feature exists** until staff have a surface listing
+  `source = 'client_portal' AND case_id IS NULL`, or uploads are attached some other way.
 
 ## Testing
 
