@@ -66,9 +66,12 @@ the app becomes a separate, deliberate act.
   live and serving clients; app work must not be able to break the website. A test
   enforces this (see Testing).
 
-**Open:** app display name. The listing says "ELAB Solutions", vague for a client
-portal. "ELAB Client Portal" or "ELAB" is clearer. Display name is independent of
-package name, so the listing is reusable either way. Decide before store metadata.
+**App display name: `myELAB`** (decided 2026-09-19). Replaces the listing's current
+"ELAB Solutions", which was right for a marketing site and vague for a client portal.
+Display name is independent of package name, so `org.elabsolution.app` is still reused.
+
+Applies to: `appName` in `capacitor.config.ts`, the Play and App Store listing titles,
+the iOS `CFBundleDisplayName`, and the Android `app_name` string.
 
 ## Push notifications
 
@@ -204,6 +207,6 @@ not of phase 1.
 
 ## Open questions
 
-1. App display name — "ELAB Solutions" vs "ELAB Client Portal" vs "ELAB".
+1. ~~App display name~~ — **resolved: `myELAB`**. Confirm exact casing before store metadata.
 2. Does an iOS App Store record exist for `org.elabsolution.app`?
 3. Is HEIC actually reaching storage today via the web picker?
