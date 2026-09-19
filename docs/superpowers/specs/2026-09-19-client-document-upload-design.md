@@ -116,11 +116,13 @@ checklist's `is_received`, which is the state staff actually act on.
 
 ## Open questions
 
-1. **Storage bucket.** Uploads currently target `client-documents`, whose existence could
-   not be proved — the storage list endpoint returns `[]` for non-existent buckets too
-   (verified with a deliberately fake bucket as a control). CC has `case-documents` and
-   `documents`. Prefer an existing CC bucket over creating another. Needs a service-role
-   check of `storage.buckets` and its policies.
+1. ~~Storage bucket~~ — **resolved: `case-documents`** (private). CC has 18 buckets and
+   **no `client-documents` among them**, so the portal's `storage.from('client-documents')
+   .upload(...)` fails at the storage put, *before* the missing-table insert — upload has
+   never worked from its very first step. `case-documents` holds **8,716 objects** against
+   the table's 8,694 rows and is where case documents actually live; paths are prefixed by
+   person/case UUID (`uncategorized/` for 3,266 unfiled). The public `documents` bucket
+   holds only 110 objects and is something else.
 2. **Case resolution.** When a person has several open cases, which does an upload attach
    to? Options: most recent active, client picks, or leave `case_id` NULL and let staff
    file it. Leaving it NULL is safest but pushes work onto staff.
@@ -128,6 +130,13 @@ checklist's `is_received`, which is the state staff actually act on.
    unclassified for staff to match? CC has `classification_method` /
    `classification_confidence` on the checklist, suggesting existing automation worth
    reusing rather than duplicating.
+
+## Noted for separate follow-up
+
+The `documents` bucket is **public** and holds 110 objects. Not this project's target and
+not necessarily a problem — but a public bucket in a system handling passports and
+licensing certificates is worth an explicit look. Out of scope here; raised so it is not
+lost.
 
 ## Testing
 
