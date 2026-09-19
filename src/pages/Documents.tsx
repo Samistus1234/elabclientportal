@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { fetchCaseStatus, CaseStatus, sourceKindLabel } from '@/lib/caseStatusApi'
 import { buildChecklist } from '@/lib/documentChecklist'
+import { uploadClientDocument } from '@/lib/documentUpload'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     ArrowLeft,
@@ -26,17 +27,16 @@ import {
 interface Document {
     id: string
     name: string
-    document_type?: string
     storage_path: string
     mime_type?: string
     size_bytes?: number
-    status: 'pending' | 'approved' | 'rejected' | 'needs_revision'
     uploaded_at: string
     notes?: string
-    case_reference?: string
-    reviewed_by?: string
-    reviewed_at?: string
-    review_notes?: string
+    type?: string
+    label?: string
+    source?: string
+    /** Not a column on `documents`; the renderer falls back to 'pending'. */
+    status?: 'pending' | 'approved' | 'rejected' | 'needs_revision'
 }
 
 interface UploadingFile {
@@ -224,54 +224,12 @@ export default function Documents() {
             }])
 
             try {
-                // Create unique file path
-                const fileExt = file.name.split('.').pop()
-                const fileName = `${personId}/${Date.now()}_${crypto.randomUUID()}.${fileExt}`
+                const doc = await uploadClientDocument(file)
 
-                // Upload to Supabase Storage
-                const { data: uploadData, error: uploadError } = await supabase.storage
-                    .from('client-documents')
-                    .upload(fileName, file, {
-                        cacheControl: '3600',
-                        upsert: false
-                    })
-
-                if (uploadError) throw uploadError
-
-                // Update progress to 50% (upload complete)
-                setUploadingFiles(prev => prev.map(f =>
-                    f.id === uploadId ? { ...f, progress: 50 } : f
-                ))
-
-                // Get current user ID for uploaded_by_user_id
-                const { data: { user } } = await supabase.auth.getUser()
-
-                // Save document record to database
-                const { data: docData, error: docError } = await supabase
-                    .from('client_documents')
-                    .insert({
-                        person_id: personId,
-                        uploaded_by_user_id: user?.id,
-                        name: file.name.replace(/\.[^/.]+$/, ''), // Remove extension
-                        storage_path: uploadData.path,
-                        mime_type: file.type,
-                        size_bytes: file.size,
-                        status: 'pending'
-                    })
-                    .select()
-                    .single()
-
-                if (docError) throw docError
-
-                // Update progress to 100%
                 setUploadingFiles(prev => prev.map(f =>
                     f.id === uploadId ? { ...f, progress: 100, status: 'success' } : f
                 ))
-
-                // Add to documents list
-                if (docData) {
-                    setDocuments(prev => [docData, ...prev])
-                }
+                if (doc) setDocuments(prev => [doc, ...prev])
 
                 // Remove from uploading list after delay
                 setTimeout(() => {
@@ -643,7 +601,7 @@ export default function Documents() {
                         <div className="divide-y divide-slate-100">
                             {filteredDocuments.map((doc, index) => {
                                 const FileIcon = getFileIcon(doc.mime_type || '')
-                                const status = statusConfig[doc.status] || statusConfig.pending
+                                const status = statusConfig[doc.status || 'pending'] || statusConfig.pending
                                 const StatusIcon = status.icon
 
                                 return (
