@@ -16,8 +16,6 @@ import {
     Clock,
     AlertCircle,
     X,
-    Download,
-    Trash2,
     Eye,
     Loader2,
     FolderOpen,
@@ -117,7 +115,6 @@ export default function Documents() {
     const [error, setError] = useState<string | null>(null)
     const [selectedCategory, setSelectedCategory] = useState<string>('all')
     const [isDragging, setIsDragging] = useState(false)
-    const [personId, setPersonId] = useState<string | null>(null)
     const [caseStatuses, setCaseStatuses] = useState<CaseStatus[]>([])
 
     useEffect(() => {
@@ -136,10 +133,6 @@ export default function Documents() {
                 .or(`email.eq.${user.email},primary_email.eq.${user.email}`)
                 .single()
 
-            if (personData) {
-                setPersonId(personData.id)
-            }
-
             // Documents eLab already holds for this client (WhatsApp / email /
             // office uploads) so the checklist reflects reality, not just
             // in-portal uploads.
@@ -152,20 +145,7 @@ export default function Documents() {
                 .then(setCaseStatuses)
                 .catch(() => setCaseStatuses([]))
 
-            // Load documents for this user
-            const { data: docs, error: docsError } = await supabase
-                .from('client_documents')
-                .select('*')
-                .eq('uploaded_by_user_id', user.id)
-                .order('uploaded_at', { ascending: false })
-
-            if (docsError) {
-                // Table might not exist yet - that's okay
-                console.log('Documents table may not exist yet:', docsError)
-                setDocuments([])
-            } else {
-                setDocuments(docs || [])
-            }
+            setDocuments([])
         } catch (err: any) {
             setError(err.message)
         } finally {
@@ -188,7 +168,7 @@ export default function Documents() {
         setIsDragging(false)
         const files = Array.from(e.dataTransfer.files)
         handleFiles(files)
-    }, [personId])
+    }, [])
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || [])
@@ -197,11 +177,6 @@ export default function Documents() {
     }
 
     const handleFiles = async (files: File[]) => {
-        if (!personId) {
-            setError('Please wait for your profile to load')
-            return
-        }
-
         for (const file of files) {
             // Validate file type
             if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
@@ -242,54 +217,6 @@ export default function Documents() {
                     f.id === uploadId ? { ...f, status: 'error', error: err.message } : f
                 ))
             }
-        }
-    }
-
-    const handleDownload = async (doc: Document) => {
-        try {
-            const { data, error } = await supabase.storage
-                .from('client-documents')
-                .download(doc.storage_path)
-
-            if (error) throw error
-
-            // Create download link
-            const url = URL.createObjectURL(data)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = doc.name + (doc.mime_type?.includes('pdf') ? '.pdf' : '')
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            URL.revokeObjectURL(url)
-        } catch (err: any) {
-            setError('Failed to download file: ' + err.message)
-        }
-    }
-
-    const handleDelete = async (doc: Document) => {
-        if (!confirm('Are you sure you want to delete this document?')) return
-
-        try {
-            // Delete from storage
-            const { error: storageError } = await supabase.storage
-                .from('client-documents')
-                .remove([doc.storage_path])
-
-            if (storageError) throw storageError
-
-            // Delete from database
-            const { error: dbError } = await supabase
-                .from('client_documents')
-                .delete()
-                .eq('id', doc.id)
-
-            if (dbError) throw dbError
-
-            // Remove from local state
-            setDocuments(prev => prev.filter(d => d.id !== doc.id))
-        } catch (err: any) {
-            setError('Failed to delete file: ' + err.message)
         }
     }
 
@@ -635,22 +562,6 @@ export default function Documents() {
                                                 <span className={`text-xs font-medium ${status.color}`}>
                                                     {status.label}
                                                 </span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => handleDownload(doc)}
-                                                    className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-primary-600 transition-colors"
-                                                    title="Download"
-                                                >
-                                                    <Download className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(doc)}
-                                                    className="p-2 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-600 transition-colors"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
                                             </div>
                                         </div>
                                         {doc.notes && (
