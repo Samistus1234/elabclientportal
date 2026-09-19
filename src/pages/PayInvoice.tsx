@@ -356,9 +356,13 @@ export default function PayInvoice() {
         const feeInfo = calculatePaystackFee(invoice.amount_due, 'USD')
 
         // Build payment link URL with query parameters
-        // Paystack payment links accept: amount (in cents), email, and custom_fields
+        // Paystack payment links accept: amount, email, and custom_fields
         const params = new URLSearchParams({
-            amount: String(Math.round(feeInfo.total * 100)), // Amount in cents
+            // The Paystack USD page takes a WHOLE USD amount and accepts decimals.
+            // Verified 2026-09-19 against the live page: `amount=31.47` renders
+            // "Amount USD 31.47"; `amount=3147` renders "USD 3,147". Sending
+            // `total * 100` here was the 100x over-quote clients hit.
+            amount: feeInfo.total.toFixed(2),
             email: payerEmail,
             'metadata[invoice_id]': invoice.id,
             'metadata[invoice_number]': invoice.invoice_number,
