@@ -119,6 +119,11 @@ in the CC Supabase project.
 
 ## Camera capture
 
+> **Prerequisite:** this section assumed a working upload path. It does not exist — see
+> [the upload repair spec](2026-09-19-client-document-upload-design.md). The design below
+> holds, but applies to the repaired path (edge function, `documents` table,
+> `source='client_portal'`), not the current broken one.
+
 `handleFiles(files: File[])` in `src/pages/Documents.tsx` is already the single funnel
 for drag/drop and the file picker. **Camera feeds that funnel; it does not get its own
 path** — otherwise validation, progress UI, storage path and the `client_documents` row
@@ -128,7 +133,8 @@ drift apart within two releases.
 - **Multi-page capture**: clients photograph multi-page certificates. Capture accumulates
   into a list, then merges into one PDF, reusing the logic behind `/tools/pdf/from-image`.
   Extract that into a shared lib imported by both the tool page and the capture flow.
-- **To verify during implementation:** the upload `accept` list is
+- **HEIC:** originally the reason this was investigated; cannot be assessed until uploads
+  work at all. The `accept` list is
   `.pdf,.jpg,.jpeg,.png,.webp,.doc,.docx` — no HEIC. If iOS photo-library picks can
   arrive as HEIC today, they are landing in storage unviewable for staff. If confirmed,
   normalise HEIC inside `handleFiles` — which fixes the website too.
@@ -188,7 +194,10 @@ valuable and independently shippable to the internal track:
 2. **Push.** Migration, channel widening, executor branch, Firebase/APNs setup, client
    registration and revocation. The largest phase and the one carrying the business case.
 3. **Camera capture.** Shared image→PDF lib extraction, capture flow, HEIC verification.
-   Self-contained; touches only Documents and the tools lib.
+   **BLOCKED until client document upload works** — see
+   [the upload repair spec](2026-09-19-client-document-upload-design.md). In-portal upload
+   has never worked against the current database, so there is no working `handleFiles()`
+   path for camera to feed. That repair ships independently and first.
 4. **Biometric.** Smallest, most droppable, and the only third-party dependency —
    deliberately last so it can be cut without disturbing anything else.
 
@@ -209,4 +218,5 @@ not of phase 1.
 
 1. ~~App display name~~ — **resolved: `myELAB`**. Confirm exact casing before store metadata.
 2. Does an iOS App Store record exist for `org.elabsolution.app`?
-3. Is HEIC actually reaching storage today via the web picker?
+3. ~~Is HEIC reaching storage today?~~ — **unanswerable until upload is repaired.** In-portal
+   upload has never worked, so no client-uploaded HEIC can exist. Revisit after the repair.
