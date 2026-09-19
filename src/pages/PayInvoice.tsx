@@ -105,6 +105,7 @@ interface PublicInvoice {
     created_at: string
     customer_name: string | null
     customer_email: string | null
+    customer_phone?: string | null
     case_reference: string | null
     org_name: string | null
     line_items: Array<{
@@ -152,6 +153,7 @@ export default function PayInvoice() {
     const [submittingProof, setSubmittingProof] = useState(false)
     const [proofError, setProofError] = useState<string | null>(null)
     const [proofSuccess, setProofSuccess] = useState(false)
+    const [payerPhone, setPayerPhone] = useState<string>('')
 
     // Paystack state
     const [paymentLoading, setPaymentLoading] = useState(false)
@@ -197,6 +199,19 @@ export default function PayInvoice() {
                 p_currency: invoiceData.currency
             })
             setBankAccounts(bankData || [])
+
+            if (!invoiceData.customer_phone) {
+                // get_public_invoice does not expose the client's phone, and the
+                // Paystack page asks for it — read it from the public contact RPC
+                // so the client never has to type it. Absent RPC degrades quietly.
+                const { data: contact } = await supabase.rpc('get_public_invoice_contact', {
+                    p_invoice_id: invoiceId
+                })
+                const cp = (contact as { customer_phone?: string } | null)?.customer_phone
+                if (cp) setPayerPhone(cp)
+            } else {
+                setPayerPhone(invoiceData.customer_phone)
+            }
 
             // Pre-fill payer info from URL params if available
             const email = searchParams.get('email')
@@ -355,6 +370,20 @@ export default function PayInvoice() {
         const payerEmail = proofForm.payerEmail || invoice.customer_email || ''
         const feeInfo = calculatePaystackFee(invoice.amount_due, 'USD')
 
+        // Hand the Paystack page every field it asks for, so the client only
+        // reviews and taps "Pay now".
+        // Param names verified against the live page 2026-09-19:
+        //   first_name / last_name → fills "First name" / "Last name"
+        //     (firstname/lastname do NOT work — they arrive empty)
+        //   phone                  → fills "Phone number"
+        //   your_quotation_number  → the page's custom field, now carrying the
+        //                            invoice number
+        // Invoice numbers are two tokens or more ("Priscilla Amara Ezeji"):
+        // last token is the surname, everything before it is the given name(s).
+        const nameParts = (invoice.customer_name || '').trim().split(/\s+/).filter(Boolean)
+        const firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : (nameParts[0] || '')
+        const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ''
+
         // Build payment link URL with query parameters
         // Paystack payment links accept: amount, email, and custom_fields
         const params = new URLSearchParams({
@@ -364,12 +393,20 @@ export default function PayInvoice() {
             // `total * 100` here was the 100x over-quote clients hit.
             amount: feeInfo.total.toFixed(2),
             email: payerEmail,
+            first_name: firstName,
+            last_name: lastName,
+            your_quotation_number: invoice.invoice_number,
             'metadata[invoice_id]': invoice.id,
             'metadata[invoice_number]': invoice.invoice_number,
             'metadata[customer_name]': invoice.customer_name || '',
             'metadata[invoice_amount]': String(invoice.amount_due),
             'metadata[processing_fee]': String(feeInfo.fee)
         })
+
+        // Phone only arrives once the public contact RPC exposes it — include it
+        // whenever present so the field is never left for typing.
+        const phone = payerPhone || invoice.customer_phone
+        if (phone) params.set('phone', phone)
 
         // Open Paystack USD payment link in new tab
         window.open(`${PAYSTACK_USD_PAYMENT_LINK}?${params.toString()}`, '_blank')
@@ -869,34 +906,44 @@ export default function PayInvoice() {
                                                     />
                                                 </div>
 
-                                                {/* Pay Button */}
-                                                {isUSDSelected ? (
-                                                    <button
-                                                        onClick={handlePayWithUSDLink}
-                                                        disabled={!proofForm.payerEmail}
-                                                        className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
-                                                    >
-                                                        PAY {formatCurrency(feeInfo.total, selectedCurrency)}
-                                                        <ArrowRight className="w-4 h-4" />
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={handlePayWithCard}
-                                                        disabled={paymentLoading || !proofForm.payerEmail}
-                                                        className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
-                                                    >
-                                                        {paymentLoading ? (
-                                                            <>
-                                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                                Processing...
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                PAY {formatCurrency(feeInfo.total, selectedCurrency)}
-                                                                <ArrowRight className="w-4 h-4" />
-                                                            </>
-                                                        )}
-                                                    </button>
+                                                {/* Pay Button — one checkout path for every
+                                                    currency. USD used to divert to the hosted
+                                                    Paystack payment page, which asked the client
+                                                    to fill in name, phone, amount and a reference.
+                                                    The inline popup takes the amount from this page
+                                                    (not typeable) and asks only for card details. */}
+                                                <button
+                                                    onClick={handlePayWithCard}
+                                                    disabled={paymentLoading || !proofForm.payerEmail}
+                                                    className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
+                                                >
+                                                    {paymentLoading ? (
+                                                        <>
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                            Processing...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            PAY {formatCurrency(feeInfo.total, selectedCurrency)}
+                                                            <ArrowRight className="w-4 h-4" />
+                                                        </>
+                                                    )}
+                                                </button>
+
+                                                {/* Fallback — keeps USD payable if the popup is
+                                                    blocked by a browser/extension. */}
+                                                {isUSDSelected && (
+                                                    <p className="text-[11px] text-[#8b8680] text-center mt-3">
+                                                        Card form not opening?{' '}
+                                                        <button
+                                                            type="button"
+                                                            onClick={handlePayWithUSDLink}
+                                                            className="text-[#b8860b] underline hover:text-[#96700a] transition-colors"
+                                                        >
+                                                            Use our secure payment page
+                                                        </button>{' '}
+                                                        (enter {formatCurrency(feeInfo.total, selectedCurrency)}).
+                                                    </p>
                                                 )}
 
                                                 {/* Card logos */}
