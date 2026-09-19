@@ -79,7 +79,7 @@ Deno.test("resolvePersonId: null input fails closed", () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `deno test supabase/functions/_shared/resolvePerson.test.ts --allow-none`
+Run: `deno test supabase/functions/_shared/resolvePerson.test.ts`
 Expected: FAIL — module `./resolvePerson.ts` not found.
 
 - [ ] **Step 3: Write the minimal implementation**
@@ -103,7 +103,7 @@ export function resolvePersonId(rows: PersonRow[]): string | null {
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `deno test supabase/functions/_shared/resolvePerson.test.ts --allow-none`
+Run: `deno test supabase/functions/_shared/resolvePerson.test.ts`
 Expected: PASS — 4 tests.
 
 - [ ] **Step 5: Commit**
@@ -168,7 +168,7 @@ Deno.test("resolveCaseId: empty input leaves it unfiled", () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `deno test supabase/functions/_shared/resolveCase.test.ts --allow-none`
+Run: `deno test supabase/functions/_shared/resolveCase.test.ts`
 Expected: FAIL — module `./resolveCase.ts` not found.
 
 - [ ] **Step 3: Write the minimal implementation**
@@ -193,7 +193,7 @@ export function resolveCaseId(rows: CaseRow[]): string | null {
 
 - [ ] **Step 4: Run the test to verify it passes**
 
-Run: `deno test supabase/functions/_shared/resolveCase.test.ts --allow-none`
+Run: `deno test supabase/functions/_shared/resolveCase.test.ts`
 Expected: PASS — 5 tests.
 
 - [ ] **Step 5: Commit**
