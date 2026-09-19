@@ -34,9 +34,6 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
     KWD: '\u062F.\u0643'
 }
 
-// Paystack integration
-const PAYSTACK_PUBLIC_KEY = 'pk_live_611141c01b9589d73ff5eff313fc899d7377c534'
-
 // Paystack USD payment link (for international payments)
 const PAYSTACK_USD_PAYMENT_LINK = 'https://paystack.shop/pay/elab-usd-payment'
 
@@ -70,21 +67,9 @@ const calculatePaystackFee = (amount: number, currency: string): { fee: number; 
     return { fee, total, percentage }
 }
 
-// Load Paystack script
-const loadPaystackScript = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-        if (document.getElementById('paystack-script')) {
-            resolve()
-            return
-        }
-        const script = document.createElement('script')
-        script.id = 'paystack-script'
-        script.src = 'https://js.paystack.co/v1/inline.js'
-        script.onload = () => resolve()
-        script.onerror = () => reject(new Error('Failed to load Paystack'))
-        document.head.appendChild(script)
-    })
-}
+// Paystack's inline.js script is no longer loaded: card payments go through the
+// server-side Checkout (see handlePayWithCard), which collects the billing address
+// Paystack's AVS requires and handles 3DS itself.
 
 interface PublicInvoice {
     id: string
@@ -130,6 +115,27 @@ interface BankAccount {
 export default function PayInvoice() {
     const { invoiceId } = useParams<{ invoiceId: string }>()
     const [searchParams] = useSearchParams()
+
+    // Returning from Paystack's hosted Checkout: confirm with the gateway so the client
+    // sees the true state. The webhook records the payment independently of this call —
+    // this is only the client's view of it, so a failure here never loses money.
+    useEffect(() => {
+        if (searchParams.get('paid') !== '1') return
+        const ref = searchParams.get('reference')
+        if (!ref) return
+        let cancelled = false
+        supabase.functions
+            .invoke('paystack-initialize', { body: { action: 'verify', reference: ref } })
+            .then(({ data }) => {
+                if (cancelled) return
+                setPaymentReference(ref)
+                if ((data as any)?.verified) setPaymentSuccess(true)
+            })
+            .catch((err) => console.error('Payment verification failed:', err))
+        return () => {
+            cancelled = true
+        }
+    }, [searchParams])
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const [invoice, setInvoice] = useState<PublicInvoice | null>(null)
@@ -291,71 +297,33 @@ export default function PayInvoice() {
         setPaymentLoading(true)
 
         try {
-            await loadPaystackScript()
+            // SERVER-SIDE CHECKOUT. The old inline popup (PaystackPop.setup) cannot collect
+            // a billing address, so Paystack's AVS step parked every US/UK/Canada card on
+            // "waiting for address verification details" — the spinner spun and nothing was
+            // charged. Paystack's own Checkout collects the address and handles 3DS, and the
+            // amount is computed and locked server-side so the browser cannot alter it.
+            console.log(`Starting server-side checkout for ${invoice.invoice_number}: ${payAmount} ${payCurrency}`)
 
             const payerEmail = proofForm.payerEmail || invoice.customer_email || 'customer@example.com'
 
-            // Calculate fee - charge customer the total (invoice + fee)
-            const feeInfo = calculatePaystackFee(payAmount, payCurrency)
-
-            // @ts-ignore - PaystackPop is loaded from script
-            const handler = window.PaystackPop.setup({
-                key: PAYSTACK_PUBLIC_KEY,
-                email: payerEmail,
-                amount: Math.round(feeInfo.total * 100), // Paystack expects amount in kobo/cents - charge total with fee
-                currency: payCurrency,
-                ref: `${invoice.invoice_number}-${Date.now()}`,
-                metadata: {
+            const initRes = await supabase.functions.invoke('paystack-initialize', {
+                body: {
+                    action: 'initialize',
                     invoice_id: invoice.id,
-                    invoice_number: invoice.invoice_number,
-                    customer_name: invoice.customer_name,
-                    invoice_amount: payAmount,
-                    invoice_currency: invoice.currency,
-                    payment_currency: payCurrency,
-                    processing_fee: feeInfo.fee,
-                    ...(useSecondary && {
-                        exchange_rate_used: invoice.secondary_exchange_rate,
-                        amount_in_invoice_currency: invoice.amount_due
-                    }),
-                    custom_fields: [
-                        {
-                            display_name: "Invoice Number",
-                            variable_name: "invoice_number",
-                            value: invoice.invoice_number
-                        },
-                        {
-                            display_name: "Processing Fee",
-                            variable_name: "processing_fee",
-                            value: `${feeInfo.percentage} (${payCurrency} ${feeInfo.fee})`
-                        }
-                    ]
-                },
-                callback: function(response: any) {
-                    console.log('Payment successful:', response)
-                    setPaymentReference(response.reference)
-
-                    // Record the payment in the database (record original invoice amount, not the fee)
-                    supabase.rpc('record_public_paystack_payment', {
-                        p_invoice_id: invoice.id,
-                        p_paystack_reference: response.reference,
-                        p_amount: invoice.amount_due, // Always record in invoice's primary currency
-                        p_currency: invoice.currency || 'NGN',
-                        p_payer_email: payerEmail
-                    }).then(({ error: recordError }) => {
-                        if (recordError) {
-                            console.error('Error recording payment:', recordError)
-                        }
-                    })
-
-                    setPaymentSuccess(true)
-                    setPaymentLoading(false)
-                },
-                onClose: function() {
-                    setPaymentLoading(false)
+                    email: payerEmail,
+                    currency: payCurrency
                 }
             })
+            const initData: any = initRes.data
+            if (initRes.error || !initData?.authorization_url) {
+                console.error('paystack-initialize failed:', initRes.error, initData)
+                throw new Error(initData?.error || 'The payment gateway did not return a checkout link')
+            }
 
-            handler.openIframe()
+            // Off to Paystack's Checkout. It returns the client to
+            // /pay/<invoice>?paid=1&reference=... where we confirm the payment.
+            window.location.href = initData.authorization_url
+            return
         } catch (error) {
             console.error('Failed to initialize Paystack:', error)
             alert('Failed to load payment gateway. Please try again or use bank transfer.')
