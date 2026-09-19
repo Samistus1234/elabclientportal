@@ -85,9 +85,9 @@ Deploy and extend `client-documents-api`, which already holds a service-role cli
 2. **Upload** — client PUTs bytes directly to storage. Large files never transit the
    function.
 3. **Commit** — client calls the function, which inserts into `documents` with
-   `source='client_portal'`, `person_id`, and `case_id` where resolvable, then links
-   `case_document_checklist` (`document_id`, `is_received`, `received_via='client_portal'`)
-   so the upload advances the case.
+   `source='client_portal'`, `person_id`, and `case_id` where resolvable, `case_id` only when the
+   person has exactly one active case. Checklist linkage is deferred — see resolved
+   question 3.
 4. `uploaded_by_user_id` stays **NULL** — it is a staff FK and a client is not staff.
    Provenance comes from `source` + `person_id`.
 
@@ -114,7 +114,7 @@ RLS predicate on a shared staff table is none of those.
 than invent a review workflow, drop the portal's review-state UI and surface the
 checklist's `is_received`, which is the state staff actually act on.
 
-## Open questions
+## Resolved questions
 
 1. ~~Storage bucket~~ — **resolved: `case-documents`** (private). CC has 18 buckets and
    **no `client-documents` among them**, so the portal's `storage.from('client-documents')
@@ -123,13 +123,18 @@ checklist's `is_received`, which is the state staff actually act on.
    the table's 8,694 rows and is where case documents actually live; paths are prefixed by
    person/case UUID (`uncategorized/` for 3,266 unfiled). The public `documents` bucket
    holds only 110 objects and is something else.
-2. **Case resolution.** When a person has several open cases, which does an upload attach
-   to? Options: most recent active, client picks, or leave `case_id` NULL and let staff
-   file it. Leaving it NULL is safest but pushes work onto staff.
-3. **Checklist matching.** Does the upload satisfy a named checklist row, or land
-   unclassified for staff to match? CC has `classification_method` /
-   `classification_confidence` on the checklist, suggesting existing automation worth
-   reusing rather than duplicating.
+2. ~~Case resolution~~ — **resolved: exactly-one-active-case, else NULL.** If the person has
+   precisely one case with `status='active'`, attach its `case_id`; with zero or several,
+   leave `case_id` NULL for staff to file. The distribution makes this cheap: **957 persons
+   have exactly one active case, 83 have two or more** — so this resolves ~92% automatically
+   and fails safe for the rest. Guessing among several cases would file a passport against
+   the wrong application, which is worse than leaving it unfiled.
+3. ~~Checklist matching~~ — **resolved: deferred to a later iteration.** v1 does not write
+   `case_document_checklist`. Marking `is_received` on a guessed row tells staff a document
+   arrived that did not — a silent false positive, the exact failure mode this spec exists
+   to avoid. CC already has classification machinery (`classification_method`,
+   `classification_confidence`); reuse it later rather than duplicate it now. Staff
+   visibility is delivered by the `documents` row alone, which is what this repair is for.
 
 ## Noted for separate follow-up
 
