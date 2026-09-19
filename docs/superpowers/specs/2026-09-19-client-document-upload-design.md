@@ -77,7 +77,12 @@ dual-column shadow issue already recorded in CC notes.
 
 ## Design: write through an edge function
 
-Deploy and extend `client-documents-api`, which already holds a service-role client.
+A **new** function, `client-document-upload`. **Do not extend `client-documents-api`** — it
+authenticates with a shared static key (`SYNC_API_KEY`) and deploys `--no-verify-jwt`,
+making it a machine-to-machine endpoint for Command Centre. Putting a client-facing path
+behind a shared secret means a browser holding that key could read every client's
+documents. The new function verifies the caller's **JWT** and derives identity from it,
+using service role only for the privileged write.
 
 1. **Request slot** — client calls the function with its JWT. Function verifies the JWT,
    resolves the person by email **server-side**, returns a signed upload URL scoped to
@@ -104,7 +109,8 @@ RLS predicate on a shared staff table is none of those.
 |---|---|---|
 | Target table | Existing `public.documents` | Staff already work from it; avoids a silo |
 | Provenance | `source='client_portal'` | Matches existing convention |
-| Write path | Edge function, service role | Avoids client RLS on a shared staff table |
+| Write path | New JWT-verifying edge function | Avoids client RLS on a shared staff table |
+| Which function | New `client-document-upload`, not `client-documents-api` | The latter is M2M, gated by a shared static key |
 | File transfer | Signed upload URL, direct to storage | Keeps large files out of the function |
 | `uploaded_by_user_id` | NULL for client uploads | It is a staff FK |
 | Review-state UI | Drop it | See below |
