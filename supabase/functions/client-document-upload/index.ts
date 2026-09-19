@@ -70,5 +70,48 @@ serve(async (req) => {
     return json({ path: data.path, token: data.token });
   }
 
+  if (action === "commit") {
+    const body = await req.json().catch(() => ({}));
+    const { path, name, mimeType, sizeBytes } = body as {
+      path?: string; name?: string; mimeType?: string; sizeBytes?: number;
+    };
+
+    if (!path || !name) return json({ error: "path and name are required" }, 400);
+
+    // Authorization: the path must sit under THIS person's prefix.
+    if (!path.startsWith(`${personId}/`)) {
+      console.error("[client-document-upload] path/person mismatch", { personId, path });
+      return json({ error: "Forbidden" }, 403);
+    }
+
+    const { data: caseRows } = await admin
+      .from("cases")
+      .select("id, status")
+      .eq("person_id", personId);
+
+    const caseId = resolveCaseId((caseRows ?? []) as { id: string; status: string }[]);
+
+    const { data: doc, error } = await admin
+      .from("documents")
+      .insert({
+        person_id: personId,
+        case_id: caseId,                 // null when 0 or >1 active cases
+        name,
+        storage_path: path,
+        mime_type: mimeType ?? null,
+        size_bytes: sizeBytes ?? null,
+        source: "client_portal",
+        uploaded_by_user_id: null,       // FK targets the staff users table
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[client-document-upload] insert failed", error);
+      return json({ error: "Could not record the document." }, 500);
+    }
+    return json({ document: doc });
+  }
+
   return json({ error: "Unknown action" }, 400);
 });
