@@ -16,8 +16,24 @@ Deno.test("rejects a doubled separator", () => {
   assertEquals(hasUnsafePathSegments("11111111-1111-1111-1111-111111111111//x.pdf"), true);
 });
 
-Deno.test("rejects .. embedded without surrounding slashes", () => {
-  assertEquals(hasUnsafePathSegments("11111111-1111-1111-1111-111111111111/..x.pdf"), true);
+Deno.test("allows .. embedded within a single segment (not a traversal segment)", () => {
+  // N1: a literal substring check on ".." rejected legitimate filenames
+  // create_slot itself issues (its sanitiser preserves dots). Only a whole
+  // "." or ".." path segment is a traversal marker; embedded dots are not,
+  // and are backstopped by the storage existence check instead.
+  assertEquals(hasUnsafePathSegments("11111111-1111-1111-1111-111111111111/..x.pdf"), false);
+});
+
+Deno.test("allows a legitimate doubled-dot filename create_slot would issue", () => {
+  const personId = "11111111-1111-1111-1111-111111111111";
+  assertEquals(
+    hasUnsafePathSegments(`${personId}/${crypto.randomUUID()}-passport..pdf`),
+    false,
+  );
+});
+
+Deno.test("rejects a bare single-dot segment", () => {
+  assertEquals(hasUnsafePathSegments("11111111-1111-1111-1111-111111111111/./x.pdf"), true);
 });
 
 Deno.test("rejects a bare filename with no person prefix at all", () => {

@@ -94,7 +94,12 @@ serve(async (req) => {
     const action = new URL(req.url).searchParams.get("action");
 
     if (action === "create_slot") {
-      const { fileName } = await req.json().catch(() => ({ fileName: null }));
+      // N4: a literal `null` body resolves from req.json() without the
+      // .catch() firing, and destructuring straight off `null` throws. Guard
+      // it the same way `commit` is, so this returns a normal 400 instead of
+      // falling through to the top-level catch's 500.
+      const body = (await req.json().catch(() => ({ fileName: null }))) ?? { fileName: null };
+      const { fileName } = body as { fileName?: unknown };
       if (!fileName || typeof fileName !== "string") {
         return json({ error: "fileName is required" }, 400);
       }
@@ -145,16 +150,25 @@ serve(async (req) => {
         return json({ error: "Forbidden" }, 403);
       }
 
+      // N3: `search` is not a hard exact-match filter and its ordering isn't
+      // a correctness guarantee, so `limit` buys nothing here — the explicit
+      // `f.name === objectName` comparison below is what actually verifies
+      // the object. Dropped the limit rather than depend on that.
       const { data: listing, error: listError } = await admin.storage
         .from(BUCKET)
-        .list(folder, { search: objectName, limit: 1 });
+        .list(folder, { search: objectName });
 
       if (listError) {
         console.error("[client-document-upload] storage lookup failed", listError);
         return json({ error: "Something went wrong. Please try again." }, 500);
       }
 
-      const object = listing?.find((f) => f.name === objectName);
+      // N2: storage.list() can also return pseudo-folder placeholder entries
+      // (id: null, metadata: null) whose name could coincidentally equal
+      // objectName. Require a real object id so a placeholder can't satisfy
+      // this check — not reachable today since "/" is stripped from names,
+      // but a placeholder's null metadata would also break mime/size below.
+      const object = listing?.find((f) => f.name === objectName && f.id);
       if (!object) {
         console.error("[client-document-upload] committed path has no uploaded object", { personId, path });
         return json({ error: "We could not find that upload. Please try again." }, 404);
