@@ -43,6 +43,31 @@ android {
     }
 }
 
+// Debug builds must keep working with no keystore.properties on the machine (the
+// `if (keystorePropertiesFile.exists())` guards above exist for that). But a release
+// build with no keystore.properties must never silently produce an unsigned bundle —
+// that only gets caught when Google Play rejects the upload. Fail loudly, before any
+// release task runs, if the keystore config is missing. Uses taskGraph.whenReady
+// (fires once the set of tasks that will actually run is known) rather than
+// afterEvaluate, since at configuration time we don't yet know whether a release
+// task was requested — this is the equivalent hook for "about to run a release task".
+gradle.taskGraph.whenReady { taskGraph ->
+    def releaseTaskRequested = taskGraph.allTasks.any { task ->
+        task.path.startsWith("${project.path}:") && task.name.contains('Release')
+    }
+    if (releaseTaskRequested && !keystorePropertiesFile.exists()) {
+        throw new GradleException(
+            "Missing android/keystore.properties — release build cannot be signed.\n" +
+            "Google Play rejects any key but the original upload key for org.elabsolution.app,\n" +
+            "so a release build must use that key or fail, never fall back to an unsigned bundle.\n" +
+            "Copy it (and elabsolution-upload.keystore) from:\n" +
+            "  /Users/samuel/elabsolution-international-llc-web-main/android/keystore.properties\n" +
+            "  /Users/samuel/elabsolution-international-llc-web-main/android/app/elabsolution-upload.keystore\n" +
+            "into android/keystore.properties and android/app/elabsolution-upload.keystore, then retry."
+        )
+    }
+}
+
 repositories {
     flatDir{
         dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
