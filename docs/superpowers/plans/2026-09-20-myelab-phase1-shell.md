@@ -307,7 +307,23 @@ xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
 
 Expected: `** ARCHIVE SUCCEEDED **`.
 
-- [ ] **Step 5: Verify the archive's identity**
+- [ ] **Step 5: Verify the archive is signed by the RIGHT TEAM**
+
+The plist checks below cannot tell a distributable archive from an undistributable one —
+a build signed by a personal Apple ID carries exactly the same bundle id, display name,
+version and minimum OS. Check the signing authority first, and treat a mismatch as a
+failed task, not a warning:
+
+```bash
+codesign -dvvv ~/elabclientportal/ios/build/myELAB.xcarchive/Products/Applications/App.app 2>&1 \
+  | grep -E "Authority=Apple"
+```
+
+Expected: an authority naming team **39C598HQLD** (ELAB Solutions International).
+If it names `62A85SPP3B` or any personal Apple ID, the archive is useless for
+distribution — delete it and report BLOCKED. Do not treat ARCHIVE SUCCEEDED as success.
+
+- [ ] **Step 6: Verify the archive's identity**
 
 ```bash
 PL=~/elabclientportal/ios/build/myELAB.xcarchive/Products/Applications/App.app/Info.plist
@@ -317,7 +333,7 @@ PL=~/elabclientportal/ios/build/myELAB.xcarchive/Products/Applications/App.app/I
 /usr/libexec/PlistBuddy -c 'Print :MinimumOSVersion' "$PL"     # 15.0
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 cd ~/elabclientportal
