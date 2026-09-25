@@ -28,3 +28,8 @@ npm-debug.log*
 .env*.local
 
 /node_modules
+
+# Android signing — never commit
+android/keystore.properties
+android/app/*.keystore
+android/app/*.jks
