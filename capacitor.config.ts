@@ -31,6 +31,9 @@ const config: CapacitorConfig = {
   },
   android: {
     allowMixedContent: false,
+    // targetSdk 36 enforces edge-to-edge; let Capacitor keep the WebView
+    // clear of the status and navigation bars (see Academy's 1.1.6 fix).
+    adjustMarginsForEdgeToEdge: 'auto',
   },
 };
 
