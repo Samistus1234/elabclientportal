@@ -17,7 +17,9 @@ import {
     Shield,
     Palette
 } from 'lucide-react'
+import { Globe, ExternalLink } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { openExternal, ELAB_WEBSITE_URL, ELAB_CONTACT_URL } from '@/lib/openExternal'
 import { supabase } from '@/lib/supabase'
 
 export default function Settings() {
@@ -318,6 +320,55 @@ export default function Settings() {
                     <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         ELAB Solutions takes your privacy seriously. Your personal information is encrypted and securely stored. We never share your data with third parties without your consent.
                     </p>
+                </motion.div>
+
+                {/* About ELAB — the app is the portal only; the website lives outside it */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl shadow-sm p-6`}
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-10 h-10 rounded-xl ${isDark ? 'bg-slate-700' : 'bg-primary-100'} flex items-center justify-center`}>
+                            <Globe className={`w-5 h-5 ${isDark ? 'text-primary-300' : 'text-primary-600'}`} />
+                        </div>
+                        <div>
+                            <h2 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>About ELAB</h2>
+                            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Services, offices and how to reach us</p>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <button
+                            type="button"
+                            onClick={() => { void openExternal(ELAB_WEBSITE_URL) }}
+                            className={`flex items-center justify-between gap-3 p-4 rounded-xl border text-left ${isDark
+                                ? 'border-slate-700 text-slate-100 hover:bg-slate-700/60'
+                                : 'border-slate-200 text-slate-800 hover:bg-slate-50'
+                                } transition-colors`}
+                        >
+                            <span>
+                                <span className="block font-medium">Visit our website</span>
+                                <span className={`block text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>elabsolution.org, opens in your browser</span>
+                            </span>
+                            <ExternalLink className="w-4 h-4 shrink-0 opacity-70" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => { void openExternal(ELAB_CONTACT_URL) }}
+                            className={`flex items-center justify-between gap-3 p-4 rounded-xl border text-left ${isDark
+                                ? 'border-slate-700 text-slate-100 hover:bg-slate-700/60'
+                                : 'border-slate-200 text-slate-800 hover:bg-slate-50'
+                                } transition-colors`}
+                        >
+                            <span>
+                                <span className="block font-medium">Contact ELAB</span>
+                                <span className={`block text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Offices, phone and email</span>
+                            </span>
+                            <ExternalLink className="w-4 h-4 shrink-0 opacity-70" />
+                        </button>
+                    </div>
                 </motion.div>
 
                 {/* Logout Button */}
