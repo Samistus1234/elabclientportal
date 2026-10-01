@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import Brand from '@/components/Brand'
 import { useTheme } from '@/contexts/ThemeContext'
-import { PROFESSION_OPTIONS, submitReferrerApplication } from '@/lib/referralApi'
+import { PROFESSION_OPTIONS, ReferralApiError, submitReferrerApplication } from '@/lib/referralApi'
 
 /**
  * /referral/join — public application form for the referral programme.
@@ -20,7 +20,8 @@ export default function ReferralJoin() {
     })
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [done, setDone] = useState(false)
+    const [accountExists, setAccountExists] = useState(false)
+    const [done, setDone] = useState<false | 'new' | 'existing'>(false)
 
     useEffect(() => { document.title = 'Join the referral programme · ELAB' }, [])
 
@@ -31,6 +32,7 @@ export default function ReferralJoin() {
     const submit = async (event: React.FormEvent) => {
         event.preventDefault()
         setError(null)
+        setAccountExists(false)
         if (form.password.length < 8) {
             setError('Choose a password of at least 8 characters.')
             return
@@ -41,13 +43,16 @@ export default function ReferralJoin() {
         }
         setSubmitting(true)
         try {
-            await submitReferrerApplication({
+            const result = await submitReferrerApplication({
                 firstName: form.firstName, lastName: form.lastName, email: form.email, phone: form.phone,
                 country: form.country, profession: form.profession, audience: form.audience,
                 networkSize: form.networkSize, note: form.note, password: form.password, hp: form.hp,
             })
-            setDone(true)
+            setDone(result.existing_account ? 'existing' : 'new')
         } catch (err) {
+            if (err instanceof ReferralApiError && err.code === 'account_exists') {
+                setAccountExists(true)
+            }
             setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
         } finally {
             setSubmitting(false)
@@ -81,8 +86,9 @@ export default function ReferralJoin() {
                         <CheckCircle2 size={26} />
                         <h2>Application received</h2>
                         <p>
-                            Your account is ready and your application is with our team. Sign in with your email address
-                            and the password you just chose — your dashboard shows your status while we review it.
+                            {done === 'existing'
+                                ? 'Your application is attached to your existing ELAB account. Sign in with the password you already use — your referral dashboard shows your status while we review it.'
+                                : 'Your account is ready and your application is with our team. Sign in with your email address and the password you just chose — your dashboard shows your status while we review it.'}
                         </p>
                         <p>Once you are approved we issue your personal referral link and email it to you.</p>
                         <Link className="referral-button" to="/login">Sign in to your dashboard</Link>
@@ -125,6 +131,7 @@ export default function ReferralJoin() {
                             </label>
                             <label><span>Choose a password *</span>
                                 <input type="password" value={form.password} onChange={set('password')} required autoComplete="new-password" placeholder="At least 8 characters" />
+                                <small className="referral-field-note">Already an ELAB client? Use the password you sign in with and we attach this to your account.</small>
                             </label>
                             <label><span>Confirm password *</span>
                                 <input type="password" value={form.confirm} onChange={set('confirm')} required autoComplete="new-password" />
@@ -138,7 +145,17 @@ export default function ReferralJoin() {
                         {/* honeypot */}
                         <input className="referral-honeypot" tabIndex={-1} autoComplete="off" aria-hidden="true" value={form.hp} onChange={set('hp')} />
 
-                        {error && <p className="referral-error" role="alert">{error}</p>}
+                        {error && (
+                            <div className="referral-error" role="alert">
+                                <p>{error}</p>
+                                {accountExists && (
+                                    <p className="referral-fineprint">
+                                        <Link to="/login">Sign in</Link> · <Link to="/forgot-password">Reset your password</Link>
+                                        {' '}· or re-submit this form with the password you already use for ELAB.
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         <div className="referral-form-footer">
                             <button type="submit" className="referral-button" disabled={submitting}>
