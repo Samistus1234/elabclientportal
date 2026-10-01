@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { LogOut } from 'lucide-react'
 import Brand from '@/components/Brand'
 import { useTheme } from '@/contexts/ThemeContext'
-import { signOut } from '@/lib/supabase'
+import { getPortalUserInfo, signOut } from '@/lib/supabase'
 
 /**
  * Shell for the referrer area of the client portal.
@@ -15,8 +15,17 @@ export default function ReferralLayout() {
     const navigate = useNavigate()
     const { isDark } = useTheme()
     const [menuOpen, setMenuOpen] = useState(false)
+    // Existing clients / recruiters keep their own home; pure referrers have none.
+    const [homeLink, setHomeLink] = useState<{ to: string; label: string } | null>(null)
 
     useEffect(() => { document.title = 'Referral programme · ELAB' }, [])
+    useEffect(() => {
+        getPortalUserInfo().then(({ data }) => {
+            if (data?.user_type === 'applicant') setHomeLink({ to: '/dashboard', label: 'My applications' })
+            else if (data?.user_type === 'recruiter') setHomeLink({ to: '/recruiter/dashboard', label: 'Recruiter dashboard' })
+            else if (data?.user_type === 'institutional_contact') setHomeLink({ to: '/contact/dashboard', label: 'Verification requests' })
+        }).catch(() => undefined)
+    }, [])
     useEffect(() => { setMenuOpen(false) }, [navigate])
 
     const handleSignOut = async () => {
@@ -49,7 +58,7 @@ export default function ReferralLayout() {
                         ))}
                     </nav>
                     <div className="referral-header-actions">
-                        <NavLink to="/dashboard" className="referral-quiet-link">My applications</NavLink>
+                        {homeLink && <NavLink to={homeLink.to} className="referral-quiet-link">{homeLink.label}</NavLink>}
                         <button type="button" className="referral-quiet-link" onClick={handleSignOut}>
                             <LogOut size={14} /> Sign out
                         </button>

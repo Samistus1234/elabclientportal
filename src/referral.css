@@ -102,6 +102,10 @@ html.dark .referral-table th{background:#1b2942}
 .referral-form{margin-bottom:24px}
 .referral-form-footer{display:flex;flex-direction:column;gap:12px;margin-top:22px;align-items:flex-start}
 .referral-error{color:#b03030;font-size:13.5px;margin-top:14px}
+.referral-error p{margin:0}.referral-error .referral-fineprint{margin-top:6px}.referral-error a{color:#245fb7;font-weight:600}
+.referral-field-note{display:block;font-size:11.5px;color:var(--inner-muted);margin-top:6px;line-height:1.5}
+.dashboard-referral-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#245fb7;text-decoration:none;margin-top:10px}
+.dashboard-referral-link:hover{text-decoration:underline}
 .referral-notice-line{font-size:13.5px;color:#245fb7;margin:0 0 20px}
 .referral-honeypot{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 .referral-payout-panel .referral-button{margin-top:6px}

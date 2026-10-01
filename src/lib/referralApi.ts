@@ -128,7 +128,7 @@ async function callPublicFunction(path: string, body: unknown) {
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok || data?.success === false) {
-        throw new Error(data?.error || 'Something went wrong. Please try again.')
+        throw new ReferralApiError(data?.error || 'Something went wrong. Please try again.', data?.error_code ?? null)
     }
     return data
 }
@@ -147,8 +147,20 @@ export interface ReferrerApplication {
     hp?: string
 }
 
+export class ReferralApiError extends Error {
+    code: string | null
+    constructor(message: string, code: string | null) {
+        super(message)
+        this.code = code
+    }
+}
+
 export function submitReferrerApplication(payload: ReferrerApplication) {
-    return callPublicFunction('/referral-apply', payload) as Promise<{ success: true; status: string }>
+    return callPublicFunction('/referral-apply', payload) as Promise<{
+        success: true
+        status: string
+        existing_account?: boolean
+    }>
 }
 
 export interface PublicReferral {

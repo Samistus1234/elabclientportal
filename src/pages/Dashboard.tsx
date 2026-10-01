@@ -467,6 +467,11 @@ function DashboardSkeleton() {
 // ============================================================================
 export default function Dashboard() {
     const [person, setPerson] = useState<PersonData | null>(null)
+    // Clients who also joined the referral programme get a way into it from here.
+    const [isReferrer, setIsReferrer] = useState(false)
+    useEffect(() => {
+        supabase.rpc('my_referrer_id').then(({ data }) => setIsReferrer(!!data), () => undefined)
+    }, [])
     const [cases, setCases] = useState<CaseData[]>([])
     const [pipelineStages, setPipelineStages] = useState<Record<string, PipelineStage[]>>({})
     const [loading, setLoading] = useState(true)
@@ -836,6 +841,11 @@ export default function Dashboard() {
                         firstName={person?.first_name || 'there'}
                         stats={{ total: cases.length, active: activeCases, completed: completedCases }}
                     />
+                    {isReferrer && (
+                        <Link to="/referral" className="dashboard-referral-link">
+                            Your referral programme — link, referrals and earnings <ChevronRight className="w-4 h-4" />
+                        </Link>
+                    )}
                 </div>
 
                 {/* Quick Actions */}
