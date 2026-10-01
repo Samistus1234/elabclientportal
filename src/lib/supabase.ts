@@ -63,7 +63,7 @@ export async function getUser() {
 export interface PortalUserInfo {
     portal_user_id: string
     person_id: string | null
-    user_type: 'applicant' | 'recruiter' | 'institutional_contact'
+    user_type: 'applicant' | 'recruiter' | 'institutional_contact' | 'referrer'
     first_name: string | null
     last_name: string | null
     email: string

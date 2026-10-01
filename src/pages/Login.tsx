@@ -30,6 +30,8 @@ export default function Login() {
                     navigate('/recruiter/dashboard', { replace: true })
                 } else if (userInfo?.user_type === 'institutional_contact') {
                     navigate('/contact/dashboard', { replace: true })
+                } else if (userInfo?.user_type === 'referrer') {
+                    navigate('/referral', { replace: true })
                 } else {
                     navigate('/dashboard', { replace: true })
                 }
@@ -196,6 +198,12 @@ export default function Login() {
                                     Are you an institution?{' '}
                                     <Link to="/contact/register" className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline">
                                         Register here
+                                    </Link>
+                                </p>
+                                <p className="text-center text-slate-500 text-sm">
+                                    Want to introduce people to eLab?{' '}
+                                    <Link to="/referral/join" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
+                                        Join the referral programme
                                     </Link>
                                 </p>
                             </div>
