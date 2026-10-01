@@ -56,6 +56,15 @@ import HeicToJpg from '@/pages/tools/image/HeicToJpg'
 import PasswordGenerator from '@/pages/tools/utility/PasswordGenerator'
 import QrCodeGenerator from '@/pages/tools/utility/QrCodeGenerator'
 
+// Pages - Referral programme (referrer area is protected; join + landing are public)
+import ReferralLayout from '@/pages/referral/ReferralLayout'
+import ReferralOverview from '@/pages/referral/ReferralOverview'
+import ReferralList from '@/pages/referral/ReferralList'
+import ReferralEarnings from '@/pages/referral/ReferralEarnings'
+import ReferralInvite from '@/pages/referral/ReferralInvite'
+import ReferralJoin from '@/pages/referral/ReferralJoin'
+import ReferralLanding from '@/pages/referral/ReferralLanding'
+
 // Layout wrapper for authenticated pages
 function ProtectedRoute({ children, session }: { children: React.ReactNode; session: Session | null }) {
     if (!session) {
@@ -77,6 +86,8 @@ function RoleBasedRedirect() {
                     setRedirectPath('/recruiter/dashboard')
                 } else if (userInfo?.user_type === 'institutional_contact') {
                     setRedirectPath('/contact/dashboard')
+                } else if (userInfo?.user_type === 'referrer') {
+                    setRedirectPath('/referral')
                 } else {
                     setRedirectPath('/dashboard')
                 }
@@ -207,6 +218,10 @@ export default function App() {
                 <Route path="/support/verification-fees" element={<VerificationFeeChecker />} />
                 <Route path="/verification-fees" element={<VerificationFeeChecker />} />
 
+                {/* Referral programme — public joining form and referred-person landing */}
+                <Route path="/referral/join" element={<ReferralJoin />} />
+                <Route path="/r/:code" element={<ReferralLanding />} />
+
                 {/* Public payment page - no auth required */}
                 <Route path="/pay/:invoiceId" element={<PayInvoice />} />
 
@@ -257,6 +272,21 @@ export default function App() {
                         </ProtectedRoute>
                     }
                 />
+
+                {/* Protected routes - Referrer (referral programme) */}
+                <Route
+                    path="/referral"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <ReferralLayout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route index element={<ReferralOverview />} />
+                    <Route path="referrals" element={<ReferralList />} />
+                    <Route path="earnings" element={<ReferralEarnings />} />
+                    <Route path="invite" element={<ReferralInvite />} />
+                </Route>
 
                 {/* Protected routes - Recruiter */}
                 <Route
