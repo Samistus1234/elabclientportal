@@ -23,6 +23,25 @@ import {
 } from 'lucide-react'
 import { format, parseISO, isPast } from 'date-fns'
 
+// "Signature" look — matches the invoice and receipt documents.
+const SERIF = {
+    fontFamily: "'Cormorant Garamond', Georgia, 'Times New Roman', serif",
+    fontVariantNumeric: 'lining-nums tabular-nums',
+} as const
+const GOLD_RULE = { background: 'linear-gradient(90deg, #B08D57, #D9C39A 70%, rgba(217,195,154,0))' }
+
+function usePaymentPageFonts() {
+    useEffect(() => {
+        const id = 'pay-page-fonts'
+        if (document.getElementById(id)) return
+        const link = document.createElement('link')
+        link.id = id
+        link.rel = 'stylesheet'
+        link.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Manrope:wght@400;500;600;700;800&display=swap'
+        document.head.appendChild(link)
+    }, [])
+}
+
 const CURRENCY_SYMBOLS: Record<string, string> = {
     USD: '$',
     NGN: '\u20A6',
@@ -115,6 +134,9 @@ interface BankAccount {
 export default function PayInvoice() {
     const { invoiceId } = useParams<{ invoiceId: string }>()
     const [searchParams] = useSearchParams()
+    usePaymentPageFonts()
+    // Phones show the services behind a "view details" link so the pay buttons stay near the top.
+    const [showItems, setShowItems] = useState(false)
 
     // Returning from Paystack's hosted Checkout: confirm with the gateway so the client
     // sees the true state. The webhook records the payment independently of this call —
@@ -259,21 +281,21 @@ export default function PayInvoice() {
         const isOverdue = dueDate && isPast(parseISO(dueDate)) && status !== 'paid'
 
         if (isOverdue || status === 'overdue') {
-            return { label: 'Overdue', className: 'bg-red-50 text-red-700 border border-red-200', icon: AlertCircle }
+            return { label: 'Overdue', className: 'text-[#C2410C] border border-[#C2410C]', icon: AlertCircle }
         }
 
         switch (status) {
             case 'paid':
-                return { label: 'Paid', className: 'bg-emerald-50 text-emerald-700 border border-emerald-200', icon: CheckCircle2 }
+                return { label: 'Paid', className: 'text-[#2F6B4F] border border-[#2F6B4F]', icon: CheckCircle2 }
             case 'partial':
-                return { label: 'Partial', className: 'bg-amber-50 text-amber-700 border border-amber-200', icon: Clock }
+                return { label: 'Partial', className: 'text-[#8A6A2F] border border-[#B08D57]', icon: Clock }
             case 'sent':
             case 'viewed':
-                return { label: 'Pending', className: 'bg-sky-50 text-sky-700 border border-sky-200', icon: Clock }
+                return { label: 'Pending', className: 'text-[#27488F] border border-[#27488F]', icon: Clock }
             case 'cancelled':
-                return { label: 'Cancelled', className: 'bg-slate-50 text-slate-500 border border-slate-200', icon: X }
+                return { label: 'Cancelled', className: 'text-[#8A8578] border border-[#C9C4B8]', icon: X }
             default:
-                return { label: status, className: 'bg-slate-50 text-slate-700 border border-slate-200', icon: FileText }
+                return { label: status, className: 'text-[#5B5A55] border border-[#C9C4B8]', icon: FileText }
         }
     }
 
@@ -461,15 +483,15 @@ export default function PayInvoice() {
     // ── Loading State ──
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4]">
+            <div className="min-h-screen flex items-center justify-center bg-[#F2F1EE]">
                 <div className="flex flex-col items-center gap-5">
                     <motion.div
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
                     >
-                        <div className="w-12 h-12 rounded-full border-[3px] border-[#e5e2db] border-t-[#0c1220]" />
+                        <div className="w-12 h-12 rounded-full border-[3px] border-[#e5e2db] border-t-[#13254A]" />
                     </motion.div>
-                    <p className="text-sm text-[#8b8680] tracking-wide uppercase font-medium" style={{ fontFamily: "'Georgia', serif" }}>
+                    <p className="text-sm text-[#8b8680] tracking-wide uppercase font-medium" style={SERIF}>
                         Loading invoice...
                     </p>
                 </div>
@@ -480,22 +502,22 @@ export default function PayInvoice() {
     // ── Error State ──
     if (error || !invoice) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4]">
+            <div className="min-h-screen flex items-center justify-center bg-[#F2F1EE]">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white border border-[#e5e2db] p-10 max-w-md text-center"
+                    className="bg-[#FDFCF9] shadow-[0_1px_2px_rgba(19,37,74,0.05),0_10px_30px_rgba(19,37,74,0.06)] p-10 max-w-md mx-4 text-center"
                 >
-                    <div className="w-px h-8 bg-[#b8860b] mx-auto mb-6" />
-                    <h1 className="text-xl font-semibold text-[#0c1220] mb-3" style={{ fontFamily: "'Georgia', serif" }}>
-                        Invoice Not Found
+                    <div className="w-px h-8 bg-[#B08D57] mx-auto mb-6" />
+                    <h1 className="text-xl font-semibold text-[#13254A] mb-3" style={SERIF}>
+                        Invoice not found
                     </h1>
                     <p className="text-sm text-[#64748b] mb-8 leading-relaxed">
                         {error || 'This invoice could not be found or may have been removed.'}
                     </p>
                     <a
                         href="mailto:headoffice@elabsolution.org"
-                        className="inline-flex items-center gap-2 text-[#b8860b] hover:text-[#96700a] text-sm font-medium transition-colors"
+                        className="inline-flex items-center gap-2 text-[#B08D57] hover:text-[#8A6A2F] text-sm font-medium transition-colors"
                     >
                         <Mail className="w-4 h-4" />
                         Contact Support
@@ -508,34 +530,34 @@ export default function PayInvoice() {
     // ── Payment Success Screen ──
     if (paymentSuccess) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#f8f7f4]">
+            <div className="min-h-screen flex items-center justify-center bg-[#F2F1EE]">
                 <motion.div
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white border border-[#e5e2db] p-10 max-w-md text-center"
+                    className="bg-[#FDFCF9] shadow-[0_1px_2px_rgba(19,37,74,0.05),0_10px_30px_rgba(19,37,74,0.06)] p-10 max-w-md mx-4 text-center"
                 >
                     <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.2, type: 'spring' }}
-                        className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto mb-6"
+                        className="w-14 h-14 bg-[#EDF5F0] rounded-full flex items-center justify-center mx-auto mb-5"
                     >
-                        <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                        <CheckCircle2 className="w-7 h-7 text-[#2F6B4F]" />
                     </motion.div>
-                    <h1 className="text-2xl font-semibold text-[#0c1220] mb-3" style={{ fontFamily: "'Georgia', serif" }}>
-                        Payment Received
+                    <h1 className="text-[34px] font-semibold text-[#13254A] mb-3" style={SERIF}>
+                        Payment received
                     </h1>
                     <p className="text-sm text-[#64748b] mb-6 leading-relaxed">
                         Thank you for your payment. A confirmation will be sent to your email shortly.
                     </p>
                     {paymentReference && (
-                        <div className="bg-[#faf9f7] border border-[#e5e2db] p-4 mb-6">
-                            <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] mb-1">Payment Reference</p>
-                            <p className="font-mono font-semibold text-[#0c1220]">{paymentReference}</p>
+                        <div className="border-l-[3px] border-[#B08D57] bg-[#F8F6F1] p-4 mb-6 text-left">
+                            <p className="text-[10px] uppercase tracking-[1.8px] font-bold text-[#8A8578] mb-1">Payment reference</p>
+                            <p className="font-mono font-semibold text-[#13254A]">{paymentReference}</p>
                         </div>
                     )}
                     <div className="text-xs text-[#8b8680]">
-                        Invoice <span className="font-semibold text-[#0c1220]">{invoice.invoice_number}</span>
+                        Invoice <span className="font-semibold text-[#13254A]">{invoice.invoice_number}</span>
                     </div>
                 </motion.div>
             </div>
@@ -548,29 +570,25 @@ export default function PayInvoice() {
     const nairaBankAccount = bankAccounts.find(b => b.currency === 'NGN' || b.currency === invoice.currency)
 
     return (
-        <div className="min-h-screen bg-[#f8f7f4]">
+        <div className="min-h-screen bg-[#F2F1EE]">
 
             {/* ── Header ── */}
-            <header className="bg-[#0c1220] text-white">
+            <header className="bg-[#13254A] text-white">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6">
-                    {/* Gold accent line */}
-                    <div className="h-[3px] bg-[#b8860b] -mx-4 sm:-mx-6" />
-
                     <div className="flex items-center justify-between py-4">
-                        <div className="flex items-center gap-3">
-                            <img src="/elab-logo.png" alt="ELAB" className="h-9 brightness-0 invert opacity-90" />
-                            <div className="hidden sm:block">
-                                <h1 className="text-sm font-semibold tracking-tight" style={{ fontFamily: "'Georgia', serif" }}>
-                                    Elab Solutions International
-                                </h1>
-                                <p className="text-[9px] uppercase tracking-[2px] text-[#b8860b]">
-                                    Secure Payment Portal
-                                </p>
-                            </div>
+                        <div className="flex items-center gap-4">
+                            {/* Cropped white wordmark — the square /elab-logo.png with
+                                brightness-0 invert rendered as a solid white box. */}
+                            <img src="/elab-logo-white.png" alt="Elab Solutions International" className="h-6 sm:h-7 w-auto" />
+                            <span className="hidden sm:block h-6 w-px bg-white/20" />
+                            <p className="hidden sm:block text-[10px] font-bold uppercase tracking-[2.2px] text-[#C9A86A]">
+                                Secure payment
+                            </p>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-white/50">
-                            <Lock className="w-3.5 h-3.5 text-[#b8860b]" />
-                            <span className="hidden sm:inline uppercase tracking-wider text-[10px]">256-bit Encrypted</span>
+                        <div className="flex items-center gap-1.5 text-white/70">
+                            <Lock className="w-3.5 h-3.5 text-[#C9A86A]" />
+                            <span className="hidden sm:inline text-xs">Encrypted · powered by Paystack</span>
+                            <span className="sm:hidden text-[9px] font-bold uppercase tracking-[1.8px] text-[#C9A86A]">Secure payment</span>
                         </div>
                     </div>
                 </div>
@@ -585,53 +603,52 @@ export default function PayInvoice() {
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-white border border-[#e5e2db] sticky top-8"
+                            className="bg-[#FDFCF9] shadow-[0_1px_2px_rgba(19,37,74,0.05),0_10px_30px_rgba(19,37,74,0.06)] sticky top-8"
                         >
-                            {/* Top gold accent */}
-                            <div className="h-[3px] bg-[#b8860b]" />
-
-                            <div className="p-6">
+                            <div className="p-6 sm:p-7">
                                 {/* Invoice header */}
-                                <div className="flex items-start justify-between mb-6">
+                                <div className="flex items-start justify-between">
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-[2px] text-[#b8860b] font-medium mb-1">Invoice</p>
-                                        <p className="font-mono text-sm font-semibold text-[#0c1220]">{invoice.invoice_number}</p>
+                                        <p className="text-[10px] uppercase tracking-[1.8px] text-[#8A8578] font-bold mb-1">Invoice</p>
+                                        <p className="text-[15px] font-extrabold tracking-[0.4px] text-[#13254A] tabular-nums">Nº {invoice.invoice_number}</p>
                                     </div>
-                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium rounded-sm ${statusConfig.className}`}>
+                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[1.6px] ${statusConfig.className}`}>
                                         <StatusIcon className="w-3 h-3" />
                                         {statusConfig.label}
                                     </div>
+                                </div>
+                                <div className="mt-4 mb-6 flex items-start">
+                                    <div className="h-[3px] w-11 bg-[#27488F]" />
+                                    <div className="mt-px h-px flex-1" style={GOLD_RULE} />
                                 </div>
 
                                 {/* Details */}
                                 <div className="space-y-3 mb-6">
                                     {invoice.customer_name && (
-                                        <div className="flex justify-between items-baseline">
-                                            <span className="text-[11px] uppercase tracking-wider text-[#8b8680]">Client</span>
-                                            <span className="text-sm font-medium text-[#0c1220]">{invoice.customer_name}</span>
+                                        <div>
+                                            <span className="text-[10px] uppercase tracking-[1.8px] font-bold text-[#8A8578]">Billed to</span>
+                                            <p className="text-[23px] font-semibold leading-tight text-[#13254A] mt-1" style={SERIF}>{invoice.customer_name}</p>
                                         </div>
                                     )}
                                     {invoice.due_date && (
                                         <div className="flex justify-between items-baseline">
-                                            <span className="text-[11px] uppercase tracking-wider text-[#8b8680]">Due Date</span>
-                                            <span className="text-sm font-medium text-[#0c1220]">
+                                            <span className="text-[10px] uppercase tracking-[1.8px] font-bold text-[#8A8578]">Due date</span>
+                                            <span className="text-sm font-medium text-[#13254A]">
                                                 {format(parseISO(invoice.due_date), 'MMM d, yyyy')}
                                             </span>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Divider */}
-                                <div className="border-t border-[#e5e2db] mb-5" />
-
-                                {/* Line Items */}
+                                {/* Line Items — collapsed on phones until "view details" */}
+                                <div className={`${showItems ? '' : 'hidden'} lg:block`}>
                                 <div className="mb-5">
-                                    <p className="text-[10px] uppercase tracking-[1.5px] text-[#b8860b] font-medium mb-3">Services</p>
-                                    <div className="space-y-2.5">
+                                    <p className="text-[10px] uppercase tracking-[1.8px] text-[#13254A] font-bold pb-2 border-b-[1.5px] border-[#13254A]">Services</p>
+                                    <div>
                                         {invoice.line_items?.map((item, index) => (
-                                            <div key={index} className="flex justify-between items-baseline gap-4">
+                                            <div key={index} className="flex justify-between items-baseline gap-4 py-2.5 border-b border-[#EFEAE0]">
                                                 <span className="text-[13px] text-[#374151] leading-snug">{item.description}</span>
-                                                <span className="text-[13px] font-semibold text-[#0c1220] tabular-nums whitespace-nowrap">
+                                                <span className="text-[13px] font-semibold text-[#13254A] tabular-nums whitespace-nowrap">
                                                     {formatCurrency(item.line_total, invoice.currency)}
                                                 </span>
                                             </div>
@@ -640,7 +657,7 @@ export default function PayInvoice() {
                                 </div>
 
                                 {/* Totals */}
-                                <div className="border-t border-[#e5e2db] pt-4 space-y-2">
+                                <div className="pt-1 space-y-2 mb-3">
                                     <div className="flex justify-between text-[13px]">
                                         <span className="text-[#8b8680]">Subtotal</span>
                                         <span className="tabular-nums">{formatCurrency(invoice.subtotal, invoice.currency)}</span>
@@ -664,28 +681,43 @@ export default function PayInvoice() {
                                         </div>
                                     )}
 
-                                    {/* Bold separator before total */}
-                                    <div className="border-t-2 border-[#0c1220] !mt-3 !mb-2" />
+                                </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    {/* Gold rule before total */}
+                                    <div className={`h-px mb-3 ${showItems ? '' : 'hidden'} lg:block`} style={GOLD_RULE} />
 
                                     <div className="flex justify-between items-baseline">
-                                        <span className="text-[10px] uppercase tracking-[1px] font-bold text-[#8b8680]">Amount Due</span>
-                                        <span className="text-xl font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                        <span className="text-[10px] uppercase tracking-[1.8px] font-bold text-[#13254A]">Amount due · {invoice.currency}</span>
+                                        <span className="text-[34px] leading-none font-semibold text-[#13254A]" style={SERIF}>
                                             {formatCurrency(invoice.amount_due, invoice.currency)}
                                         </span>
                                     </div>
 
                                     {/* Secondary currency amount */}
-                                    {invoice.secondary_currency && invoice.secondary_total && (
-                                        <div className="bg-amber-50/60 border border-[#b8860b]/20 p-3 !mt-4">
+                                    {invoice.secondary_currency && invoice.secondary_total && invoice.amount_due > 0 && (
+                                        <div className="border-l-[3px] border-[#B08D57] bg-[#F8F3E8] p-3 !mt-4">
                                             <div className="flex justify-between items-baseline">
-                                                <span className="text-[10px] uppercase tracking-[1px] font-semibold text-[#b8860b]">
+                                                <span className="text-[10px] uppercase tracking-[1.6px] font-bold text-[#8A6A2F]">
                                                     Or pay in {invoice.secondary_currency}
                                                 </span>
-                                                <span className="text-base font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                <span className="text-xl font-semibold text-[#6B4E1F]" style={SERIF}>
                                                     {formatCurrency(getSecondaryAmountDue(), invoice.secondary_currency)}
                                                 </span>
                                             </div>
                                         </div>
+                                    )}
+                                    {(invoice.line_items?.length ?? 0) > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowItems(v => !v)}
+                                            className="lg:hidden !mt-4 text-[13px] font-semibold text-[#27488F]"
+                                        >
+                                            {showItems
+                                                ? 'Hide details'
+                                                : `${invoice.line_items.length} service${invoice.line_items.length === 1 ? '' : 's'} · view details ›`}
+                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -698,15 +730,15 @@ export default function PayInvoice() {
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white border border-emerald-200 p-10 text-center"
+                                className="bg-[#FDFCF9] shadow-[0_1px_2px_rgba(19,37,74,0.05),0_10px_30px_rgba(19,37,74,0.06)] p-10 text-center"
                             >
-                                <div className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto mb-5">
-                                    <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                                <div className="w-14 h-14 bg-[#EDF5F0] rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CheckCircle2 className="w-7 h-7 text-[#2F6B4F]" />
                                 </div>
-                                <h2 className="text-xl font-semibold text-[#0c1220] mb-2" style={{ fontFamily: "'Georgia', serif" }}>
-                                    Invoice Paid in Full
+                                <h2 className="text-[34px] font-semibold text-[#13254A] mb-2" style={SERIF}>
+                                    Settled in full
                                 </h2>
-                                <p className="text-sm text-[#64748b]">This invoice has been settled. Thank you for your payment.</p>
+                                <p className="text-sm text-[#5B5A55] leading-relaxed">This invoice has been paid. Your official receipt was emailed to you.<br />Thank you for trusting us with your professional journey.</p>
                             </motion.div>
                         ) : (
                             <motion.div
@@ -716,7 +748,7 @@ export default function PayInvoice() {
                                 className="space-y-5"
                             >
                                 {/* Payment Method Card */}
-                                <div className="bg-white border border-[#e5e2db] overflow-hidden">
+                                <div className="bg-[#FDFCF9] shadow-[0_1px_2px_rgba(19,37,74,0.05),0_10px_30px_rgba(19,37,74,0.06)] overflow-hidden">
                                     {/* Tabs */}
                                     {(() => {
                                         const hasSecondary = !!(invoice.secondary_currency && invoice.secondary_total)
@@ -724,39 +756,36 @@ export default function PayInvoice() {
                                         const cardAmt = cardCurrency === 'secondary' && hasSecondary ? getSecondaryAmountDue() : invoice.amount_due
                                         const tabFeeInfo = calculatePaystackFee(cardAmt, cardCur)
                                         return (
-                                            <div className="flex border-b border-[#e5e2db]">
+                                            <div className="flex gap-1 m-3 sm:m-4 mb-0 sm:mb-0 rounded-xl bg-[#E4E2DC] p-1">
                                                 <button
                                                     onClick={() => setActiveTab('card')}
-                                                    className={`flex-1 flex items-center justify-center gap-3 py-4 text-sm font-medium transition-all relative ${
+                                                    className={`flex-1 flex items-center justify-center gap-3 py-2.5 rounded-lg text-sm transition-all ${
                                                         activeTab === 'card'
-                                                            ? 'text-[#0c1220] bg-white'
-                                                            : 'text-[#8b8680] hover:text-[#64748b] bg-[#faf9f7]'
+                                                            ? 'text-[#13254A] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.10)]'
+                                                            : 'text-[#5B5A55] hover:text-[#13254A]'
                                                     }`}
                                                 >
-                                                    {activeTab === 'card' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#b8860b]" />}
                                                     <CreditCard className="w-4 h-4" />
                                                     <div className="text-left">
-                                                        <div className="text-[13px] font-semibold">Pay with Card</div>
+                                                        <div className="text-[13.5px] font-bold">Pay by card</div>
                                                         <div className="text-[11px] font-normal opacity-60">
                                                             {formatCurrency(tabFeeInfo.total, cardCur)}
                                                         </div>
                                                     </div>
                                                 </button>
-                                                <div className="w-px bg-[#e5e2db]" />
                                                 <button
                                                     onClick={() => setActiveTab('bank')}
-                                                    className={`flex-1 flex items-center justify-center gap-3 py-4 text-sm font-medium transition-all relative ${
+                                                    className={`flex-1 flex items-center justify-center gap-3 py-2.5 rounded-lg text-sm transition-all ${
                                                         activeTab === 'bank'
-                                                            ? 'text-[#0c1220] bg-white'
-                                                            : 'text-[#8b8680] hover:text-[#64748b] bg-[#faf9f7]'
+                                                            ? 'text-[#13254A] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.10)]'
+                                                            : 'text-[#5B5A55] hover:text-[#13254A]'
                                                     }`}
                                                 >
-                                                    {activeTab === 'bank' && <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#b8860b]" />}
                                                     <Building2 className="w-4 h-4" />
                                                     <div className="text-left">
-                                                        <div className="text-[13px] font-semibold">Bank Transfer</div>
+                                                        <div className="text-[13.5px] font-bold">Bank transfer</div>
                                                         <div className="text-[11px] font-normal opacity-60">
-                                                            {formatCurrency(invoice.amount_due, invoice.currency)} (No Fee)
+                                                            {formatCurrency(invoice.amount_due, invoice.currency)} · no fee
                                                         </div>
                                                     </div>
                                                 </button>
@@ -774,17 +803,9 @@ export default function PayInvoice() {
                                         const isUSDSelected = selectedCurrency === 'USD'
                                         return (
                                             <div className="p-6 sm:p-8">
-                                                <div className="text-center mb-6">
-                                                    <div className="w-14 h-14 bg-[#faf9f7] border border-[#e5e2db] rounded-full flex items-center justify-center mx-auto mb-4">
-                                                        <CreditCard className="w-6 h-6 text-[#0c1220]" />
-                                                    </div>
-                                                    <h3 className="text-lg font-semibold text-[#0c1220] mb-2" style={{ fontFamily: "'Georgia', serif" }}>
-                                                        Debit / Credit Card
-                                                    </h3>
-                                                    <p className="text-[13px] text-[#8b8680] max-w-xs mx-auto leading-relaxed">
-                                                        Secure payment powered by Paystack. Choose your preferred currency below.
-                                                    </p>
-                                                </div>
+                                                <p className="text-[13px] text-[#5B5A55] leading-relaxed mb-5">
+                                                    Pay securely by debit or credit card through Paystack.{hasSecondary ? ' Choose the currency you want to pay in.' : ''}
+                                                </p>
 
                                                 {/* Currency Selector — only show if secondary currency exists */}
                                                 {hasSecondary && (
@@ -792,19 +813,19 @@ export default function PayInvoice() {
                                                         {/* Primary currency option */}
                                                         <button
                                                             onClick={() => setCardCurrency('primary')}
-                                                            className={`relative p-4 border-2 transition-all text-left ${
+                                                            className={`relative p-4 border-2 rounded-xl transition-all text-left ${
                                                                 cardCurrency === 'primary'
-                                                                    ? 'border-[#b8860b] bg-amber-50/30'
+                                                                    ? 'border-[#13254A] bg-white'
                                                                     : 'border-[#e5e2db] hover:border-[#c4c0b8] bg-white'
                                                             }`}
                                                         >
                                                             {cardCurrency === 'primary' && (
-                                                                <div className="absolute top-2 right-2 w-5 h-5 bg-[#b8860b] rounded-full flex items-center justify-center">
+                                                                <div className="absolute top-2 right-2 w-5 h-5 bg-[#13254A] rounded-full flex items-center justify-center">
                                                                     <Check className="w-3 h-3 text-white" />
                                                                 </div>
                                                             )}
                                                             <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] font-medium mb-1">Pay in {invoice.currency}</p>
-                                                            <p className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                            <p className="text-lg font-bold text-[#13254A] tabular-nums" style={SERIF}>
                                                                 {formatCurrency(invoice.amount_due, invoice.currency)}
                                                             </p>
                                                             <p className="text-[11px] text-[#8b8680] mt-1">
@@ -815,19 +836,19 @@ export default function PayInvoice() {
                                                         {/* Secondary currency option */}
                                                         <button
                                                             onClick={() => setCardCurrency('secondary')}
-                                                            className={`relative p-4 border-2 transition-all text-left ${
+                                                            className={`relative p-4 border-2 rounded-xl transition-all text-left ${
                                                                 cardCurrency === 'secondary'
-                                                                    ? 'border-[#b8860b] bg-amber-50/30'
+                                                                    ? 'border-[#13254A] bg-white'
                                                                     : 'border-[#e5e2db] hover:border-[#c4c0b8] bg-white'
                                                             }`}
                                                         >
                                                             {cardCurrency === 'secondary' && (
-                                                                <div className="absolute top-2 right-2 w-5 h-5 bg-[#b8860b] rounded-full flex items-center justify-center">
+                                                                <div className="absolute top-2 right-2 w-5 h-5 bg-[#13254A] rounded-full flex items-center justify-center">
                                                                     <Check className="w-3 h-3 text-white" />
                                                                 </div>
                                                             )}
                                                             <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] font-medium mb-1">Pay in {invoice.secondary_currency}</p>
-                                                            <p className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                            <p className="text-lg font-bold text-[#13254A] tabular-nums" style={SERIF}>
                                                                 {formatCurrency(secondaryAmountDue, invoice.secondary_currency!)}
                                                             </p>
                                                             <p className="text-[11px] text-[#8b8680] mt-1">
@@ -838,22 +859,22 @@ export default function PayInvoice() {
                                                 )}
 
                                                 {/* Fee Breakdown */}
-                                                <div className="bg-[#faf9f7] border border-[#e5e2db] p-5 mb-6 space-y-3">
+                                                <div className="mb-6 space-y-3">
                                                     <div className="flex justify-between text-[13px]">
                                                         <span className="text-[#64748b]">Invoice Amount</span>
-                                                        <span className="font-medium text-[#0c1220] tabular-nums">{formatCurrency(selectedAmount, selectedCurrency)}</span>
+                                                        <span className="font-medium text-[#13254A] tabular-nums">{formatCurrency(selectedAmount, selectedCurrency)}</span>
                                                     </div>
                                                     <div className="flex justify-between text-[13px]">
                                                         <span className="text-[#64748b]">
                                                             Processing Fee ({feeInfo.percentage})
                                                             <span className="text-[11px] text-[#8b8680] ml-1">(Paystack)</span>
                                                         </span>
-                                                        <span className="font-medium text-[#b8860b] tabular-nums">+{formatCurrency(feeInfo.fee, selectedCurrency)}</span>
+                                                        <span className="font-medium text-[#B08D57] tabular-nums">+{formatCurrency(feeInfo.fee, selectedCurrency)}</span>
                                                     </div>
-                                                    <div className="border-t border-[#e5e2db] pt-3">
+                                                    <div className="pt-3 border-t border-[#EFEAE0]">
                                                         <div className="flex justify-between items-baseline">
-                                                            <span className="text-[10px] uppercase tracking-[1px] font-bold text-[#64748b]">Total to Pay</span>
-                                                            <span className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                            <span className="text-[10px] uppercase tracking-[1.8px] font-bold text-[#13254A]">Total to pay</span>
+                                                            <span className="text-[38px] leading-none font-semibold text-[#13254A]" style={SERIF}>
                                                                 {formatCurrency(feeInfo.total, selectedCurrency)}
                                                             </span>
                                                         </div>
@@ -862,15 +883,15 @@ export default function PayInvoice() {
 
                                                 {/* Email Input */}
                                                 <div className="mb-5">
-                                                    <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
-                                                        Email for Receipt
+                                                    <label className="block text-[10px] uppercase tracking-[1.8px] text-[#8A8578] font-bold mb-2">
+                                                        Email for your receipt
                                                     </label>
                                                     <input
                                                         type="email"
                                                         value={proofForm.payerEmail}
                                                         onChange={(e) => setProofForm({ ...proofForm, payerEmail: e.target.value })}
                                                         placeholder="jacinta@gmail.com"
-                                                        className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220] placeholder:text-[#c4c0b8]"
+                                                        className="w-full px-4 py-3 rounded-xl border border-[#E2DCCD] bg-white focus:border-[#13254A] focus:ring-1 focus:ring-[#13254A]/15 transition-all outline-none text-[15px] text-[#13254A] placeholder:text-[#c4c0b8]"
                                                     />
                                                 </div>
 
@@ -883,7 +904,7 @@ export default function PayInvoice() {
                                                 <button
                                                     onClick={handlePayWithCard}
                                                     disabled={paymentLoading || !proofForm.payerEmail}
-                                                    className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
+                                                    className="w-full rounded-xl bg-[#13254A] text-white font-extrabold py-4 px-6 hover:bg-[#0E1C3A] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-[15px] tracking-wide"
                                                 >
                                                     {paymentLoading ? (
                                                         <>
@@ -892,7 +913,7 @@ export default function PayInvoice() {
                                                         </>
                                                     ) : (
                                                         <>
-                                                            PAY {formatCurrency(feeInfo.total, selectedCurrency)}
+                                                            Pay {formatCurrency(feeInfo.total, selectedCurrency)} securely
                                                             <ArrowRight className="w-4 h-4" />
                                                         </>
                                                     )}
@@ -906,7 +927,7 @@ export default function PayInvoice() {
                                                         <button
                                                             type="button"
                                                             onClick={handlePayWithUSDLink}
-                                                            className="text-[#b8860b] underline hover:text-[#96700a] transition-colors"
+                                                            className="text-[#B08D57] underline hover:text-[#8A6A2F] transition-colors"
                                                         >
                                                             Use our secure payment page
                                                         </button>{' '}
@@ -915,11 +936,11 @@ export default function PayInvoice() {
                                                 )}
 
                                                 {/* Card logos */}
-                                                <div className="flex items-center justify-center gap-3 mt-5">
-                                                    <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">VISA</span>
-                                                    <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">MASTERCARD</span>
-                                                    {!isUSDSelected && <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">VERVE</span>}
-                                                    {isUSDSelected && <span className="px-3 py-1 bg-[#faf9f7] border border-[#e5e2db] text-[#0c1220] text-[10px] font-bold tracking-wider">AMEX</span>}
+                                                <div className="flex items-center justify-center gap-4 mt-5">
+                                                    <span className="text-[#8A8578] text-[10.5px] font-bold tracking-[1px]">VISA</span>
+                                                    <span className="text-[#8A8578] text-[10.5px] font-bold tracking-[1px]">MASTERCARD</span>
+                                                    {!isUSDSelected && <span className="text-[#8A8578] text-[10.5px] font-bold tracking-[1px]">VERVE</span>}
+                                                    {isUSDSelected && <span className="text-[#8A8578] text-[10.5px] font-bold tracking-[1px]">AMEX</span>}
                                                 </div>
 
                                                 <p className="text-[11px] text-[#8b8680] text-center mt-4">
@@ -932,28 +953,17 @@ export default function PayInvoice() {
                                     {/* ── Bank Transfer Tab ── */}
                                     {activeTab === 'bank' && nairaBankAccount && (
                                         <div className="p-6 sm:p-8">
-                                            <div className="text-center mb-8">
-                                                <div className="w-14 h-14 bg-[#faf9f7] border border-[#e5e2db] rounded-full flex items-center justify-center mx-auto mb-4">
-                                                    <Building2 className="w-6 h-6 text-[#0c1220]" />
-                                                </div>
-                                                <h3 className="text-lg font-semibold text-[#0c1220] mb-1" style={{ fontFamily: "'Georgia', serif" }}>
-                                                    Bank Transfer
-                                                </h3>
-                                                <span className="inline-block px-2.5 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold border border-emerald-200 uppercase tracking-wider mb-3">
-                                                    No Processing Fee
-                                                </span>
-                                                <p className="text-[13px] text-[#8b8680] max-w-xs mx-auto leading-relaxed">
-                                                    Transfer to the account below and submit your payment proof.
-                                                </p>
-                                            </div>
+                                            <p className="text-[13.5px] text-[#3D3B36] leading-relaxed mb-5">
+                                                Transfer <strong className="text-[#13254A] tabular-nums">{formatCurrency(invoice.amount_due, invoice.currency)}</strong> to the account below &mdash; no processing fee. Then tell us you've paid so we can confirm it quickly.
+                                            </p>
 
                                             {/* Bank Details */}
-                                            <div className="space-y-3 mb-6">
+                                            <div className="mb-6 border-l-[3px] border-[#B08D57] bg-[#F8F6F1] px-4 divide-y divide-[#ECE6D8]">
                                                 {/* Bank Name */}
-                                                <div className="flex items-center justify-between p-4 bg-[#faf9f7] border border-[#e5e2db]">
+                                                <div className="flex items-center justify-between py-3">
                                                     <div>
                                                         <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] mb-0.5">Bank</p>
-                                                        <p className="text-sm font-semibold text-[#0c1220]">{nairaBankAccount.bank_name}</p>
+                                                        <p className="text-sm font-semibold text-[#13254A]">{nairaBankAccount.bank_name}</p>
                                                     </div>
                                                     <button
                                                         onClick={() => copyToClipboard(nairaBankAccount.bank_name, 'bank')}
@@ -964,10 +974,10 @@ export default function PayInvoice() {
                                                 </div>
 
                                                 {/* Account Name */}
-                                                <div className="flex items-center justify-between p-4 bg-[#faf9f7] border border-[#e5e2db]">
+                                                <div className="flex items-center justify-between py-3">
                                                     <div>
                                                         <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] mb-0.5">Account Name</p>
-                                                        <p className="text-sm font-semibold text-[#0c1220]">{nairaBankAccount.account_name}</p>
+                                                        <p className="text-sm font-semibold text-[#13254A]">{nairaBankAccount.account_name}</p>
                                                     </div>
                                                     <button
                                                         onClick={() => copyToClipboard(nairaBankAccount.account_name, 'name')}
@@ -978,42 +988,42 @@ export default function PayInvoice() {
                                                 </div>
 
                                                 {/* Account Number — Highlighted */}
-                                                <div className="flex items-center justify-between p-4 bg-[#0c1220] border border-[#0c1220]">
+                                                <div className="flex items-center justify-between py-3">
                                                     <div>
-                                                        <p className="text-[10px] uppercase tracking-[1.5px] text-[#b8860b] mb-0.5">Account Number</p>
-                                                        <p className="text-xl font-bold text-white tracking-wide tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                        <p className="text-[10px] uppercase tracking-[1.5px] text-[#8b8680] mb-0.5">Account Number</p>
+                                                        <p className="text-2xl font-semibold text-[#13254A] tracking-wide" style={SERIF}>
                                                             {nairaBankAccount.account_number}
                                                         </p>
                                                     </div>
                                                     <button
                                                         onClick={() => copyToClipboard(nairaBankAccount.account_number, 'number')}
-                                                        className="p-2 hover:bg-white/10 transition-colors"
+                                                        className="p-2 hover:bg-[#e5e2db] transition-colors"
                                                     >
-                                                        {copiedField === 'number' ? <Check className="w-5 h-5 text-[#b8860b]" /> : <Copy className="w-5 h-5 text-white/60" />}
+                                                        {copiedField === 'number' ? <Check className="w-5 h-5 text-emerald-600" /> : <Copy className="w-5 h-5 text-[#8b8680]" />}
                                                     </button>
                                                 </div>
 
                                                 {/* Payment Reference */}
-                                                <div className="flex items-center justify-between p-4 bg-amber-50/60 border border-[#b8860b]/20">
+                                                <div className="flex items-center justify-between py-3">
                                                     <div>
-                                                        <p className="text-[10px] uppercase tracking-[1.5px] text-[#b8860b] font-semibold mb-0.5">
+                                                        <p className="text-[10px] uppercase tracking-[1.5px] text-[#B08D57] font-semibold mb-0.5">
                                                             Payment Reference (Required)
                                                         </p>
-                                                        <p className="text-sm font-bold text-[#0c1220]">{invoice.invoice_number}</p>
+                                                        <p className="text-sm font-bold text-[#13254A]">{invoice.invoice_number}</p>
                                                     </div>
                                                     <button
                                                         onClick={() => copyToClipboard(invoice.invoice_number, 'ref')}
-                                                        className="p-2 hover:bg-[#b8860b]/10 transition-colors"
+                                                        className="p-2 hover:bg-[#B08D57]/10 transition-colors"
                                                     >
-                                                        {copiedField === 'ref' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-[#b8860b]" />}
+                                                        {copiedField === 'ref' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-[#B08D57]" />}
                                                     </button>
                                                 </div>
 
                                                 {/* Amount */}
-                                                <div className="flex items-center justify-between p-4 bg-emerald-50/50 border border-emerald-200/60">
+                                                <div className="flex items-center justify-between py-3">
                                                     <div>
                                                         <p className="text-[10px] uppercase tracking-[1.5px] text-emerald-700 mb-0.5">Amount to Transfer</p>
-                                                        <p className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                        <p className="text-lg font-bold text-[#13254A] tabular-nums" style={SERIF}>
                                                             {formatCurrency(invoice.amount_due, invoice.currency)}
                                                         </p>
                                                     </div>
@@ -1027,18 +1037,18 @@ export default function PayInvoice() {
 
                                                 {/* Secondary currency equivalent */}
                                                 {invoice.secondary_currency && invoice.secondary_total && (
-                                                    <div className="flex items-center justify-between p-4 bg-amber-50/60 border border-[#b8860b]/20">
+                                                    <div className="flex items-center justify-between py-3">
                                                         <div>
-                                                            <p className="text-[10px] uppercase tracking-[1.5px] text-[#b8860b] font-semibold mb-0.5">Or Transfer in {invoice.secondary_currency}</p>
-                                                            <p className="text-lg font-bold text-[#0c1220] tabular-nums" style={{ fontFamily: "'Georgia', serif" }}>
+                                                            <p className="text-[10px] uppercase tracking-[1.5px] text-[#B08D57] font-semibold mb-0.5">Or Transfer in {invoice.secondary_currency}</p>
+                                                            <p className="text-lg font-bold text-[#13254A] tabular-nums" style={SERIF}>
                                                                 {formatCurrency(getSecondaryAmountDue(), invoice.secondary_currency)}
                                                             </p>
                                                         </div>
                                                         <button
                                                             onClick={() => copyToClipboard(getSecondaryAmountDue().toString(), 'sec-amount')}
-                                                            className="p-2 hover:bg-[#b8860b]/10 transition-colors"
+                                                            className="p-2 hover:bg-[#B08D57]/10 transition-colors"
                                                         >
-                                                            {copiedField === 'sec-amount' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-[#b8860b]" />}
+                                                            {copiedField === 'sec-amount' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-[#B08D57]" />}
                                                         </button>
                                                     </div>
                                                 )}
@@ -1047,10 +1057,10 @@ export default function PayInvoice() {
                                             {/* Submit Proof Button */}
                                             <button
                                                 onClick={() => setShowProofModal(true)}
-                                                className="w-full bg-[#0c1220] text-white font-semibold py-4 px-6 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 text-sm tracking-wide"
+                                                className="w-full rounded-xl bg-[#13254A] text-white font-extrabold py-4 px-6 hover:bg-[#0E1C3A] transition-colors flex items-center justify-center gap-2.5 text-[15px] tracking-wide"
                                             >
                                                 <Upload className="w-4 h-4" />
-                                                I'VE PAID — SUBMIT PROOF
+                                                I've paid &mdash; upload my receipt
                                             </button>
                                         </div>
                                     )}
@@ -1064,42 +1074,33 @@ export default function PayInvoice() {
                                 </div>
 
                                 {/* Security Notice */}
-                                <div className="bg-white border border-[#e5e2db] p-5 flex items-start gap-4">
-                                    <div className="w-10 h-10 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <Shield className="w-5 h-5 text-emerald-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-semibold text-[#0c1220] mb-1" style={{ fontFamily: "'Georgia', serif" }}>
-                                            Secure Payment
-                                        </p>
-                                        <p className="text-[13px] text-[#64748b] leading-relaxed">
-                                            Your payment information is encrypted and secure. We never store your card details.
-                                        </p>
-                                    </div>
+                                <div className="flex items-start gap-3 px-1.5 text-[12.5px] leading-relaxed text-[#8A8578]">
+                                    <Shield className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                    <p>Card payments are processed by Paystack over an encrypted connection. We never see or store your card details.</p>
                                 </div>
 
                                 {/* Contact Support */}
-                                <div className="bg-white border border-[#e5e2db] p-5">
-                                    <p className="text-[10px] uppercase tracking-[1.5px] text-[#b8860b] font-medium mb-3">Need Assistance?</p>
-                                    <div className="flex items-center justify-between">
-                                        <a href="mailto:headoffice@elabsolution.org" className="flex items-center gap-2 text-[13px] text-[#0c1220] hover:text-[#b8860b] transition-colors font-medium">
+                                <div className="px-1.5">
+                                    <p className="text-[10px] uppercase tracking-[1.8px] text-[#8A8578] font-bold mb-2">Need assistance?</p>
+                                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                                        <a href="mailto:headoffice@elabsolution.org" className="flex items-center gap-2 text-[13px] text-[#13254A] hover:text-[#B08D57] transition-colors font-medium">
                                             <Mail className="w-3.5 h-3.5 text-[#8b8680]" />
                                             headoffice@elabsolution.org
                                         </a>
-                                        <a href="tel:+2348168634195" className="flex items-center gap-2 text-[13px] text-[#0c1220] hover:text-[#b8860b] transition-colors font-medium">
+                                        <a href="tel:+2348165634195" className="flex items-center gap-2 text-[13px] text-[#13254A] hover:text-[#B08D57] transition-colors font-medium">
                                             <Phone className="w-3.5 h-3.5 text-[#8b8680]" />
-                                            +234 816 863 4195
+                                            +234 816 563 4195
                                         </a>
                                     </div>
                                 </div>
 
                                 {/* Legal Links */}
                                 <div className="text-center text-[11px] text-[#8b8680] space-x-4">
-                                    <a href="/privacy" className="hover:text-[#b8860b] transition-colors">Privacy</a>
+                                    <a href="/privacy" className="hover:text-[#B08D57] transition-colors">Privacy</a>
                                     <span className="text-[#e5e2db]">|</span>
-                                    <a href="/terms" className="hover:text-[#b8860b] transition-colors">Terms</a>
+                                    <a href="/terms" className="hover:text-[#B08D57] transition-colors">Terms</a>
                                     <span className="text-[#e5e2db]">|</span>
-                                    <a href="/support/refund-policy" className="hover:text-[#b8860b] transition-colors">Refund Policy</a>
+                                    <a href="/support/refund-policy" className="hover:text-[#B08D57] transition-colors">Refund Policy</a>
                                 </div>
                             </motion.div>
                         )}
@@ -1114,25 +1115,22 @@ export default function PayInvoice() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-[#0c1220]/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                        className="fixed inset-0 bg-[#13254A]/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
                         onClick={() => !submittingProof && !proofSuccess && setShowProofModal(false)}
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="bg-white border border-[#e5e2db] max-w-md w-full max-h-[90vh] overflow-y-auto"
+                            className="bg-[#FDFCF9] shadow-[0_24px_60px_rgba(19,37,74,0.25)] max-w-md w-full max-h-[90vh] overflow-y-auto"
                             onClick={e => e.stopPropagation()}
                         >
-                            {/* Modal gold accent */}
-                            <div className="h-[3px] bg-[#b8860b]" />
-
                             {/* Header */}
-                            <div className="p-6 border-b border-[#e5e2db]">
+                            <div className="p-6 border-b border-[#EFEAE0]">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h3 className="text-lg font-semibold text-[#0c1220]" style={{ fontFamily: "'Georgia', serif" }}>
-                                            Submit Payment Proof
+                                        <h3 className="text-[26px] leading-tight font-semibold text-[#13254A]" style={SERIF}>
+                                            Upload your receipt
                                         </h3>
                                         <p className="text-[12px] text-[#8b8680] mt-0.5">
                                             Invoice {invoice.invoice_number}
@@ -1155,11 +1153,11 @@ export default function PayInvoice() {
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
                                             transition={{ type: 'spring' }}
-                                            className="w-16 h-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center mx-auto mb-5"
+                                            className="w-14 h-14 bg-[#EDF5F0] rounded-full flex items-center justify-center mx-auto mb-5"
                                         >
-                                            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                                            <CheckCircle2 className="w-7 h-7 text-[#2F6B4F]" />
                                         </motion.div>
-                                        <h4 className="text-lg font-semibold text-[#0c1220] mb-2" style={{ fontFamily: "'Georgia', serif" }}>
+                                        <h4 className="text-[26px] font-semibold text-[#13254A] mb-2" style={SERIF}>
                                             Proof Submitted
                                         </h4>
                                         <p className="text-[13px] text-[#64748b] leading-relaxed">
@@ -1176,7 +1174,7 @@ export default function PayInvoice() {
 
                                         {/* File Upload */}
                                         <div>
-                                            <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
+                                            <label className="block text-[10px] uppercase tracking-[1.8px] text-[#8A8578] font-bold mb-2">
                                                 Payment Receipt / Screenshot *
                                             </label>
                                             <input
@@ -1207,7 +1205,7 @@ export default function PayInvoice() {
                                                             setProofFile(null)
                                                             setProofPreview(null)
                                                         }}
-                                                        className="absolute top-2 right-2 p-1.5 bg-[#0c1220] text-white hover:bg-[#1a2538] transition-colors"
+                                                        className="absolute top-2 right-2 p-1.5 bg-[#13254A] text-white hover:bg-[#0E1C3A] transition-colors"
                                                     >
                                                         <X className="w-3.5 h-3.5" />
                                                     </button>
@@ -1215,7 +1213,7 @@ export default function PayInvoice() {
                                             ) : (
                                                 <button
                                                     onClick={() => fileInputRef.current?.click()}
-                                                    className="w-full h-32 border-2 border-dashed border-[#e5e2db] flex flex-col items-center justify-center gap-2 hover:border-[#b8860b] hover:bg-[#faf9f7] transition-all"
+                                                    className="w-full h-32 rounded-xl border-2 border-dashed border-[#E2DCCD] flex flex-col items-center justify-center gap-2 hover:border-[#B08D57] hover:bg-[#faf9f7] transition-all"
                                                 >
                                                     <Upload className="w-6 h-6 text-[#8b8680]" />
                                                     <span className="text-[13px] text-[#64748b] font-medium">
@@ -1230,7 +1228,7 @@ export default function PayInvoice() {
 
                                         {/* Email */}
                                         <div>
-                                            <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
+                                            <label className="block text-[10px] uppercase tracking-[1.8px] text-[#8A8578] font-bold mb-2">
                                                 Your Email *
                                             </label>
                                             <input
@@ -1238,26 +1236,26 @@ export default function PayInvoice() {
                                                 value={proofForm.payerEmail}
                                                 onChange={(e) => setProofForm({ ...proofForm, payerEmail: e.target.value })}
                                                 placeholder="jacinta@gmail.com"
-                                                className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220] placeholder:text-[#c4c0b8]"
+                                                className="w-full px-4 py-3 rounded-xl border border-[#E2DCCD] bg-white focus:border-[#13254A] focus:ring-1 focus:ring-[#13254A]/15 transition-all outline-none text-[15px] text-[#13254A] placeholder:text-[#c4c0b8]"
                                             />
                                         </div>
 
                                         {/* Payment Date */}
                                         <div>
-                                            <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
+                                            <label className="block text-[10px] uppercase tracking-[1.8px] text-[#8A8578] font-bold mb-2">
                                                 Payment Date *
                                             </label>
                                             <input
                                                 type="date"
                                                 value={proofForm.paymentDate}
                                                 onChange={(e) => setProofForm({ ...proofForm, paymentDate: e.target.value })}
-                                                className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220]"
+                                                className="w-full px-4 py-3 rounded-xl border border-[#E2DCCD] bg-white focus:border-[#13254A] focus:ring-1 focus:ring-[#13254A]/15 transition-all outline-none text-[15px] text-[#13254A]"
                                             />
                                         </div>
 
                                         {/* Bank Reference */}
                                         <div>
-                                            <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
+                                            <label className="block text-[10px] uppercase tracking-[1.8px] text-[#8A8578] font-bold mb-2">
                                                 Bank Reference / Transaction ID
                                             </label>
                                             <input
@@ -1265,13 +1263,13 @@ export default function PayInvoice() {
                                                 value={proofForm.bankReference}
                                                 onChange={(e) => setProofForm({ ...proofForm, bankReference: e.target.value })}
                                                 placeholder="e.g., TRF123456789"
-                                                className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220] placeholder:text-[#c4c0b8]"
+                                                className="w-full px-4 py-3 rounded-xl border border-[#E2DCCD] bg-white focus:border-[#13254A] focus:ring-1 focus:ring-[#13254A]/15 transition-all outline-none text-[15px] text-[#13254A] placeholder:text-[#c4c0b8]"
                                             />
                                         </div>
 
                                         {/* Name */}
                                         <div>
-                                            <label className="block text-[11px] uppercase tracking-wider text-[#8b8680] font-medium mb-2">
+                                            <label className="block text-[10px] uppercase tracking-[1.8px] text-[#8A8578] font-bold mb-2">
                                                 Your Name
                                             </label>
                                             <input
@@ -1279,7 +1277,7 @@ export default function PayInvoice() {
                                                 value={proofForm.payerName}
                                                 onChange={(e) => setProofForm({ ...proofForm, payerName: e.target.value })}
                                                 placeholder="Full name"
-                                                className="w-full px-4 py-3 border border-[#e5e2db] bg-white focus:border-[#b8860b] focus:ring-1 focus:ring-[#b8860b]/20 transition-all outline-none text-sm text-[#0c1220] placeholder:text-[#c4c0b8]"
+                                                className="w-full px-4 py-3 rounded-xl border border-[#E2DCCD] bg-white focus:border-[#13254A] focus:ring-1 focus:ring-[#13254A]/15 transition-all outline-none text-[15px] text-[#13254A] placeholder:text-[#c4c0b8]"
                                             />
                                         </div>
 
@@ -1287,7 +1285,7 @@ export default function PayInvoice() {
                                         <button
                                             onClick={handleSubmitProof}
                                             disabled={!proofFile || !proofForm.payerEmail || submittingProof}
-                                            className="w-full bg-[#0c1220] text-white font-semibold py-4 px-4 hover:bg-[#1a2538] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
+                                            className="w-full rounded-xl bg-[#13254A] text-white font-extrabold py-4 px-4 hover:bg-[#0E1C3A] transition-colors flex items-center justify-center gap-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-sm tracking-wide"
                                         >
                                             {submittingProof ? (
                                                 <>
@@ -1297,7 +1295,7 @@ export default function PayInvoice() {
                                             ) : (
                                                 <>
                                                     <Upload className="w-4 h-4" />
-                                                    SUBMIT PAYMENT PROOF
+                                                    Send my receipt
                                                 </>
                                             )}
                                         </button>
@@ -1310,15 +1308,14 @@ export default function PayInvoice() {
             </AnimatePresence>
 
             {/* ── Footer ── */}
-            <footer className="bg-[#0c1220] mt-16">
-                <div className="h-[3px] bg-[#b8860b]" />
+            <footer className="bg-[#13254A] mt-16">
                 <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="text-center sm:text-left">
-                            <p className="text-sm text-white/80 font-medium" style={{ fontFamily: "'Georgia', serif" }}>
+                            <p className="text-sm text-white/80 font-medium" style={SERIF}>
                                 Elab Solutions International, LLC
                             </p>
-                            <p className="text-[10px] uppercase tracking-[2px] text-[#b8860b] mt-1">
+                            <p className="text-[10px] uppercase tracking-[2px] text-[#C9A86A] mt-1">
                                 Healthcare Credentialing & Global Placement
                             </p>
                         </div>
@@ -1329,7 +1326,7 @@ export default function PayInvoice() {
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Phone className="w-3 h-3" />
-                                <span>+234 816 863 4195</span>
+                                <span>+234 816 563 4195</span>
                             </div>
                         </div>
                     </div>
