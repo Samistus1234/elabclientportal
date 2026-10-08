@@ -27,7 +27,9 @@ async function callCommandCenter(path: string, body: Record<string, unknown>) {
     const response = await fetch(buildCommandCenterUrl(path), {
         method: 'POST',
         headers: commandCenterHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify(body),
+        // Tells the server this page does the emailed-code flow; older cached
+        // pages are asked to reload instead of being sent a code they can't use.
+        body: JSON.stringify({ ...body, client: 'portal-signup-v2' }),
     })
     const payload = await response.json().catch(() => null)
     return { response, payload }
