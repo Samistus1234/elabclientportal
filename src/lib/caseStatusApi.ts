@@ -1,4 +1,5 @@
-import { buildCommandCenterUrl, commandCenterHeaders } from './commandCenterApi'
+import { buildCommandCenterUrl } from './commandCenterApi'
+import { supabase } from './supabase'
 
 export interface ReceivedDocument {
     id: string
@@ -27,6 +28,11 @@ export interface CaseStatus {
  * (WhatsApp / email / office uploads), so the portal reflects reality instead
  * of showing every client an empty "please upload" state.
  *
+ * Auth: the signed-in client's own Supabase token. The server reads the email from
+ * the token and ignores the body, so a client only ever sees their own records.
+ * (It used to send the shared x-api-key, which the server no longer accepts —
+ * every call was refused and clients saw an empty list.)
+ *
  * Fails soft: on any error we return [] and the portal behaves as before.
  */
 export async function fetchCaseStatus(emails: (string | null | undefined)[]): Promise<CaseStatus[]> {
@@ -35,9 +41,14 @@ export async function fetchCaseStatus(emails: (string | null | undefined)[]): Pr
     if (clean.length === 0) return []
 
     try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) return []
         const response = await fetch(buildCommandCenterUrl('/portal-case-status'), {
             method: 'POST',
-            headers: commandCenterHeaders({ 'Content-Type': 'application/json' }),
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+            },
             body: JSON.stringify({ emails: clean }),
         })
         if (!response.ok) return []

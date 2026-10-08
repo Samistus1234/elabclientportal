@@ -3,10 +3,12 @@ import { useState } from 'react'
 import { signInWithPassword, getPortalUserInfo } from '@/lib/supabase'
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Headphones, CheckCircle, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 
 export default function Login() {
     const navigate = useNavigate()
+    // Set by Register after sign-up ("Account created…", "You already have an account…").
+    const notice = (useLocation().state as { message?: string } | null)?.message
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
@@ -76,6 +78,12 @@ export default function Login() {
                             </div>
                         </div>
 
+                        {notice && !error && (
+                            <div role="status" className="mb-5 p-4 rounded-xl bg-green-50 text-green-700 text-sm flex items-start gap-3 border border-green-100">
+                                <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                                <span>{notice}</span>
+                            </div>
+                        )}
                         <form onSubmit={handleSubmit} className="space-y-5">
                             {/* Email Field */}
                             <div>
