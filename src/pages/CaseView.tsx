@@ -442,11 +442,9 @@ export default function CaseView() {
             setCaseData(typedCaseData)
 
             if (typedCaseData.pipeline?.id) {
+                // Client-facing stages only (staff-only steps hidden, client labels).
                 const { data: stagesData } = await supabase
-                    .from('pipeline_stages')
-                    .select('id, name, slug, order_index')
-                    .eq('pipeline_id', typedCaseData.pipeline.id)
-                    .order('order_index', { ascending: true })
+                    .rpc('get_pipeline_stages', { p_pipeline_id: typedCaseData.pipeline.id })
 
                 if (stagesData) {
                     setPipelineStages(
