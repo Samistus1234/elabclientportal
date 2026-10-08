@@ -112,6 +112,8 @@ interface PublicInvoice {
     customer_phone?: string | null
     case_reference: string | null
     org_name: string | null
+    /** Applied credit notes (they are already taken off amount_due). */
+    credit_notes?: Array<{ credit_note_number: string; total: number }>
     line_items: Array<{
         description: string
         quantity: number
@@ -302,7 +304,8 @@ export default function PayInvoice() {
     // Calculate secondary currency amount due (pro-rated if partial payment)
     const getSecondaryAmountDue = (): number => {
         if (!invoice?.secondary_total || !invoice?.secondary_currency) return 0
-        if (invoice.amount_paid > 0 && invoice.total_amount > 0) {
+        // Part-paid or credited: scale the alternative to what is still owed.
+        if (invoice.total_amount > 0 && invoice.amount_due < invoice.total_amount) {
             // Pro-rate: secondary_total * (amount_due / total_amount)
             return Math.round((invoice.secondary_total * (invoice.amount_due / invoice.total_amount)) * 100) / 100
         }
@@ -674,6 +677,12 @@ export default function PayInvoice() {
                                             <span className="tabular-nums">{formatCurrency(invoice.tax_amount, invoice.currency)}</span>
                                         </div>
                                     )}
+                                    {(invoice.credit_notes || []).map((cn) => (
+                                        <div key={cn.credit_note_number} className="flex justify-between text-[13px] text-emerald-600">
+                                            <span>Credit note {cn.credit_note_number}</span>
+                                            <span className="tabular-nums">-{formatCurrency(Number(cn.total) || 0, invoice.currency)}</span>
+                                        </div>
+                                    ))}
                                     {invoice.amount_paid > 0 && (
                                         <div className="flex justify-between text-[13px] text-emerald-600">
                                             <span>Amount Paid</span>
