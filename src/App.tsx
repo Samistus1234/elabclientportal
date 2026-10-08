@@ -10,14 +10,17 @@ import WalkthroughOverlay from '@/components/WalkthroughOverlay'
 import Login from '@/pages/Login'
 import Register from '@/pages/Register'
 import AuthCallback from '@/pages/AuthCallback'
-import Dashboard from '@/pages/Dashboard'
-import CaseView from '@/pages/CaseView'
+import Home from '@/pages/portal/Home'
+import Applications from '@/pages/portal/Applications'
+import ApplicationView from '@/pages/portal/ApplicationView'
+import Payments from '@/pages/portal/Payments'
+import Help from '@/pages/portal/Help'
 import AcceptInvite from '@/pages/AcceptInvite'
 import ForgotPassword from '@/pages/ForgotPassword'
 import ResetPassword from '@/pages/ResetPassword'
 import FAQ from '@/pages/FAQ'
-import Documents from '@/pages/Documents'
-import Settings from '@/pages/Settings'
+import DocumentsPage from '@/pages/portal/DocumentsPage'
+import AccountSettings from '@/pages/portal/AccountSettings'
 import Support from '@/pages/Support'
 import Homepage from '@/pages/Homepage'
 import PrivacyPolicy from '@/pages/PrivacyPolicy'
@@ -244,7 +247,31 @@ export default function App() {
                     path="/dashboard"
                     element={
                         <ProtectedRoute session={session}>
-                            <Dashboard />
+                            <Home />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/applications"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <Applications />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/payments"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <Payments />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/help"
+                    element={
+                        <ProtectedRoute session={session}>
+                            <Help />
                         </ProtectedRoute>
                     }
                 />
@@ -252,7 +279,7 @@ export default function App() {
                     path="/case/:caseId"
                     element={
                         <ProtectedRoute session={session}>
-                            <CaseView />
+                            <ApplicationView />
                         </ProtectedRoute>
                     }
                 />
@@ -260,7 +287,7 @@ export default function App() {
                     path="/documents"
                     element={
                         <ProtectedRoute session={session}>
-                            <Documents />
+                            <DocumentsPage />
                         </ProtectedRoute>
                     }
                 />
@@ -268,7 +295,7 @@ export default function App() {
                     path="/settings"
                     element={
                         <ProtectedRoute session={session}>
-                            <Settings />
+                            <AccountSettings />
                         </ProtectedRoute>
                     }
                 />
