@@ -377,7 +377,7 @@ export default function Support() {
                                         type="email"
                                         value={trackEmail}
                                         onChange={(e) => setTrackEmail(e.target.value)}
-                                        placeholder="jacinta@gmail.com"
+                                        placeholder="you@example.com"
                                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all outline-none"
                                     />
                                 </div>
@@ -489,7 +489,7 @@ export default function Support() {
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                                placeholder="jacinta@gmail.com"
+                                                placeholder="you@example.com"
                                                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-400 focus:ring-2 focus:ring-primary-100 transition-all outline-none"
                                             />
                                         </div>

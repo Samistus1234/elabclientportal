@@ -17,6 +17,16 @@ export default function Home() {
     const [invoices, setInvoices] = useState<MyInvoice[] | null>(null)
     const [isReferrer, setIsReferrer] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [sideError, setSideError] = useState(false)
+
+    // Updates + invoices; a failure says so (it is not "no updates").
+    const loadSide = () => {
+        setSideError(false)
+        setUpdates(null)
+        setInvoices(null)
+        getMyUpdates(6).then(setUpdates).catch(() => setSideError(true))
+        getMyInvoices().then(setInvoices).catch(() => setSideError(true))
+    }
 
     useEffect(() => {
         let alive = true
@@ -36,8 +46,7 @@ export default function Home() {
             })
             .catch(() => alive && setError("We couldn't load your applications. Please refresh the page."))
         getMyWaitingCases().then((w) => alive && setWaiting(w)).catch(() => undefined)
-        getMyUpdates(6).then((u) => alive && setUpdates(u)).catch(() => alive && setUpdates([]))
-        getMyInvoices().then((i) => alive && setInvoices(i)).catch(() => alive && setInvoices([]))
+        loadSide()
         supabase.rpc('my_referrer_id').then(({ data }) => alive && setIsReferrer(!!data), () => undefined)
         return () => {
             alive = false
@@ -61,7 +70,7 @@ export default function Home() {
                 {error && <div className="pl-alert pl-alert-red">{error}</div>}
 
                 {waiting.map((w) => (
-                    <div key={w.case_id} className="pl-card pl-card-pad" style={{ borderLeft: '4px solid var(--pl-amber-line)', display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center' }}>
+                    <div key={w.case_id} className="pl-card pl-card-pad pl-wait" style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center' }}>
                         <div style={{ flex: '1 1 260px' }}>
                             <div style={{ fontWeight: 700, fontSize: 15 }}>We're waiting on you</div>
                             <div style={{ fontSize: 14, color: 'var(--pl-text-2)', marginTop: 3 }}>
@@ -77,10 +86,10 @@ export default function Home() {
                     <section className="pl-card" aria-labelledby="apps-h">
                         <div className="pl-card-h">
                             <h2 id="apps-h">Your applications</h2>
-                            <Link to="/applications" className="pl-link">All →</Link>
+                            <Link to="/applications" className="pl-link">See all</Link>
                         </div>
                         {cases === null ? (
-                            <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 56 }} /></div>
+                            <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 56 }} role="status" aria-label="Loading" /></div>
                         ) : open.length === 0 ? (
                             <div className="pl-empty">
                                 {finished.length ? 'All your applications are complete.' : "You don't have an application with us yet."}
@@ -111,8 +120,13 @@ export default function Home() {
                         <div className="pl-card-h">
                             <h2 id="upd-h">Updates</h2>
                         </div>
-                        {updates === null ? (
-                            <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 56 }} /></div>
+                        {sideError && updates === null ? (
+                            <div className="pl-empty">
+                                We couldn't load your updates.{' '}
+                                <button type="button" className="pl-link" onClick={loadSide}>Try again</button>
+                            </div>
+                        ) : updates === null ? (
+                            <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 56 }} role="status" aria-label="Loading" /></div>
                         ) : updates.length === 0 ? (
                             <div className="pl-empty">No updates yet.</div>
                         ) : (
@@ -142,7 +156,7 @@ export default function Home() {
                                 <><b>{toPay.length === 1 ? '1 invoice to pay' : `${toPay.length} invoices to pay`}</b> <span style={{ color: 'var(--pl-muted)' }}>· {toPay.map((i) => formatMoney(i.amount_due, i.currency)).join(' + ')}</span></>
                             )}
                         </div>
-                        <span className="pl-link">Payments →</span>
+                        <span className="pl-link">View payments</span>
                     </Link>
                 )}
 

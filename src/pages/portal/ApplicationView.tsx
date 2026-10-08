@@ -13,9 +13,10 @@ export default function ApplicationView() {
     const { caseId = '' } = useParams()
     const [c, setCase] = useState<MyCase | null | undefined>(undefined)
     const [stages, setStages] = useState<Stage[]>([])
-    const [history, setHistory] = useState<{ id: string; created_at: string; to_stage_name: string }[]>([])
+    const [history, setHistory] = useState<{ id: string; created_at: string; to_stage_name: string }[] | null>(null)
     const [docs, setDocs] = useState<MyDocument[] | null>(null)
     const [waiting, setWaiting] = useState(false)
+    const [historyError, setHistoryError] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
@@ -30,7 +31,7 @@ export default function ApplicationView() {
                 }
             })
             .catch(() => alive && setError("We couldn't load this application. Please refresh the page."))
-        getCaseHistory(caseId).then((h) => alive && setHistory(h)).catch(() => alive && setHistory([]))
+        getCaseHistory(caseId).then((h) => alive && setHistory(h)).catch(() => alive && setHistoryError(true))
         getMyDocuments()
             .then((d) => alive && setDocs(d.filter((x) => x.case_id === caseId)))
             .catch(() => alive && setDocs([]))
@@ -53,7 +54,7 @@ export default function ApplicationView() {
 
     const currentIndex = c ? stages.findIndex((s) => s.id === c.stage_id) : -1
     const finished = c && ['completed', 'closed'].includes((c.status || '').toLowerCase())
-    const since = history.find((h) => h.to_stage_name === c?.stage_name)?.created_at
+    const since = (history || []).find((h) => h.to_stage_name === c?.stage_name)?.created_at
 
     return (
         <PortalLayout>
@@ -61,7 +62,11 @@ export default function ApplicationView() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
                     <div>
                         <Link to="/applications" className="pl-crumb">‹ Applications</Link>
-                        <h1 className="pl-h1" style={{ marginTop: 4 }}>{c?.pipeline_name || (c === undefined ? ' ' : 'Application')}</h1>
+                        {c === undefined ? (
+                            <div className="pl-skel" style={{ height: 30, width: 260, marginTop: 4 }} role="status" aria-label="Loading" />
+                        ) : (
+                            <h1 className="pl-h1" style={{ marginTop: 4 }}>{c?.pipeline_name || 'Application'}</h1>
+                        )}
                         <div className="pl-sub">
                             {[c?.case_reference, (c?.start_date || c?.created_at) && `started ${formatDate(c?.start_date || c?.created_at, true)}`].filter(Boolean).join(' · ')}
                         </div>
@@ -69,7 +74,7 @@ export default function ApplicationView() {
                     {error && <div className="pl-alert pl-alert-red">{error}</div>}
 
                     {waiting && (
-                        <div className="pl-card pl-card-pad" style={{ borderLeft: '4px solid var(--pl-amber-line)' }}>
+                        <div className="pl-card pl-card-pad pl-wait">
                             <div style={{ fontWeight: 700 }}>We're waiting on you</div>
                             <div style={{ fontSize: 14, color: 'var(--pl-text-2)', marginTop: 3 }}>
                                 We've asked you for something by WhatsApp or email. Reply there, or <Link to="/documents" className="pl-link">upload it here</Link>.
@@ -80,7 +85,7 @@ export default function ApplicationView() {
                     <section className="pl-card pl-card-pad" aria-labelledby="prog-h">
                         <h2 id="prog-h" style={{ fontSize: 16, fontWeight: 600, margin: '0 0 8px' }}>Progress</h2>
                         {c === undefined ? (
-                            <div className="pl-skel" style={{ height: 120 }} />
+                            <div className="pl-skel" style={{ height: 120 }} role="status" aria-label="Loading" />
                         ) : stages.length === 0 ? (
                             <div style={{ fontSize: 14 }}>
                                 Current step: <b>{c.stage_name || 'In progress'}</b>
@@ -106,7 +111,14 @@ export default function ApplicationView() {
 
                     <section className="pl-card" aria-labelledby="hist-h">
                         <div className="pl-card-h"><h2 id="hist-h">History</h2></div>
-                        {history.length === 0 ? (
+                        {historyError ? (
+                            <div className="pl-empty">
+                                We couldn't load the history.{' '}
+                                <button type="button" className="pl-link" onClick={() => window.location.reload()}>Try again</button>
+                            </div>
+                        ) : history === null ? (
+                            <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 40 }} role="status" aria-label="Loading" /></div>
+                        ) : history.length === 0 ? (
                             <div className="pl-empty">No changes recorded yet.</div>
                         ) : (
                             history.map((h) => (
@@ -135,10 +147,10 @@ export default function ApplicationView() {
                     <section className="pl-card" aria-labelledby="docs-h">
                         <div className="pl-card-h">
                             <h2 id="docs-h">Documents for this application</h2>
-                            <Link to="/documents" className="pl-link">All →</Link>
+                            <Link to="/documents" className="pl-link">See all</Link>
                         </div>
                         {docs === null ? (
-                            <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 40 }} /></div>
+                            <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 40 }} role="status" aria-label="Loading" /></div>
                         ) : docs.length === 0 ? (
                             <div className="pl-empty">No documents on this application yet.</div>
                         ) : (

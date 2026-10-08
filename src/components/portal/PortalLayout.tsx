@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Home, Layers, FileText, CreditCard, LifeBuoy } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { getMyPerson, type MyPerson } from '@/lib/portalData'
+import { getMyPerson, getMyWaitingCases, type MyPerson } from '@/lib/portalData'
 import '@/portal-v2.css'
 
 const NAV = [
@@ -22,13 +22,17 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
         pathname === to || pathname.startsWith(`${to}/`) || (to === '/applications' && pathname.startsWith('/case/'))
     const [person, setPerson] = useState<MyPerson | null>(null)
     const [menuOpen, setMenuOpen] = useState(false)
+    const [waitingCount, setWaitingCount] = useState(0)
     const menuRef = useRef<HTMLDivElement>(null)
+    const avatarRef = useRef<HTMLButtonElement>(null)
 
     // Fetched per mount (no module cache): on a shared device, the next person to
     // sign in must never see the previous client's name in the account menu.
     useEffect(() => {
         let alive = true
         getMyPerson().then((p) => alive && setPerson(p)).catch(() => undefined)
+        // Badge the Documents tab while eLab is waiting on the client.
+        getMyWaitingCases().then((w) => alive && setWaitingCount(w.length)).catch(() => undefined)
         return () => {
             alive = false
         }
@@ -39,8 +43,19 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
         const close = (e: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
         }
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setMenuOpen(false)
+                avatarRef.current?.focus()
+            }
+        }
         document.addEventListener('mousedown', close)
-        return () => document.removeEventListener('mousedown', close)
+        document.addEventListener('keydown', onKey)
+        menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+        return () => {
+            document.removeEventListener('mousedown', close)
+            document.removeEventListener('keydown', onKey)
+        }
     }, [menuOpen])
 
     const initials =
@@ -62,11 +77,13 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
                         {NAV.map((n) => (
                             <Link key={n.to} to={n.to} className={isOn(n.to) ? 'on' : ''} aria-current={isOn(n.to) ? 'page' : undefined}>
                                 {n.label}
+                                {n.to === '/documents' && waitingCount > 0 && <span className="pl-badge" aria-label="needs your attention" />}
                             </Link>
                         ))}
                     </nav>
                     <div ref={menuRef} style={{ marginLeft: 'auto', position: 'relative' }}>
                         <button
+                            ref={avatarRef}
                             type="button"
                             className="pl-avatar"
                             aria-label="Account"
@@ -99,8 +116,9 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
             <nav className="pl-tabs" aria-label="Main">
                 {NAV.map((n) => (
                     <Link key={n.to} to={n.to} className={isOn(n.to) ? 'on' : ''} aria-current={isOn(n.to) ? 'page' : undefined}>
-                        <n.icon className="w-6 h-6" strokeWidth={1.8} />
+                        <n.icon className="w-6 h-6" strokeWidth={1.8} aria-hidden />
                         {n.label}
+                        {n.to === '/documents' && waitingCount > 0 && <span className="pl-badge" aria-label="needs your attention" />}
                     </Link>
                 ))}
             </nav>

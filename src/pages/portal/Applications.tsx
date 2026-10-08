@@ -43,7 +43,7 @@ export default function Applications() {
                 </div>
                 {error && <div className="pl-alert pl-alert-red">{error}</div>}
                 {cases === null ? (
-                    <div className="pl-card pl-card-pad"><div className="pl-skel" style={{ height: 64 }} /></div>
+                    <div className="pl-card pl-card-pad"><div className="pl-skel" style={{ height: 64 }} role="status" aria-label="Loading" /></div>
                 ) : cases.length === 0 ? (
                     <div className="pl-card"><div className="pl-empty" style={{ borderTop: 0 }}>You don't have an application with us yet.</div></div>
                 ) : (

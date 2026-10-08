@@ -91,7 +91,7 @@ export default function DocumentsPage() {
                 )}
 
                 {waiting.length > 0 && (
-                    <section className="pl-card" style={{ borderLeft: '4px solid var(--pl-amber-line)' }}>
+                    <section className="pl-card pl-wait">
                         <div className="pl-card-h"><h2>Needed from you</h2></div>
                         {waiting.map((w) => (
                             <div key={w.case_id} className="pl-row">
@@ -113,7 +113,7 @@ export default function DocumentsPage() {
                         {docs && docs.length > 0 && <span className="pl-row-sub">{docs.length} {docs.length === 1 ? 'document' : 'documents'}</span>}
                     </div>
                     {docs === null ? (
-                        <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 56 }} /></div>
+                        <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 56 }} role="status" aria-label="Loading" /></div>
                     ) : docs.length === 0 ? (
                         <div className="pl-empty">We don't hold any documents for you yet.</div>
                     ) : (

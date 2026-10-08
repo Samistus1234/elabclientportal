@@ -67,7 +67,7 @@ export default function AccountSettings() {
                 </section>
 
                 <form className="pl-card pl-card-pad" onSubmit={changePassword} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    <div style={{ fontSize: 16, fontWeight: 600 }}>Change password</div>
+                    <h2 className="pl-card-title">Change password</h2>
                     <div>
                         <label className="pl-label" htmlFor="pw1">New password</label>
                         <input id="pw1" type="password" className="pl-input" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={8} required />
@@ -81,7 +81,7 @@ export default function AccountSettings() {
                 </form>
 
                 <section className="pl-card pl-card-pad">
-                    <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 10 }}>Appearance</div>
+                    <h2 className="pl-card-title" style={{ marginBottom: 10 }}>Appearance</h2>
                     <div className="pl-seg" role="radiogroup" aria-label="Appearance">
                         {THEMES.map((t) => (
                             <button
