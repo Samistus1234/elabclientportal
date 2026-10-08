@@ -3,10 +3,9 @@ import { useState } from 'react'
 import { signInWithPassword, getPortalUserInfo } from '@/lib/supabase'
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Headphones, CheckCircle, Sparkles } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 
 export default function Login() {
-    const navigate = useNavigate()
     // Set by Register after sign-up ("Account created…", "You already have an account…").
     const notice = (useLocation().state as { message?: string } | null)?.message
     const [email, setEmail] = useState('')
@@ -26,19 +25,23 @@ export default function Login() {
             setError(error.message)
             setIsLoading(false)
         } else if (session) {
+            // Full page load into the destination: the app's route guard reads the
+            // session on load. A client-side navigate() ran before the guard had
+            // seen the new session and bounced back to /login.
+            const go = (path: string) => window.location.replace(path)
             try {
                 const { data: userInfo } = await getPortalUserInfo()
                 if (userInfo?.user_type === 'recruiter') {
-                    navigate('/recruiter/dashboard', { replace: true })
+                    go('/recruiter/dashboard')
                 } else if (userInfo?.user_type === 'institutional_contact') {
-                    navigate('/contact/dashboard', { replace: true })
+                    go('/contact/dashboard')
                 } else if (userInfo?.user_type === 'referrer') {
-                    navigate('/referral', { replace: true })
+                    go('/referral')
                 } else {
-                    navigate('/dashboard', { replace: true })
+                    go('/dashboard')
                 }
             } catch {
-                navigate('/dashboard', { replace: true })
+                go('/dashboard')
             }
         } else {
             setError('Login failed. Please try again.')

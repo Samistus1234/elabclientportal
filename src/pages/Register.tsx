@@ -201,7 +201,8 @@ export default function Register() {
             if (signInError) {
                 navigate('/login', { replace: true, state: { message: 'Account created successfully! Please sign in.' } })
             } else {
-                navigate('/dashboard', { replace: true })
+                // Full load so the route guard sees the new session (see Login).
+                window.location.replace('/dashboard')
             }
         } catch (err) {
             console.error('Account creation error:', err)
