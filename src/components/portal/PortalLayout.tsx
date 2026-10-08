@@ -13,8 +13,6 @@ const NAV = [
     { to: '/help', label: 'Help', icon: LifeBuoy },
 ]
 
-let personCache: MyPerson | null = null
-
 /** The signed-in applicant's frame: top bar on desktop, tab bar on phones. */
 export default function PortalLayout({ children }: { children: ReactNode }) {
     const navigate = useNavigate()
@@ -22,18 +20,18 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
     // An application page (/case/:id) belongs to the Applications tab.
     const isOn = (to: string) =>
         pathname === to || pathname.startsWith(`${to}/`) || (to === '/applications' && pathname.startsWith('/case/'))
-    const [person, setPerson] = useState<MyPerson | null>(personCache)
+    const [person, setPerson] = useState<MyPerson | null>(null)
     const [menuOpen, setMenuOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
 
+    // Fetched per mount (no module cache): on a shared device, the next person to
+    // sign in must never see the previous client's name in the account menu.
     useEffect(() => {
-        if (personCache) return
-        getMyPerson()
-            .then((p) => {
-                personCache = p
-                setPerson(p)
-            })
-            .catch(() => undefined)
+        let alive = true
+        getMyPerson().then((p) => alive && setPerson(p)).catch(() => undefined)
+        return () => {
+            alive = false
+        }
     }, [])
 
     useEffect(() => {
@@ -49,7 +47,6 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
         `${person?.first_name?.[0] ?? ''}${person?.last_name?.[0] ?? ''}`.toUpperCase() || '•'
 
     const signOut = async () => {
-        personCache = null
         await supabase.auth.signOut()
         navigate('/login', { replace: true })
     }

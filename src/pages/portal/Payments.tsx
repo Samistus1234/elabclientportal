@@ -3,6 +3,16 @@ import { Link } from 'react-router-dom'
 import PortalLayout from '@/components/portal/PortalLayout'
 import { formatDate, formatMoney, getMyInvoices, type MyInvoice } from '@/lib/portalData'
 
+/** Receipt links come from the server; only ever open an https URL. */
+function safeReceiptUrl(url: string | null) {
+    if (!url) return null
+    try {
+        return new URL(url).protocol === 'https:' ? url : null
+    } catch {
+        return null
+    }
+}
+
 export default function Payments() {
     const [invoices, setInvoices] = useState<MyInvoice[] | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -69,8 +79,8 @@ export default function Payments() {
                                             <div className="pl-row-sub">{i.paid_date ? `Paid ${formatDate(i.paid_date)}` : 'Paid'}</div>
                                         </div>
                                         <b className="pl-num">{formatMoney(i.total, i.currency)}</b>
-                                        {i.receipt_url ? (
-                                            <a href={i.receipt_url} target="_blank" rel="noreferrer" className="pl-link">Receipt</a>
+                                        {safeReceiptUrl(i.receipt_url) ? (
+                                            <a href={safeReceiptUrl(i.receipt_url)!} target="_blank" rel="noreferrer" className="pl-link">Receipt</a>
                                         ) : (
                                             <Link to={`/pay/${i.id}`} className="pl-link">View</Link>
                                         )}
