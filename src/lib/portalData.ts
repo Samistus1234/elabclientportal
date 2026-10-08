@@ -199,3 +199,25 @@ export function greeting() {
 export function isFinished(c: MyCase) {
     return ['completed', 'closed', 'cancelled', 'archived'].includes((c.status || '').toLowerCase())
 }
+
+export interface NextStep {
+    service_key: string
+    title: string
+    icon: string
+    reason: string
+    from_case_id: string
+    from_application: string | null
+}
+
+/** Up to 3 services that naturally follow what the client already has (journey map in the CC). */
+export const getMyNextSteps = () => rpc<NextStep>('get_my_next_steps')
+
+export async function respondToNextStep(serviceKey: string, response: 'interested' | 'dismissed', fromCaseId: string) {
+    const { data, error } = await supabase.rpc('respond_to_next_step', {
+        p_service_key: serviceKey,
+        p_response: response,
+        p_from_case_id: fromCaseId,
+    })
+    if (error) throw error
+    return data as { ok: boolean; already: boolean }
+}
