@@ -56,6 +56,10 @@ export default function Help() {
     const send = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
+        if (!subject.trim() || !message.trim()) {
+            setError('Add a subject and your question, then send.')
+            return
+        }
         if (!person?.email) {
             setError("We couldn't find your email on file. Please message us on WhatsApp instead.")
             return
@@ -101,7 +105,7 @@ export default function Help() {
 
                     <form className="pl-card pl-card-pad" onSubmit={send} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                         <div>
-                            <div style={{ fontWeight: 600 }}>Ask a question</div>
+                            <h2 className="pl-card-title">Ask a question</h2>
                             {person && (
                                 <div className="pl-row-sub" style={{ marginTop: 2 }}>
                                     From {[person.first_name, person.last_name].filter(Boolean).join(' ')} · we reply to {person.email}
@@ -140,7 +144,7 @@ export default function Help() {
                             </div>
                         )}
                         <div>
-                            <button type="submit" className="pl-btn" disabled={sending || !subject.trim() || !message.trim()}>
+                            <button type="submit" className="pl-btn" disabled={sending}>
                                 {sending ? 'Sending…' : 'Send'}
                             </button>
                         </div>
@@ -156,7 +160,7 @@ export default function Help() {
                 <section className="pl-card lg:mt-[62px]" style={{ alignSelf: 'start', minWidth: 0 }} aria-labelledby="q-h">
                     <div className="pl-card-h"><h2 id="q-h">Your questions</h2></div>
                     {tickets === null ? (
-                        <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 40 }} /></div>
+                        <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 40 }} role="status" aria-label="Loading" /></div>
                     ) : tickets.length === 0 ? (
                         <div className="pl-empty">You haven't asked us anything here yet.</div>
                     ) : (

@@ -1,12 +1,11 @@
 import AuthShell from '@/components/AuthShell'
 import { useState } from 'react'
 import { signInWithPassword, getPortalUserInfo } from '@/lib/supabase'
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Headphones, CheckCircle, Sparkles } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Headphones, CheckCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useNavigate, useLocation, Link } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 
 export default function Login() {
-    const navigate = useNavigate()
     // Set by Register after sign-up ("Account created…", "You already have an account…").
     const notice = (useLocation().state as { message?: string } | null)?.message
     const [email, setEmail] = useState('')
@@ -26,19 +25,23 @@ export default function Login() {
             setError(error.message)
             setIsLoading(false)
         } else if (session) {
+            // Full page load into the destination: the app's route guard reads the
+            // session on load. A client-side navigate() ran before the guard had
+            // seen the new session and bounced back to /login.
+            const go = (path: string) => window.location.replace(path)
             try {
                 const { data: userInfo } = await getPortalUserInfo()
                 if (userInfo?.user_type === 'recruiter') {
-                    navigate('/recruiter/dashboard', { replace: true })
+                    go('/recruiter/dashboard')
                 } else if (userInfo?.user_type === 'institutional_contact') {
-                    navigate('/contact/dashboard', { replace: true })
+                    go('/contact/dashboard')
                 } else if (userInfo?.user_type === 'referrer') {
-                    navigate('/referral', { replace: true })
+                    go('/referral')
                 } else {
-                    navigate('/dashboard', { replace: true })
+                    go('/dashboard')
                 }
             } catch {
-                navigate('/dashboard', { replace: true })
+                go('/dashboard')
             }
         } else {
             setError('Login failed. Please try again.')
@@ -63,11 +66,8 @@ export default function Login() {
 
 
                     {/* Form Card */}
-                    <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl shadow-slate-200/50 border border-white/50">
+                    <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-black/[0.06]">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                                <Sparkles className="w-6 h-6 text-white" />
-                            </div>
                             <div>
                                 <h2 className="text-xl font-bold text-slate-800">
                                     Sign in to your account
@@ -99,9 +99,9 @@ export default function Login() {
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="jacinta@gmail.com"
+                                            placeholder="you@example.com"
                                             required
-                                            className="w-full pl-12 pr-4 py-3.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 transition-all outline-none text-slate-800 placeholder:text-slate-400 bg-white"
+                                            className="w-full pl-12 pr-4 py-3 text-base rounded-xl border border-[rgba(60,60,67,0.29)] focus:border-[#245FB7] focus:ring-4 focus:ring-[#245FB7]/20 transition-all outline-none text-slate-800 placeholder:text-slate-500 bg-white"
                                         />
                                     </div>
                                 </div>
@@ -123,13 +123,13 @@ export default function Login() {
                                             onChange={(e) => setPassword(e.target.value)}
                                             placeholder="Enter your password"
                                             required
-                                            className="w-full pl-12 pr-12 py-3.5 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-0 transition-all outline-none text-slate-800 placeholder:text-slate-400 bg-white"
+                                            className="w-full pl-12 pr-12 py-3 text-base rounded-xl border border-[rgba(60,60,67,0.29)] focus:border-[#245FB7] focus:ring-4 focus:ring-[#245FB7]/20 transition-all outline-none text-slate-800 placeholder:text-slate-500 bg-white"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
                                             aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                            className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
                                         >
                                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
@@ -167,7 +167,7 @@ export default function Login() {
                                 disabled={isLoading || !email || !password}
                                 whileHover={{ scale: 1.01 }}
                                 whileTap={{ scale: 0.99 }}
-                                className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white font-semibold hover:from-blue-700 hover:via-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-blue-500/30 relative overflow-hidden group"
+                                className="w-full h-12 px-6 rounded-xl bg-[#245FB7] text-white font-semibold hover:bg-[#1D4E99] active:bg-[#1D4E99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-blue-500/30 relative overflow-hidden group"
                             >
 
                                 {isLoading ? (
@@ -183,7 +183,7 @@ export default function Login() {
                             {/* Divider */}
                             <div className="flex items-center gap-4 py-2">
                                 <div className="flex-1 h-px bg-slate-200" />
-                                <span className="text-xs text-slate-400 font-medium">OR</span>
+                                <span className="text-xs text-slate-500 font-medium">or</span>
                                 <div className="flex-1 h-px bg-slate-200" />
                             </div>
 
@@ -191,20 +191,20 @@ export default function Login() {
                             <div className="space-y-3">
                                 <Link
                                     to="/register"
-                                    className="w-full py-3 px-4 rounded-xl border-2 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 text-slate-700 font-medium flex items-center justify-center gap-2 transition-all"
+                                    className="w-full min-h-[44px] py-3 px-4 rounded-xl border border-black/10 hover:bg-slate-50 text-slate-700 font-medium flex items-center justify-center gap-2 transition-all"
                                 >
                                     <CheckCircle className="w-4 h-4 text-blue-500" />
                                     Activate your account
                                 </Link>
                                 <p className="text-center text-slate-500 text-sm">
                                     Are you a recruiter?{' '}
-                                    <Link to="/recruiter/register" className="text-purple-600 hover:text-purple-700 font-semibold hover:underline">
+                                    <Link to="/recruiter/register" className="text-[#245FB7] hover:text-[#1D4E99] font-semibold hover:underline">
                                         Register here
                                     </Link>
                                 </p>
                                 <p className="text-center text-slate-500 text-sm">
                                     Are you an institution?{' '}
-                                    <Link to="/contact/register" className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline">
+                                    <Link to="/contact/register" className="text-[#245FB7] hover:text-[#1D4E99] font-semibold hover:underline">
                                         Register here
                                     </Link>
                                 </p>
@@ -229,7 +229,7 @@ export default function Login() {
                             href="https://portal.elabsolution.org/support"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-sm font-medium hover:from-purple-600 hover:to-indigo-600 transition-all shadow-lg shadow-purple-500/20"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-black/10 text-slate-800 text-sm font-medium hover:bg-slate-50 min-h-[44px] transition-all shadow-lg shadow-purple-500/20"
                         >
                             <Headphones className="w-4 h-4" />
                             Submit Support Ticket
@@ -241,7 +241,7 @@ export default function Login() {
                                 support@elabsolution.org
                             </a>
                         </p>
-                        <div className="flex items-center justify-center gap-3 mt-2 text-xs text-slate-400">
+                        <div className="flex items-center justify-center gap-3 mt-2 text-xs text-slate-500">
                             <a href="tel:+2348165634195" className="hover:text-blue-500 transition-colors">
                                 +234 816 563 4195
                             </a>

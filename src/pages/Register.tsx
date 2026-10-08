@@ -19,9 +19,9 @@ type Step = 'verify' | 'code' | 'create'
 const STEPS: Step[] = ['verify', 'code', 'create']
 
 const inputCls =
-    'w-full pl-12 pr-4 py-3.5 rounded-xl border border-slate-200 bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition-all outline-none text-slate-800 placeholder:text-slate-400'
+    'w-full pl-12 pr-4 py-3 text-base rounded-xl border border-[rgba(60,60,67,0.29)] bg-white focus:border-[#245FB7] focus:ring-4 focus:ring-[#245FB7]/20 transition-all outline-none text-slate-800 placeholder:text-slate-500'
 const buttonCls =
-    'w-full py-4 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white font-semibold hover:from-blue-700 hover:via-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30'
+    'w-full h-12 px-6 rounded-xl bg-[#245FB7] text-white font-semibold hover:bg-[#1D4E99] active:bg-[#1D4E99] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
 
 async function callCommandCenter(path: string, body: Record<string, unknown>) {
     const response = await fetch(buildCommandCenterUrl(path), {
@@ -201,7 +201,8 @@ export default function Register() {
             if (signInError) {
                 navigate('/login', { replace: true, state: { message: 'Account created successfully! Please sign in.' } })
             } else {
-                navigate('/dashboard', { replace: true })
+                // Full load so the route guard sees the new session (see Login).
+                window.location.replace('/dashboard')
             }
         } catch (err) {
             console.error('Account creation error:', err)
@@ -224,7 +225,7 @@ export default function Register() {
     const stepIndex = STEPS.indexOf(currentStep)
 
     return (
-        <AuthShell><div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-gradient-to-br from-slate-50 via-white to-blue-50 relative overflow-hidden">
+        <AuthShell><div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 bg-[#F5F5F7] relative overflow-hidden">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -246,7 +247,7 @@ export default function Register() {
                     {/* Progress */}
                     <div className="flex gap-1.5 mb-6" aria-label={`Step ${stepIndex + 1} of 3`}>
                         {STEPS.map((s, i) => (
-                            <span key={s} className={`h-1 flex-1 rounded-full ${i <= stepIndex ? 'bg-blue-600' : 'bg-slate-200'}`} />
+                            <span key={s} className={`h-1 flex-1 rounded-full ${i <= stepIndex ? 'bg-[#245FB7]' : 'bg-slate-200'}`} />
                         ))}
                     </div>
 
@@ -348,7 +349,7 @@ export default function Register() {
                                                 placeholder="123 456"
                                                 required
                                                 autoFocus
-                                                className="w-full px-4 py-3.5 rounded-xl border border-slate-200 bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 outline-none text-center text-2xl font-semibold tracking-[0.4em] tabular-nums text-slate-800 placeholder:text-slate-300"
+                                                className="w-full px-4 py-3 rounded-xl border border-[rgba(60,60,67,0.29)] bg-white focus:border-[#245FB7] focus:ring-4 focus:ring-[#245FB7]/20 outline-none text-center text-2xl font-semibold tracking-[0.4em] tabular-nums text-slate-800 placeholder:text-slate-400"
                                             />
                                         </div>
 
@@ -367,7 +368,7 @@ export default function Register() {
 
                                     <div className="mt-4 text-center text-sm">
                                         {resendIn > 0 ? (
-                                            <span className="text-slate-400">Resend code in 0:{String(resendIn).padStart(2, '0')}</span>
+                                            <span className="text-slate-500">Resend code in 0:{String(resendIn).padStart(2, '0')}</span>
                                         ) : (
                                             <button
                                                 type="button"
@@ -427,7 +428,7 @@ export default function Register() {
                                                             type="button"
                                                             onClick={() => setShowPassword(!showPassword)}
                                                             aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                            className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
                                                         >
                                                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                                         </button>
@@ -455,7 +456,7 @@ export default function Register() {
                                                             type="button"
                                                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                                             aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                            className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
                                                         >
                                                             {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                                         </button>
@@ -494,7 +495,7 @@ export default function Register() {
                                 Sign in
                             </Link>
                         </p>
-                        <p className="text-slate-400 text-xs">
+                        <p className="text-slate-500 text-xs">
                             Need help? Contact{' '}
                             <a href="mailto:headoffice@elabsolution.org" className="hover:text-blue-500 transition-colors">
                                 headoffice@elabsolution.org
