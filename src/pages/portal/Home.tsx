@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PortalLayout from '@/components/portal/PortalLayout'
+import NextSteps from '@/components/portal/NextSteps'
 import { supabase } from '@/lib/supabase'
 import {
     formatDate, formatMoney, getMyCases, getMyInvoices, getMyPerson, getMyUpdates, getMyWaitingCases, getStages,
@@ -146,6 +147,8 @@ export default function Home() {
                         )}
                     </section>
                 </div>
+
+                <NextSteps firstName={person?.first_name} />
 
                 {invoices !== null && (
                     <Link to="/payments" className="pl-card pl-card-pad" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' }}>
