@@ -1,3 +1,4 @@
+import Updates from '@/pages/portal/Updates'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase, getPortalUserInfo } from '@/lib/supabase'
@@ -243,6 +244,7 @@ export default function App() {
                 <Route path="/tools/utility/qr-code" element={<QrCodeGenerator />} />
 
                 {/* Protected routes - Applicant */}
+                <Route path="/updates" element={<ProtectedRoute session={session}><Updates /></ProtectedRoute>} />
                 <Route
                     path="/dashboard"
                     element={

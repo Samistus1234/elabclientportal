@@ -1,3 +1,4 @@
+import ElabUpdates from '@/components/portal/ElabUpdates'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase, getRecruiterCases, getRecruiterStats, getRecruiterInvoiceStats, getPortalUserInfo, getCurrencyRates, type PortalUserInfo, type RecruiterInvoiceStats, type CurrencyRate } from '@/lib/supabase'
@@ -278,6 +279,7 @@ export default function RecruiterDashboard() {
                 </div>
             </header>
 
+            <div className="max-w-6xl mx-auto px-4 py-6"><ElabUpdates compact /></div>
             {/* Welcome Section */}
             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-8 sm:py-12">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6">

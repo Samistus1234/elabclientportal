@@ -1,3 +1,4 @@
+import ElabUpdates from '@/components/portal/ElabUpdates'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { LogOut } from 'lucide-react'
@@ -75,6 +76,7 @@ export default function ReferralLayout() {
                 </div>
             </header>
             <main className="referral-main">
+                <ElabUpdates compact />
                 <Outlet />
             </main>
             <footer className="access-footer">

@@ -1,3 +1,4 @@
+import ElabUpdates from '@/components/portal/ElabUpdates'
 import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -401,6 +402,7 @@ export default function ContactDashboard() {
             </header>
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+                <ElabUpdates compact />
                 {/* Welcome Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

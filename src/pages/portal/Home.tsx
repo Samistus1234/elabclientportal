@@ -1,3 +1,4 @@
+import ElabUpdates from '@/components/portal/ElabUpdates'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PortalLayout from '@/components/portal/PortalLayout'
@@ -68,6 +69,7 @@ export default function Home() {
                     <div className="pl-sub">Here's where your applications stand.</div>
                 </div>
 
+                <ElabUpdates compact />
                 {error && <div className="pl-alert pl-alert-red">{error}</div>}
 
                 {waiting.map((w) => (

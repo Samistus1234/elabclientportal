@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Layers, FileText, CreditCard, LifeBuoy } from 'lucide-react'
+import { Home, Layers, FileText, CreditCard, LifeBuoy, Radio } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getMyPerson, getMyWaitingCases, type MyPerson } from '@/lib/portalData'
 import '@/portal-v2.css'
@@ -10,7 +10,8 @@ const NAV = [
     { to: '/applications', label: 'Applications', icon: Layers },
     { to: '/documents', label: 'Documents', icon: FileText },
     { to: '/payments', label: 'Payments', icon: CreditCard },
-    { to: '/help', label: 'Help', icon: LifeBuoy },
+    { to: '/updates', label: 'Updates', icon: Radio },
+    { to: '/help', label: 'Help', icon: LifeBuoy, Radio },
 ]
 
 /** The signed-in applicant's frame: top bar on desktop, tab bar on phones. */
