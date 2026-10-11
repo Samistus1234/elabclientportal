@@ -1,73 +1,83 @@
-import Updates from '@/pages/portal/Updates'
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { supabase, getPortalUserInfo } from '@/lib/supabase'
 import { Session } from '@supabase/supabase-js'
 import { ThemeProvider } from '@/contexts/ThemeContext'
-import { WalkthroughProvider } from '@/contexts/WalkthroughContext'
-import WalkthroughOverlay from '@/components/WalkthroughOverlay'
+import { WalkthroughProvider, useWalkthrough } from '@/contexts/WalkthroughContext'
 
-// Pages - Applicant
-import Login from '@/pages/Login'
-import Register from '@/pages/Register'
-import AuthCallback from '@/pages/AuthCallback'
-import Home from '@/pages/portal/Home'
-import Applications from '@/pages/portal/Applications'
-import ApplicationView from '@/pages/portal/ApplicationView'
-import Payments from '@/pages/portal/Payments'
-import Help from '@/pages/portal/Help'
-import AcceptInvite from '@/pages/AcceptInvite'
-import ForgotPassword from '@/pages/ForgotPassword'
-import ResetPassword from '@/pages/ResetPassword'
-import FAQ from '@/pages/FAQ'
-import DocumentsPage from '@/pages/portal/DocumentsPage'
-import AccountSettings from '@/pages/portal/AccountSettings'
-import Support from '@/pages/Support'
 import Homepage from '@/pages/Homepage'
-import PrivacyPolicy from '@/pages/PrivacyPolicy'
-import TermsOfService from '@/pages/TermsOfService'
-import RefundPolicy from '@/pages/RefundPolicy'
-import VerificationFeeChecker from '@/pages/VerificationFeeChecker'
 
-// Pages - Recruiter
-import RecruiterLogin from '@/pages/RecruiterLogin'
-import RecruiterRegister from '@/pages/RecruiterRegister'
-import RecruiterDashboard from '@/pages/RecruiterDashboard'
-import RecruiterCaseView from '@/pages/RecruiterCaseView'
-import RecruiterInvoices from '@/pages/RecruiterInvoices'
-import RecruiterInvoiceDetail from '@/pages/RecruiterInvoiceDetail'
+// Load each page only when its route is opened.
+const Updates = lazy(() => import('@/pages/portal/Updates'))
+const WalkthroughOverlay = lazy(() => import('@/components/WalkthroughOverlay'))
+const Login = lazy(() => import('@/pages/Login'))
+const Register = lazy(() => import('@/pages/Register'))
+const AuthCallback = lazy(() => import('@/pages/AuthCallback'))
+const Home = lazy(() => import('@/pages/portal/Home'))
+const Applications = lazy(() => import('@/pages/portal/Applications'))
+const ApplicationView = lazy(() => import('@/pages/portal/ApplicationView'))
+const Payments = lazy(() => import('@/pages/portal/Payments'))
+const Help = lazy(() => import('@/pages/portal/Help'))
+const AcceptInvite = lazy(() => import('@/pages/AcceptInvite'))
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'))
+const FAQ = lazy(() => import('@/pages/FAQ'))
+const DocumentsPage = lazy(() => import('@/pages/portal/DocumentsPage'))
+const AccountSettings = lazy(() => import('@/pages/portal/AccountSettings'))
+const Support = lazy(() => import('@/pages/Support'))
+const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'))
+const TermsOfService = lazy(() => import('@/pages/TermsOfService'))
+const RefundPolicy = lazy(() => import('@/pages/RefundPolicy'))
+const VerificationFeeChecker = lazy(() => import('@/pages/VerificationFeeChecker'))
+const RecruiterLogin = lazy(() => import('@/pages/RecruiterLogin'))
+const RecruiterRegister = lazy(() => import('@/pages/RecruiterRegister'))
+const RecruiterDashboard = lazy(() => import('@/pages/RecruiterDashboard'))
+const RecruiterCaseView = lazy(() => import('@/pages/RecruiterCaseView'))
+const RecruiterInvoices = lazy(() => import('@/pages/RecruiterInvoices'))
+const RecruiterInvoiceDetail = lazy(() => import('@/pages/RecruiterInvoiceDetail'))
+const ContactLogin = lazy(() => import('@/pages/ContactLogin'))
+const ContactRegister = lazy(() => import('@/pages/ContactRegister'))
+const ContactDashboard = lazy(() => import('@/pages/ContactDashboard'))
+const ContactRequestDetail = lazy(() => import('@/pages/ContactRequestDetail'))
+const PayInvoice = lazy(() => import('@/pages/PayInvoice'))
+const ToolsHome = lazy(() => import('@/pages/tools/ToolsHome'))
+const MergePdf = lazy(() => import('@/pages/tools/pdf/MergePdf'))
+const CompressPdf = lazy(() => import('@/pages/tools/pdf/CompressPdf'))
+const SplitPdf = lazy(() => import('@/pages/tools/pdf/SplitPdf'))
+const ImageToPdf = lazy(() => import('@/pages/tools/pdf/ImageToPdf'))
+const RotatePdf = lazy(() => import('@/pages/tools/pdf/RotatePdf'))
+const CompressImage = lazy(() => import('@/pages/tools/image/CompressImage'))
+const ConvertImage = lazy(() => import('@/pages/tools/image/ConvertImage'))
+const ResizeImage = lazy(() => import('@/pages/tools/image/ResizeImage'))
+const HeicToJpg = lazy(() => import('@/pages/tools/image/HeicToJpg'))
+const PasswordGenerator = lazy(() => import('@/pages/tools/utility/PasswordGenerator'))
+const QrCodeGenerator = lazy(() => import('@/pages/tools/utility/QrCodeGenerator'))
+const ReferralLayout = lazy(() => import('@/pages/referral/ReferralLayout'))
+const ReferralOverview = lazy(() => import('@/pages/referral/ReferralOverview'))
+const ReferralList = lazy(() => import('@/pages/referral/ReferralList'))
+const ReferralEarnings = lazy(() => import('@/pages/referral/ReferralEarnings'))
+const ReferralInvite = lazy(() => import('@/pages/referral/ReferralInvite'))
+const ReferralJoin = lazy(() => import('@/pages/referral/ReferralJoin'))
+const ReferralLanding = lazy(() => import('@/pages/referral/ReferralLanding'))
 
-// Pages - Institutional Contact
-import ContactLogin from '@/pages/ContactLogin'
-import ContactRegister from '@/pages/ContactRegister'
-import ContactDashboard from '@/pages/ContactDashboard'
-import ContactRequestDetail from '@/pages/ContactRequestDetail'
+function PageLoading() {
+    return <div role="status" className="min-h-[40vh] flex items-center justify-center text-slate-600">Loading page…</div>
+}
 
-// Pages - Public (no auth required)
-import PayInvoice from '@/pages/PayInvoice'
+function ActiveWalkthrough() {
+    const { isActive } = useWalkthrough()
+    return isActive ? <Suspense fallback={null}><WalkthroughOverlay /></Suspense> : null
+}
 
-// Pages - Free Tools (public, no auth required)
-import ToolsHome from '@/pages/tools/ToolsHome'
-import MergePdf from '@/pages/tools/pdf/MergePdf'
-import CompressPdf from '@/pages/tools/pdf/CompressPdf'
-import SplitPdf from '@/pages/tools/pdf/SplitPdf'
-import ImageToPdf from '@/pages/tools/pdf/ImageToPdf'
-import RotatePdf from '@/pages/tools/pdf/RotatePdf'
-import CompressImage from '@/pages/tools/image/CompressImage'
-import ConvertImage from '@/pages/tools/image/ConvertImage'
-import ResizeImage from '@/pages/tools/image/ResizeImage'
-import HeicToJpg from '@/pages/tools/image/HeicToJpg'
-import PasswordGenerator from '@/pages/tools/utility/PasswordGenerator'
-import QrCodeGenerator from '@/pages/tools/utility/QrCodeGenerator'
-
-// Pages - Referral programme (referrer area is protected; join + landing are public)
-import ReferralLayout from '@/pages/referral/ReferralLayout'
-import ReferralOverview from '@/pages/referral/ReferralOverview'
-import ReferralList from '@/pages/referral/ReferralList'
-import ReferralEarnings from '@/pages/referral/ReferralEarnings'
-import ReferralInvite from '@/pages/referral/ReferralInvite'
-import ReferralJoin from '@/pages/referral/ReferralJoin'
-import ReferralLanding from '@/pages/referral/ReferralLanding'
+// Public pages can render while an existing session is being restored.
+function isPublicPage(path: string) {
+    return ['/', '/login', '/register', '/recruiter/login', '/recruiter/register',
+        '/contact/login', '/contact/register', '/auth/callback', '/accept-invite',
+        '/forgot-password', '/reset-password', '/faq', '/support', '/privacy',
+        '/terms', '/refund-policy', '/verification-fees', '/referral/join'].includes(path)
+        || path.startsWith('/tools') || path.startsWith('/support/')
+        || path.startsWith('/pay/') || path.startsWith('/r/')
+}
 
 // Layout wrapper for authenticated pages
 function ProtectedRoute({ children, session }: { children: React.ReactNode; session: Session | null }) {
@@ -157,6 +167,7 @@ function AuthHashHandler({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+    const { pathname } = useLocation()
     const [session, setSession] = useState<Session | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -173,17 +184,21 @@ export default function App() {
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session)
             setLoading(false)
+        }).catch(() => {
+            setSession(null)
+            setLoading(false)
         })
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session)
+            setLoading(false)
         })
 
         return () => subscription.unsubscribe()
     }, [])
 
-    if (loading) {
+    if (loading && !isPublicPage(pathname)) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
@@ -198,6 +213,7 @@ export default function App() {
         <ThemeProvider>
             <WalkthroughProvider>
                 <AuthHashHandler>
+                    <Suspense fallback={<PageLoading />}>
                     <Routes>
                 {/* Homepage - public landing page */}
                 <Route path="/" element={session ? <RoleBasedRedirect /> : <Homepage />} />
@@ -372,8 +388,9 @@ export default function App() {
                     {/* Default redirect */}
                     <Route path="*" element={session ? <RoleBasedRedirect /> : <Navigate to="/" replace />} />
                     </Routes>
+                    </Suspense>
                 </AuthHashHandler>
-                <WalkthroughOverlay />
+                <ActiveWalkthrough />
             </WalkthroughProvider>
         </ThemeProvider>
     )
