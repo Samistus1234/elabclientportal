@@ -86,6 +86,36 @@ const calculatePaystackFee = (amount: number, currency: string): { fee: number; 
     return { fee, total, percentage }
 }
 
+// Card trouble nudge. Paystack sends the client nowhere when a card payment is abandoned, so we remember
+// (per browser, per invoice) that they started one. On a later visit we point them at bank transfer, which
+// has no fee and is not affected by international-card 3-D Secure failures. Storage can be blocked
+// (private mode) — every access is guarded and the page works without it.
+const LARGE_NGN_CARD_THRESHOLD = 500000
+const CARD_ATTEMPT_WINDOW_MS = 7 * 24 * 3600 * 1000
+const attemptsKey = (invoiceId: string) => `elab-card-attempts:${invoiceId}`
+
+const readCardAttempts = (invoiceId: string): { count: number; last: number } => {
+    try {
+        const raw = window.localStorage.getItem(attemptsKey(invoiceId))
+        if (!raw) return { count: 0, last: 0 }
+        const parsed = JSON.parse(raw)
+        const count = Number(parsed?.count) || 0
+        const last = Number(parsed?.last) || 0
+        return Date.now() - last > CARD_ATTEMPT_WINDOW_MS ? { count: 0, last: 0 } : { count, last }
+    } catch {
+        return { count: 0, last: 0 }
+    }
+}
+
+const recordCardAttempt = (invoiceId: string) => {
+    try {
+        const { count } = readCardAttempts(invoiceId)
+        window.localStorage.setItem(attemptsKey(invoiceId), JSON.stringify({ count: count + 1, last: Date.now() }))
+    } catch {
+        /* storage unavailable — the nudge simply won't appear */
+    }
+}
+
 // Paystack's inline.js script is no longer loaded: card payments go through the
 // server-side Checkout (see handlePayWithCard), which collects the billing address
 // Paystack's AVS requires and handles 3DS itself.
@@ -153,7 +183,13 @@ export default function PayInvoice() {
             .then(({ data }) => {
                 if (cancelled) return
                 setPaymentReference(ref)
-                if ((data as any)?.verified) setPaymentSuccess(true)
+                if ((data as any)?.verified) {
+                    setPaymentSuccess(true)
+                } else if (['failed', 'abandoned', 'reversed'].includes(String((data as any)?.status || '').toLowerCase())) {
+                    // Declined / not completed. (ongoing/pending are still processing — say nothing.)
+                    setCardTrouble({ attempts: 1, reason: (data as any)?.message || undefined })
+                    setActiveTab('bank')
+                }
             })
             .catch((err) => console.error('Payment verification failed:', err))
         return () => {
@@ -190,6 +226,8 @@ export default function PayInvoice() {
     const [paymentSuccess, setPaymentSuccess] = useState(false)
     const [paymentReference, setPaymentReference] = useState<string | null>(null)
     const [cardCurrency, setCardCurrency] = useState<'primary' | 'secondary'>('primary')
+    // Set when we have reason to think the client's card payment did not go through.
+    const [cardTrouble, setCardTrouble] = useState<{ attempts: number; reason?: string } | null>(null)
 
     useEffect(() => {
         loadInvoice()
@@ -223,6 +261,15 @@ export default function PayInvoice() {
 
             const invoiceData = Array.isArray(data) ? data[0] : data
             setInvoice(invoiceData)
+
+            // Steer toward bank transfer where cards are least reliable. Never while confirming a
+            // just-completed Paystack payment (?paid=1) — that flow decides the tab itself.
+            if (searchParams.get('paid') !== '1' && Number(invoiceData.amount_due) > 0) {
+                const prior = readCardAttempts(invoiceId)
+                if (prior.count >= 1) setCardTrouble({ attempts: prior.count })
+                const largeNaira = invoiceData.currency === 'NGN' && Number(invoiceData.amount_due) >= LARGE_NGN_CARD_THRESHOLD
+                if (prior.count >= 2 || largeNaira) setActiveTab('bank')
+            }
 
             // Get bank accounts for payment
             const { data: bankData } = await supabase.rpc('get_public_bank_accounts', {
@@ -344,6 +391,8 @@ export default function PayInvoice() {
                 console.error('paystack-initialize failed:', initRes.error, initData)
                 throw new Error(initData?.error || 'The payment gateway did not return a checkout link')
             }
+
+            recordCardAttempt(invoice.id)
 
             // Off to Paystack's Checkout. It returns the client to
             // /pay/<invoice>?paid=1&reference=... where we confirm the payment.
@@ -758,6 +807,27 @@ export default function PayInvoice() {
                             >
                                 {/* Payment Method Card */}
                                 <div className="bg-[#FDFCF9] shadow-[0_1px_2px_rgba(19,37,74,0.05),0_10px_30px_rgba(19,37,74,0.06)] overflow-hidden">
+                                    {cardTrouble && (
+                                        <div role="status" className="m-3 sm:m-4 mb-0 sm:mb-0 border border-[#E8D9B5] bg-[#FBF5E6] px-4 py-3.5 rounded-xl">
+                                            <p className="text-[13.5px] font-bold text-[#13254A]">
+                                                {cardTrouble.attempts >= 2 ? 'Card still not going through?' : 'Did your card payment not go through?'}
+                                            </p>
+                                            <p className="text-[12.5px] leading-relaxed text-[#5B5A55] mt-1">
+                                                {cardTrouble.reason ? `Your bank said: “${cardTrouble.reason}”. ` : ''}
+                                                This is common with international cards, when the bank&apos;s verification step fails, and it is nothing you did wrong.
+                                                Bank transfer takes about two minutes, has no processing fee, and we confirm it as soon as you upload your receipt.
+                                            </p>
+                                            {activeTab === 'card' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setActiveTab('bank')}
+                                                    className="mt-2.5 text-[13px] font-bold text-[#13254A] underline underline-offset-2 hover:text-[#0E1C3A]"
+                                                >
+                                                    Pay by bank transfer instead
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
                                     {/* Tabs */}
                                     {(() => {
                                         const hasSecondary = !!(invoice.secondary_currency && invoice.secondary_total)
@@ -954,6 +1024,19 @@ export default function PayInvoice() {
 
                                                 <p className="text-[11px] text-[#8b8680] text-center mt-4">
                                                     Processing fee is charged by Paystack for card transactions
+                                                </p>
+
+                                                <p className="text-[12px] leading-relaxed text-[#5B5A55] text-center mt-4 pt-4 border-t border-[#EFEAE0]">
+                                                    {invoice.currency === 'NGN' && selectedAmount >= LARGE_NGN_CARD_THRESHOLD
+                                                        ? 'Many banks limit card payments of this size. '
+                                                        : 'Card not working? International cards sometimes need extra bank approval. '}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setActiveTab('bank')}
+                                                        className="font-bold text-[#13254A] underline underline-offset-2 hover:text-[#0E1C3A]"
+                                                    >
+                                                        Pay by bank transfer (no fee)
+                                                    </button>
                                                 </p>
                                             </div>
                                         )
