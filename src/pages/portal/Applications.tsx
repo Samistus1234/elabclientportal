@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PortalLayout from '@/components/portal/PortalLayout'
-import { getMyCases, getStages, isFinished, stepPosition, timeAgo, type MyCase, type Stage } from '@/lib/portalData'
+import { ChevronRight } from 'lucide-react'
+import { finishedLabel, getMyCases, getStages, isFinished, stepPosition, timeAgo, type MyCase, type Stage } from '@/lib/portalData'
 
 export default function Applications() {
     const [cases, setCases] = useState<MyCase[] | null>(null)
@@ -36,7 +37,7 @@ export default function Applications() {
 
     return (
         <PortalLayout>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 820 }}>
+            <div className="pl-page pl-page-narrow">
                 <div>
                     <h1 className="pl-h1">Applications</h1>
                     <div className="pl-sub">Every service eLab is handling for you.</div>
@@ -54,14 +55,21 @@ export default function Applications() {
                                 <div className="pl-card-h"><h2>{label}</h2></div>
                                 {list.map((c) => {
                                     const pos = stepPosition(stages[c.pipeline_id || ''], c.stage_id)
+                                    const done = isFinished(c)
                                     return (
                                         <Link key={c.id} to={`/case/${c.id}`} className="pl-row" style={{ flexWrap: 'wrap' }}>
                                             <div className="pl-row-t">
                                                 <div className="pl-row-title">{c.pipeline_name || 'Application'}</div>
                                                 <div className="pl-row-sub">{c.case_reference} · updated {timeAgo(c.updated_at)}</div>
                                             </div>
-                                            {c.stage_name && <span className="pl-tag pl-tag-blue">{c.stage_name}</span>}
-                                            {pos && !isFinished(c) && (
+                                            {/* A finished application shows its outcome, not the step it stopped on. */}
+                                            {done ? (
+                                                <span className={`pl-tag ${finishedLabel(c) === 'Completed' ? 'pl-tag-green' : 'pl-tag-grey'}`}>{finishedLabel(c)}</span>
+                                            ) : (
+                                                c.stage_name && <span className="pl-tag pl-tag-blue" style={{ maxWidth: '100%', whiteSpace: 'normal' }}>{c.stage_name}</span>
+                                            )}
+                                            <ChevronRight size={18} className="pl-chev" aria-hidden />
+                                            {pos && !done && (
                                                 <div style={{ flexBasis: '100%' }}>
                                                     <div className="pl-bar-track"><div className="pl-bar-fill" style={{ width: `${pos.pct}%` }} /></div>
                                                     <div className="pl-row-sub" style={{ marginTop: 5 }}>Step {pos.index} of {pos.count}</div>

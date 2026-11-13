@@ -32,7 +32,7 @@ export default function Payments() {
 
     return (
         <PortalLayout>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 860 }}>
+            <div className="pl-page pl-page-narrow" style={{ maxWidth: 860 }}>
                 <div>
                     <h1 className="pl-h1">Payments</h1>
                     <div className="pl-sub">Your invoices and receipts.</div>

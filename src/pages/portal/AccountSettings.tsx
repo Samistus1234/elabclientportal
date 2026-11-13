@@ -53,7 +53,7 @@ export default function AccountSettings() {
 
     return (
         <PortalLayout>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 620 }}>
+            <div className="pl-page pl-page-narrow" style={{ maxWidth: 620 }}>
                 <h1 className="pl-h1">Settings</h1>
 
                 <section className="pl-card" aria-labelledby="acc-h">
