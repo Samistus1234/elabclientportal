@@ -57,24 +57,27 @@ export default function Applications() {
                                     const pos = stepPosition(stages[c.pipeline_id || ''], c.stage_id)
                                     const done = isFinished(c)
                                     return (
-                                        <Link key={c.id} to={`/case/${c.id}`} className="pl-row" style={{ flexWrap: 'wrap' }}>
+                                        <Link key={c.id} to={`/case/${c.id}`} className="pl-row" style={{ alignItems: 'center' }}>
                                             <div className="pl-row-t">
-                                                <div className="pl-row-title">{c.pipeline_name || 'Application'}</div>
-                                                <div className="pl-row-sub">{c.case_reference} · updated {timeAgo(c.updated_at)}</div>
-                                            </div>
-                                            {/* A finished application shows its outcome, not the step it stopped on. */}
-                                            {done ? (
-                                                <span className={`pl-tag ${finishedLabel(c) === 'Completed' ? 'pl-tag-green' : 'pl-tag-grey'}`}>{finishedLabel(c)}</span>
-                                            ) : (
-                                                c.stage_name && <span className="pl-tag pl-tag-blue" style={{ maxWidth: '100%', whiteSpace: 'normal' }}>{c.stage_name}</span>
-                                            )}
-                                            <ChevronRight size={18} className="pl-chev" aria-hidden />
-                                            {pos && !done && (
-                                                <div style={{ flexBasis: '100%' }}>
-                                                    <div className="pl-bar-track"><div className="pl-bar-fill" style={{ width: `${pos.pct}%` }} /></div>
-                                                    <div className="pl-row-sub" style={{ marginTop: 5 }}>Step {pos.index} of {pos.count}</div>
+                                                <div className="pl-row-title" style={{ whiteSpace: 'normal' }}>{c.pipeline_name || 'Application'}</div>
+                                                <div className="pl-row-sub" style={{ whiteSpace: 'normal' }}>{c.case_reference} · updated {timeAgo(c.updated_at)}</div>
+                                                {/* A finished application shows its outcome, not the step it stopped on.
+                                                    The label sits under the title so long step names never squeeze it. */}
+                                                <div style={{ marginTop: 10 }}>
+                                                    {done ? (
+                                                        <span className={`pl-tag ${finishedLabel(c) === 'Completed' ? 'pl-tag-green' : 'pl-tag-grey'}`}>{finishedLabel(c)}</span>
+                                                    ) : (
+                                                        c.stage_name && <span className="pl-tag pl-tag-blue" style={{ display: 'inline-block', whiteSpace: 'normal' }}>{c.stage_name}</span>
+                                                    )}
                                                 </div>
-                                            )}
+                                                {pos && !done && (
+                                                    <div style={{ marginTop: 12 }}>
+                                                        <div className="pl-bar-track"><div className="pl-bar-fill" style={{ width: `${pos.pct}%` }} /></div>
+                                                        <div className="pl-row-sub" style={{ marginTop: 6 }}>Step {pos.index} of {pos.count}</div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <ChevronRight size={18} className="pl-chev" aria-hidden />
                                         </Link>
                                     )
                                 })}

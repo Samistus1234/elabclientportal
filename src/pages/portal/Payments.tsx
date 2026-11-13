@@ -42,7 +42,7 @@ export default function Payments() {
                 {invoices === null ? (
                     <div className="pl-card pl-card-pad"><div className="pl-skel" style={{ height: 64 }} role="status" aria-label="Loading" /></div>
                 ) : invoices.length === 0 ? (
-                    <div className="pl-card"><div className="pl-empty" style={{ borderTop: 0 }}>You have no invoices yet.</div></div>
+                    <div className="pl-card"><div className="pl-empty" style={{ borderTop: 0 }}>No invoices yet. When eLab sends you one, you can view and pay it here.</div></div>
                 ) : (
                     <>
                         <section className="pl-card" aria-labelledby="pay-h">

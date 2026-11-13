@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import PortalLayout from '@/components/portal/PortalLayout'
 import {
+    displayName,
     formatDate, getMyCases, getMyPerson, getMyTickets,
     type MyCase, type MyPerson, type MyTicket,
 } from '@/lib/portalData'
@@ -108,7 +109,7 @@ export default function Help() {
                             <h2 className="pl-card-title">Ask a question</h2>
                             {person && (
                                 <div className="pl-row-sub" style={{ marginTop: 2 }}>
-                                    From {[person.first_name, person.last_name].filter(Boolean).join(' ')} · we reply to {person.email}
+                                    From {[displayName(person.first_name), displayName(person.last_name)].filter(Boolean).join(' ')} · we reply to {person.email}
                                 </div>
                             )}
                         </div>

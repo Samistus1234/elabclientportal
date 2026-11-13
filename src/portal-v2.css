@@ -208,5 +208,6 @@ a.pl-row:hover, a.pl-row:active { background: var(--pl-fill); }
 .pl-stage-now { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; margin: 6px 0; color: var(--pl-blue-strong); }
 @media (min-width: 768px) { .pl-stage-now { font-size: 28px; } }
 .pl-stage-now.done { color: var(--pl-green); }
+.pl-stage-now.ended { color: var(--pl-text-2); }
 html.dark .pl-segs .bar:not(.on), html.dark .pl-vsteps .line { background: rgba(255, 255, 255, 0.14); }
 html.dark .pl-vsteps .dot { border-color: rgba(255, 255, 255, 0.3); }

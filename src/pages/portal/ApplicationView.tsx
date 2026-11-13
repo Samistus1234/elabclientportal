@@ -17,6 +17,8 @@ interface HistoryItem {
 
 type StageMove = { id: string; created_at: string; to_stage_name: string }
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
 /**
  * What happened on this application, newest first: step changes, documents we
  * received and the day it started. Step changes alone left most clients with
@@ -26,9 +28,16 @@ type StageMove = { id: string; created_at: string; to_stage_name: string }
 function buildHistory(c: MyCase, moves: StageMove[], docs: MyDocument[]): HistoryItem[] {
     const items: HistoryItem[] = []
     const sortedMoves = [...moves].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
+    // Staff often move a case back and forth while working on it (five moves in
+    // three hours is common). Within a burst of moves less than a day apart, only
+    // where it ended up matters to the client.
+    const settled = sortedMoves.filter((m, i) => {
+        const next = sortedMoves[i + 1]
+        return !next || Date.parse(next.created_at) - Date.parse(m.created_at) >= DAY_MS
+    })
     let last = ''
-    for (const m of sortedMoves) {
-        // Moving back and forth, or between staff-only steps, repeats the client step.
+    for (const m of settled) {
+        // Staff-only steps show under the nearest client step, which then repeats.
         if (m.to_stage_name === last) continue
         last = m.to_stage_name
         items.push({ key: `s-${m.id}`, at: m.created_at, text: `Moved to ${m.to_stage_name}` })
@@ -87,6 +96,9 @@ export default function ApplicationView() {
 
     const currentIndex = c ? stages.findIndex((s) => s.id === c.stage_id) : -1
     const finished = !!c && isFinished(c)
+    // Only a completed application has been through every step; a cancelled or
+    // closed one keeps the ticks it earned and shows its outcome in grey.
+    const completed = !!c && finished && finishedLabel(c) === 'Completed'
     const sinceMoves = (moves || []).filter((h) => h.to_stage_name === c?.stage_name)
     const since = sinceMoves[sinceMoves.length - 1]?.created_at
     const history = c && moves && docs ? buildHistory(c, moves, docs) : null
@@ -123,7 +135,7 @@ export default function ApplicationView() {
                                 <>
                                     <div>
                                         <p className="pl-eyebrow">{finished ? 'Outcome' : 'Where it is now'}</p>
-                                        <h2 id="now-h" className={`pl-stage-now ${finished ? 'done' : ''}`}>
+                                        <h2 id="now-h" className={`pl-stage-now ${completed ? 'done' : finished ? 'ended' : ''}`}>
                                             {finished ? finishedLabel(c) : c.stage_name || 'In progress'}
                                         </h2>
                                         {!finished && since && <div className="pl-row-sub">Since {formatDate(since, true)}</div>}
@@ -151,7 +163,7 @@ export default function ApplicationView() {
                                     {stages.length > 0 && (
                                         <ol className="pl-vsteps" aria-label="All steps">
                                             {stages.map((s, i) => {
-                                                const done = finished || (currentIndex >= 0 && i < currentIndex)
+                                                const done = completed || (currentIndex >= 0 && i < currentIndex)
                                                 const cur = !finished && i === currentIndex
                                                 return (
                                                     <li key={s.id} className={done ? 'done' : ''} aria-current={cur ? 'step' : undefined}>

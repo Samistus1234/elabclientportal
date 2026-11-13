@@ -243,14 +243,14 @@ export function finishedLabel(c: MyCase) {
 /**
  * The same step can be recorded several times when a case is moved back and
  * forth, and staff-only steps show under the nearest client step, so the raw
- * feed repeats itself ("Submitted — under review" three times on one day).
- * Keep only the latest entry for each (application, step) on each day.
+ * feed repeats itself ("Submitted — under review" three times in one evening).
+ * The feed is newest first: keep only the latest entry for each (application, step).
  */
 export function dedupeUpdates(list: MyUpdate[]) {
     const seen = new Set<string>()
     return list.filter((u) => {
         if (u.kind !== 'stage') return true
-        const key = `${u.case_id}|${u.title}|${(u.happened_at || '').slice(0, 10)}`
+        const key = `${u.case_id}|${u.title}`
         if (seen.has(key)) return false
         seen.add(key)
         return true
