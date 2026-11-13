@@ -25,13 +25,13 @@ export default function DownloadButton({
             onClick={onClick}
             disabled={disabled || loading}
             className={`
-                flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold
-                transition-all duration-200
+                flex items-center justify-center gap-2 px-6 min-h-[48px] rounded-full font-semibold
+                transition-colors duration-200
                 ${disabled || loading
-                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    ? 'bg-[#E8E8ED] text-[#86868B] cursor-not-allowed'
                     : success
-                        ? 'bg-green-500 text-white shadow-lg shadow-green-200'
-                        : 'bg-gradient-to-r from-primary-500 to-blue-600 text-white shadow-lg shadow-primary-200 hover:shadow-xl hover:shadow-primary-300'
+                        ? 'bg-[#1D6B3A] text-white'
+                        : 'bg-[#0071E3] hover:bg-[#0077ED] text-white'
                 }
                 ${className}
             `}
