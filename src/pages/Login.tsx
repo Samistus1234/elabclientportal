@@ -1,8 +1,7 @@
 import AuthShell from '@/components/AuthShell'
 import { useState } from 'react'
 import { signInWithPassword, getPortalUserInfo } from '@/lib/supabase'
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Headphones, CheckCircle } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { Eye, EyeOff } from 'lucide-react'
 import { useLocation, Link } from 'react-router-dom'
 
 export default function Login() {
@@ -50,208 +49,73 @@ export default function Login() {
     }
 
     return (
-        <AuthShell><div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative overflow-hidden">
-                {/* Background for right panel */}
+        <AuthShell>
+            <div className="auth-title">
+                <h1>Sign in to eLab.</h1>
+                <p>Check your applications, documents and messages from the team.</p>
+            </div>
 
+            <form onSubmit={handleSubmit} className="auth-card">
+                {notice && !error && <div role="status" className="auth-msg auth-msg-ok">{notice}</div>}
 
+                <div className="auth-field">
+                    <label htmlFor="email">Email</label>
+                    <input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        className="auth-input"
+                    />
+                </div>
 
-
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="w-full max-w-md relative z-10"
-                >
-                    {/* Mobile logo */}
-
-
-                    {/* Form Card */}
-                    <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-black/[0.06]">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div>
-                                <h2 className="text-xl font-bold text-slate-800">
-                                    Sign in to your account
-                                </h2>
-                                <p className="text-slate-500 text-sm">
-                                    Access your portal dashboard
-                                </p>
-                            </div>
-                        </div>
-
-                        {notice && !error && (
-                            <div role="status" className="mb-5 p-4 rounded-xl bg-green-50 text-green-700 text-sm flex items-start gap-3 border border-green-100">
-                                <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                                <span>{notice}</span>
-                            </div>
-                        )}
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            {/* Email Field */}
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
-                                    Email address
-                                </label>
-                                <div className="relative group">
-
-                                    <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                                        <input
-                                            id="email"
-                                            type="email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="you@example.com"
-                                            required
-                                            className="w-full pl-12 pr-4 py-3 text-base rounded-xl border border-[rgba(60,60,67,0.29)] focus:border-[#245FB7] focus:ring-4 focus:ring-[#245FB7]/20 transition-all outline-none text-slate-800 placeholder:text-slate-500 bg-white"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Password Field */}
-                            <div>
-                                <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
-                                    Password
-                                </label>
-                                <div className="relative group">
-
-                                    <div className="relative">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                                        <input
-                                            id="password"
-                                            type={showPassword ? 'text' : 'password'}
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            placeholder="Enter your password"
-                                            required
-                                            className="w-full pl-12 pr-12 py-3 text-base rounded-xl border border-[rgba(60,60,67,0.29)] focus:border-[#245FB7] focus:ring-4 focus:ring-[#245FB7]/20 transition-all outline-none text-slate-800 placeholder:text-slate-500 bg-white"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                                            className="absolute right-1 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-slate-500 hover:text-slate-700 transition-colors"
-                                        >
-                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Forgot Password Link */}
-                            <div className="flex justify-end">
-                                <Link
-                                    to="/forgot-password"
-                                    className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline"
-                                >
-                                    Forgot password?
-                                </Link>
-                            </div>
-
-                            {/* Error Message */}
-                            {error && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm flex items-start gap-3"
-                                >
-                                    <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <span className="text-red-500 text-xs">!</span>
-                                    </div>
-                                    {error}
-                                </motion.div>
-                            )}
-
-                            {/* Submit Button */}
-                            <motion.button
-                                type="submit"
-                                disabled={isLoading || !email || !password}
-                                whileHover={{ scale: 1.01 }}
-                                whileTap={{ scale: 0.99 }}
-                                className="w-full h-12 px-6 rounded-xl bg-[#245FB7] text-white font-semibold hover:bg-[#1D4E99] active:bg-[#1D4E99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl shadow-blue-500/30 relative overflow-hidden group"
-                            >
-
-                                {isLoading ? (
-                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                    <>
-                                        Sign In
-                                        <ArrowRight className="w-5 h-5" />
-                                    </>
-                                )}
-                            </motion.button>
-
-                            {/* Divider */}
-                            <div className="flex items-center gap-4 py-2">
-                                <div className="flex-1 h-px bg-slate-200" />
-                                <span className="text-xs text-slate-500 font-medium">or</span>
-                                <div className="flex-1 h-px bg-slate-200" />
-                            </div>
-
-                            {/* Register Links */}
-                            <div className="space-y-3">
-                                <Link
-                                    to="/register"
-                                    className="w-full min-h-[44px] py-3 px-4 rounded-xl border border-black/10 hover:bg-slate-50 text-slate-700 font-medium flex items-center justify-center gap-2 transition-all"
-                                >
-                                    <CheckCircle className="w-4 h-4 text-blue-500" />
-                                    Activate your account
-                                </Link>
-                                <p className="text-center text-slate-500 text-sm">
-                                    Are you a recruiter?{' '}
-                                    <Link to="/recruiter/register" className="text-[#245FB7] hover:text-[#1D4E99] font-semibold hover:underline">
-                                        Register here
-                                    </Link>
-                                </p>
-                                <p className="text-center text-slate-500 text-sm">
-                                    Are you an institution?{' '}
-                                    <Link to="/contact/register" className="text-[#245FB7] hover:text-[#1D4E99] font-semibold hover:underline">
-                                        Register here
-                                    </Link>
-                                </p>
-                                <p className="text-center text-slate-500 text-sm">
-                                    Want to introduce people to eLab?{' '}
-                                    <Link to="/referral/join" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
-                                        Join the referral programme
-                                    </Link>
-                                </p>
-                            </div>
-                        </form>
-                    </div>
-
-                    {/* Support Section */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="mt-8 text-center"
-                    >
-                        <a
-                            href="https://portal.elabsolution.org/support"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-black/10 text-slate-800 text-sm font-medium hover:bg-slate-50 min-h-[44px] transition-all shadow-lg shadow-purple-500/20"
+                <div className="auth-field">
+                    <label htmlFor="password">Password</label>
+                    <div className="auth-pw">
+                        <input
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            autoComplete="current-password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Password"
+                            required
+                            className="auth-input"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
-                            <Headphones className="w-4 h-4" />
-                            Submit Support Ticket
-                        </a>
+                            {showPassword ? <EyeOff size={20} aria-hidden /> : <Eye size={20} aria-hidden />}
+                        </button>
+                    </div>
+                </div>
 
-                        <p className="text-slate-500 text-sm mt-4">
-                            Need help? Contact{' '}
-                            <a href="mailto:support@elabsolution.org" className="text-blue-600 hover:underline font-medium">
-                                support@elabsolution.org
-                            </a>
-                        </p>
-                        <div className="flex items-center justify-center gap-3 mt-2 text-xs text-slate-500">
-                            <a href="tel:+2348165634195" className="hover:text-blue-500 transition-colors">
-                                +234 816 563 4195
-                            </a>
-                            <span className="w-1 h-1 rounded-full bg-slate-300" />
-                            <a href="tel:+19294192327" className="hover:text-blue-500 transition-colors">
-                                +1 (929) 419-2327
-                            </a>
-                        </div>
-                    </motion.div>
-                </motion.div>
-            </div></AuthShell>
+                {error && <div role="alert" className="auth-msg auth-msg-err">{error}</div>}
+
+                <button type="submit" className="auth-submit" disabled={isLoading || !email || !password}>
+                    {isLoading ? <span className="auth-spinner" role="status" aria-label="Signing in" /> : 'Sign in'}
+                </button>
+                <Link to="/forgot-password" className="auth-forgot">Forgot password?</Link>
+            </form>
+
+            <div className="auth-first">
+                <p>First time here?</p>
+                <Link to="/register">Activate your account with your case reference ›</Link>
+            </div>
+
+            <div className="auth-partners">
+                <p>Recruiter, institution or referral partner?</p>
+                <div>
+                    <Link to="/recruiter/register">Recruiter sign-up</Link>
+                    <Link to="/contact/register">Institution sign-up</Link>
+                    <Link to="/referral/join">Referral programme</Link>
+                </div>
+            </div>
+        </AuthShell>
     )
 }

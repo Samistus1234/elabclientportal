@@ -1,15 +1,22 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
-import Brand from './Brand'
+import '@/auth-v2.css'
 
+/**
+ * The frame around sign-in, activation, password reset and the partner sign-up
+ * pages: logo, one centred column, a quiet footer (Apple-style, Nov 2026).
+ * `portal-access` is kept so the older forms inside still get their resets.
+ */
 export default function AuthShell({ children }: { children: ReactNode }) {
-    return <div className="portal-access">
-        <header className="access-header"><Link to="/" aria-label="ELAB home"><Brand /></Link><Link to="/"><ArrowLeft size={15} />Back to home</Link></header>
-        <main className="access-layout">
-            <aside className="access-introduction"><p>ELAB CLIENT PORTAL</p><h1>Your applications,<br />with ELAB.</h1><p>Check your licensing and verification progress, review documents and contact the team handling your case.</p><div><strong>First time signing in?</strong><p>Your welcome email contains the reference you need to activate your account.</p><Link to="/support">Help with account access →</Link></div></aside>
-            {children}
-        </main>
-        <footer className="access-footer"><span>© {new Date().getFullYear()} ELAB Solutions International</span><nav><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link><Link to="/support">Support</Link></nav></footer>
+    return <div className="portal-access auth-v2">
+        <header className="auth-header">
+            <Link to="/" aria-label="eLab home"><img src="/elab-logo-blue.png" alt="eLab Solutions International" width="148" height="28" /></Link>
+            <Link to="/" className="auth-back">Back to home</Link>
+        </header>
+        <main className="auth-main">{children}</main>
+        <footer className="auth-footer">
+            <span>Need help? <Link to="/support">Contact support</Link> or <a href="https://wa.me/2348165634195">WhatsApp us</a></span>
+            <nav aria-label="Legal"><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link></nav>
+        </footer>
     </div>
 }
