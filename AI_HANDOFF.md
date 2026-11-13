@@ -3,16 +3,17 @@
 This is the shared handoff for Codex, Claude Code, ChatGPT, Grok and other assistants with repository access.
 
 ## Current handoff
-- **Last update (UTC):** 2026-11-13 01:35 UTC
+- **Last update (UTC):** 2026-11-13 02:05 UTC
 - **Assistant:** Claude Code (Claude Opus 5.5)
-- **Goal:** Owner asked for the signed-in client portal to follow the Apple style used elsewhere (mockup approved first).
-- **Branch / PR:** `feat/portal-apple-redesign` (from `origin/main` 566e0fa); PR opened for review. **Not merged, not deployed.**
-- **Files changed:** `src/portal-v2.css` (Apple tokens + new classes), `src/components/portal/PortalLayout.tsx` (wide wordmark `public/elab-logo-blue.png`, five tabs — Updates removed from nav), `src/components/portal/ElabUpdates.tsx` + `elab-updates.css` (strip hidden on Home when empty), `src/lib/portalData.ts` (`displayName`, `finishedLabel`, `dedupeUpdates`), `src/pages/portal/{Home,ApplicationView,Applications,DocumentsPage,Payments,AccountSettings,Help}.tsx`.
-- **Bugs fixed:** finished applications showed the step they stopped on (now Completed/Closed/Cancelled; cancelled no longer shows every step ticked); Home feed repeated back-and-forth stage moves; History empty on most applications (now merges documents + start date, collapses move bursts < 24h); names stored in capitals shown as typed.
-- **Removed:** the AI "Case summary" card from the application page (component file kept).
-- **Checks:** `tsc --noEmit` clean, `vite build` OK, helper checks (scratch script) pass; owner's own account viewed on localhost at 1280px and 375px: Home, Applications, three application pages, Documents, Payments, Help. No lint config exists in this repo.
-- **Not done:** public homepage and sign-in page still old style (separate pass); dark mode not looked at in a browser; Vercel branch previews are off, so no preview URL.
-- **Next action:** owner reviews/merges the PR; merging to `main` deploys via Vercel git integration.
+- **Goal:** Owner asked for the public homepage and sign-in page in the same Apple style as the signed-in pages (PR #40, merged and live). Mockup approved first.
+- **Branch / PR:** `feat/portal-public-apple` from `origin/main` 812520f; PR opened. **Not merged, not deployed.**
+- **Files changed:** `src/pages/Homepage.tsx` + `src/home-refinement.css` (rewritten; same links, FAQ text, tour targets and "Get started" dialog), `src/components/AuthShell.tsx` + new `src/auth-v2.css` (one centred column on grey; used by Login, Register, ForgotPassword, ResetPassword, Recruiter/Contact login + register), `src/pages/Login.tsx` (markup only; sign-in logic untouched, framer-motion dropped from this page).
+- **Copy changes (owner may revert):** eyebrow "For doctors, nurses and allied health professionals"; "From first message to licence."; partner sign-ups moved to one quiet line on sign-in and a "Partners" footer column on the homepage; phone numbers removed from the sign-in page (still in homepage footer).
+- **Checks:** `tsc --noEmit` clean, `vite build` OK; viewed signed-out on localhost at pane width (~800px) and 375px: homepage top to footer, Get started dialog, /login, /register, /forgot-password, /recruiter/login; no horizontal scroll at 375px. Did not submit any form.
+- **Next action:** owner reviews/merges; merging to `main` deploys via Vercel.
+
+## Previous handoff (2026-11-13 01:35 UTC)
+- Signed-in pages redesign + four data-display fixes: PR #40, merged 812520f and live.
 
 ## Updating this file
 Record the UTC timestamp, assistant/tool, goal, branch/commit/PR, exact files changed, completed work, checks run and results, known issues, unfinished work, and next actionable step.
