@@ -221,3 +221,38 @@ export async function respondToNextStep(serviceKey: string, response: 'intereste
     if (error) throw error
     return data as { ok: boolean; already: boolean }
 }
+
+/**
+ * A name as people write it. Names saved in capitals ("SAMMY") are shown in
+ * normal case; names that already mix case ("McDonald", "de Souza") are left alone.
+ */
+export function displayName(name: string | null | undefined) {
+    const n = (name || '').trim()
+    if (!n || n !== n.toUpperCase()) return n
+    return n.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_m, sep: string, ch: string) => sep + ch.toUpperCase())
+}
+
+/** What a finished application is called: its outcome, not the step it stopped on. */
+export function finishedLabel(c: MyCase) {
+    const s = (c.status || '').toLowerCase()
+    if (s === 'cancelled') return 'Cancelled'
+    if (s === 'archived' || s === 'closed') return 'Closed'
+    return 'Completed'
+}
+
+/**
+ * The same step can be recorded several times when a case is moved back and
+ * forth, and staff-only steps show under the nearest client step, so the raw
+ * feed repeats itself ("Submitted — under review" three times in one evening).
+ * The feed is newest first: keep only the latest entry for each (application, step).
+ */
+export function dedupeUpdates(list: MyUpdate[]) {
+    const seen = new Set<string>()
+    return list.filter((u) => {
+        if (u.kind !== 'stage') return true
+        const key = `${u.case_id}|${u.title}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+    })
+}

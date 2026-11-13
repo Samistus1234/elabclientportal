@@ -1,19 +1,60 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { AlertCircle, Check, CheckCircle2, ChevronLeft, FileText } from 'lucide-react'
 import PortalLayout from '@/components/portal/PortalLayout'
-import AISummaryCard from '@/components/AISummaryCard'
 import {
-    formatDate, getCaseHistory, getMyCase, getMyDocuments, getMyWaitingCases, getStages,
+    finishedLabel, formatDate, getCaseHistory, getMyCase, getMyDocuments, getMyWaitingCases, getStages, isFinished,
     type MyCase, type MyDocument, type Stage,
 } from '@/lib/portalData'
 
 const WHATSAPP_URL = 'https://wa.me/2348165634195'
 
+interface HistoryItem {
+    key: string
+    at: string
+    text: string
+}
+
+type StageMove = { id: string; created_at: string; to_stage_name: string }
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/**
+ * What happened on this application, newest first: step changes, documents we
+ * received and the day it started. Step changes alone left most clients with
+ * "No changes recorded yet" because an application usually opens on its first
+ * step and the documents arrive before the step moves.
+ */
+function buildHistory(c: MyCase, moves: StageMove[], docs: MyDocument[]): HistoryItem[] {
+    const items: HistoryItem[] = []
+    const sortedMoves = [...moves].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
+    // Staff often move a case back and forth while working on it (five moves in
+    // three hours is common). Within a burst of moves less than a day apart, only
+    // where it ended up matters to the client.
+    const settled = sortedMoves.filter((m, i) => {
+        const next = sortedMoves[i + 1]
+        return !next || Date.parse(next.created_at) - Date.parse(m.created_at) >= DAY_MS
+    })
+    let last = ''
+    for (const m of settled) {
+        // Staff-only steps show under the nearest client step, which then repeats.
+        if (m.to_stage_name === last) continue
+        last = m.to_stage_name
+        items.push({ key: `s-${m.id}`, at: m.created_at, text: `Moved to ${m.to_stage_name}` })
+    }
+    for (const d of docs) {
+        if (d.uploaded_at) items.push({ key: `d-${d.id}`, at: d.uploaded_at, text: `We received ${d.name}` })
+    }
+    const started = c.start_date || c.created_at
+    if (started) items.push({ key: 'start', at: started, text: 'Application started' })
+    return items.sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
+}
+
 export default function ApplicationView() {
     const { caseId = '' } = useParams()
     const [c, setCase] = useState<MyCase | null | undefined>(undefined)
     const [stages, setStages] = useState<Stage[]>([])
-    const [history, setHistory] = useState<{ id: string; created_at: string; to_stage_name: string }[] | null>(null)
+    const [moves, setMoves] = useState<StageMove[] | null>(null)
     const [docs, setDocs] = useState<MyDocument[] | null>(null)
     const [waiting, setWaiting] = useState(false)
     const [historyError, setHistoryError] = useState(false)
@@ -31,7 +72,7 @@ export default function ApplicationView() {
                 }
             })
             .catch(() => alive && setError("We couldn't load this application. Please refresh the page."))
-        getCaseHistory(caseId).then((h) => alive && setHistory(h)).catch(() => alive && setHistoryError(true))
+        getCaseHistory(caseId).then((h) => alive && setMoves(h)).catch(() => alive && setHistoryError(true))
         getMyDocuments()
             .then((d) => alive && setDocs(d.filter((x) => x.case_id === caseId)))
             .catch(() => alive && setDocs([]))
@@ -44,131 +85,165 @@ export default function ApplicationView() {
     if (c === null) {
         return (
             <PortalLayout>
-                <div className="pl-card pl-card-pad" style={{ maxWidth: 560 }}>
-                    <div style={{ fontWeight: 600 }}>Application not found</div>
-                    <div className="pl-sub">It may belong to another account. <Link to="/applications" className="pl-link">See your applications</Link></div>
+                <div className="pl-card" style={{ maxWidth: 560, padding: 24 }}>
+                    <h1 className="pl-card-title" style={{ fontSize: 19, fontWeight: 700 }}>Application not found</h1>
+                    <p className="pl-note-d" style={{ color: 'var(--pl-muted)' }}>It may belong to another account.</p>
+                    <Link to="/applications" className="pl-btn pl-btn-ink" style={{ marginTop: 16 }}>See your applications</Link>
                 </div>
             </PortalLayout>
         )
     }
 
     const currentIndex = c ? stages.findIndex((s) => s.id === c.stage_id) : -1
-    const finished = c && ['completed', 'closed'].includes((c.status || '').toLowerCase())
-    const since = (history || []).find((h) => h.to_stage_name === c?.stage_name)?.created_at
+    const finished = !!c && isFinished(c)
+    // Only a completed application has been through every step; a cancelled or
+    // closed one keeps the ticks it earned and shows its outcome in grey.
+    const completed = !!c && finished && finishedLabel(c) === 'Completed'
+    const sinceMoves = (moves || []).filter((h) => h.to_stage_name === c?.stage_name)
+    const since = sinceMoves[sinceMoves.length - 1]?.created_at
+    const history = c && moves && docs ? buildHistory(c, moves, docs) : null
+    const updated = c?.updated_at ? formatDate(c.updated_at, true) : ''
 
     return (
         <PortalLayout>
-            <div style={{ display: 'grid', gap: 16 }} className="lg:grid-cols-[1.3fr_1fr]">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
-                    <div>
-                        <Link to="/applications" className="pl-crumb">‹ Applications</Link>
-                        {c === undefined ? (
-                            <div className="pl-skel" style={{ height: 30, width: 260, marginTop: 4 }} role="status" aria-label="Loading" />
-                        ) : (
-                            <h1 className="pl-h1" style={{ marginTop: 4 }}>{c?.pipeline_name || 'Application'}</h1>
-                        )}
-                        <div className="pl-sub">
-                            {[c?.case_reference, (c?.start_date || c?.created_at) && `started ${formatDate(c?.start_date || c?.created_at, true)}`].filter(Boolean).join(' · ')}
-                        </div>
-                    </div>
-                    {error && <div className="pl-alert pl-alert-red">{error}</div>}
-
-                    {waiting && (
-                        <div className="pl-card pl-card-pad pl-wait">
-                            <div style={{ fontWeight: 700 }}>We're waiting on you</div>
-                            <div style={{ fontSize: 14, color: 'var(--pl-text-2)', marginTop: 3 }}>
-                                We've asked you for something by WhatsApp or email. Reply there, or <Link to="/documents" className="pl-link">upload it here</Link>.
-                            </div>
-                        </div>
+            <div className="pl-page">
+                <div>
+                    <Link to="/applications" className="pl-crumb" style={{ color: 'var(--pl-link)', gap: 2 }}>
+                        <ChevronLeft size={18} aria-hidden />Applications
+                    </Link>
+                    {c === undefined ? (
+                        <div className="pl-skel" style={{ height: 40, width: 300, marginTop: 8 }} role="status" aria-label="Loading" />
+                    ) : (
+                        <h1 className="pl-h1" style={{ marginTop: 8 }}>{c.pipeline_name || 'Application'}</h1>
                     )}
-
-                    <section className="pl-card pl-card-pad" aria-labelledby="prog-h">
-                        <h2 id="prog-h" style={{ fontSize: 16, fontWeight: 600, margin: '0 0 8px' }}>Progress</h2>
-                        {c === undefined ? (
-                            <div className="pl-skel" style={{ height: 120 }} role="status" aria-label="Loading" />
-                        ) : stages.length === 0 ? (
-                            <div style={{ fontSize: 14 }}>
-                                Current step: <b>{c.stage_name || 'In progress'}</b>
-                            </div>
-                        ) : (
-                            <ol className="pl-steps">
-                                {stages.map((s, i) => {
-                                    const done = finished || (currentIndex >= 0 && i < currentIndex)
-                                    const cur = !finished && i === currentIndex
-                                    return (
-                                        <li key={s.id} className="pl-step" aria-current={cur ? 'step' : undefined}>
-                                            <span className={`pl-dot ${done ? 'pl-dot-done' : cur ? 'pl-dot-cur' : 'pl-dot-todo'}`}>{done ? '✓' : ''}</span>
-                                            <div>
-                                                <div style={{ fontWeight: cur ? 700 : done ? 500 : 400, color: done || cur ? 'var(--pl-text)' : 'var(--pl-muted)' }}>{s.name}</div>
-                                                {cur && since && <div className="pl-row-sub">Since {formatDate(since)}</div>}
-                                            </div>
-                                        </li>
-                                    )
-                                })}
-                            </ol>
-                        )}
-                    </section>
-
-                    <section className="pl-card" aria-labelledby="hist-h">
-                        <div className="pl-card-h"><h2 id="hist-h">History</h2></div>
-                        {historyError ? (
-                            <div className="pl-empty">
-                                We couldn't load the history.{' '}
-                                <button type="button" className="pl-link" onClick={() => window.location.reload()}>Try again</button>
-                            </div>
-                        ) : history === null ? (
-                            <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 40 }} role="status" aria-label="Loading" /></div>
-                        ) : history.length === 0 ? (
-                            <div className="pl-empty">No changes recorded yet.</div>
-                        ) : (
-                            history.map((h) => (
-                                <div key={h.id} className="pl-row">
-                                    <div className="pl-row-t"><div className="pl-row-title" style={{ whiteSpace: 'normal' }}>{h.to_stage_name}</div></div>
-                                    <span className="pl-row-sub" style={{ marginTop: 0 }}>{formatDate(h.created_at)}</span>
-                                </div>
-                            ))
-                        )}
-                    </section>
+                    <p className="pl-sub" style={{ margin: '8px 0 0' }}>
+                        {[
+                            c?.case_reference,
+                            (c?.start_date || c?.created_at) && `started ${formatDate(c?.start_date || c?.created_at, true)}`,
+                            updated && `updated ${updated}`,
+                        ].filter(Boolean).join(' · ')}
+                    </p>
                 </div>
+                {error && <div className="pl-alert pl-alert-red">{error}</div>}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }} className="lg:pt-[62px]">
-                    {c && (
-                        <AISummaryCard
-                            caseId={c.id}
-                            caseData={{
-                                status: c.status,
-                                pipeline: c.pipeline_name ? { name: c.pipeline_name, slug: c.pipeline_slug || '' } : undefined,
-                                current_stage: c.stage_name ? { name: c.stage_name, slug: c.stage_slug || '' } : undefined,
-                                metadata: c.metadata || undefined,
-                            }}
-                        />
-                    )}
-
-                    <section className="pl-card" aria-labelledby="docs-h">
-                        <div className="pl-card-h">
-                            <h2 id="docs-h">Documents for this application</h2>
-                            <Link to="/documents" className="pl-link">See all</Link>
-                        </div>
-                        {docs === null ? (
-                            <div style={{ padding: '4px 18px 18px' }}><div className="pl-skel" style={{ height: 40 }} role="status" aria-label="Loading" /></div>
-                        ) : docs.length === 0 ? (
-                            <div className="pl-empty">No documents on this application yet.</div>
-                        ) : (
-                            docs.slice(0, 6).map((d) => (
-                                <div key={d.id} className="pl-row">
-                                    <div className="pl-row-t">
-                                        <div className="pl-row-title">{d.name}</div>
-                                        <div className="pl-row-sub">{d.received_via} · {formatDate(d.uploaded_at)}</div>
+                <div className="pl-split">
+                    <div className="pl-stack">
+                        <section className="pl-hero" aria-labelledby="now-h">
+                            {c === undefined ? (
+                                <div className="pl-skel" style={{ height: 160 }} role="status" aria-label="Loading" />
+                            ) : (
+                                <>
+                                    <div>
+                                        <p className="pl-eyebrow">{finished ? 'Outcome' : 'Where it is now'}</p>
+                                        <h2 id="now-h" className={`pl-stage-now ${completed ? 'done' : finished ? 'ended' : ''}`}>
+                                            {finished ? finishedLabel(c) : c.stage_name || 'In progress'}
+                                        </h2>
+                                        {!finished && since && <div className="pl-row-sub">Since {formatDate(since, true)}</div>}
                                     </div>
-                                    <span className="pl-tag pl-tag-green">Received</span>
-                                </div>
-                            ))
-                        )}
-                    </section>
 
-                    <div className="pl-card pl-card-pad" style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                        <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="pl-btn">Message us on WhatsApp</a>
-                        <Link to={`/help?case=${caseId}`} className="pl-btn2">Ask a question</Link>
+                                    {waiting ? (
+                                        <div className="pl-note pl-note-amber">
+                                            <AlertCircle size={24} color="var(--pl-amber)" aria-hidden style={{ flex: 'none' }} />
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p className="pl-note-t">We need something from you</p>
+                                                <p className="pl-note-d">We asked you by WhatsApp or email. Reply there, or upload it here.</p>
+                                                <Link to="/documents" className="pl-btn" style={{ marginTop: 12 }}>Upload a document</Link>
+                                            </div>
+                                        </div>
+                                    ) : !finished ? (
+                                        <div className="pl-note">
+                                            <CheckCircle2 size={24} color="var(--pl-green)" aria-hidden style={{ flex: 'none' }} />
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <p className="pl-note-t">Nothing needed from you right now</p>
+                                                <p className="pl-note-d">Our team is working on this step and will message you when it moves on.</p>
+                                            </div>
+                                        </div>
+                                    ) : null}
+
+                                    {stages.length > 0 && (
+                                        <ol className="pl-vsteps" aria-label="All steps">
+                                            {stages.map((s, i) => {
+                                                const done = completed || (currentIndex >= 0 && i < currentIndex)
+                                                const cur = !finished && i === currentIndex
+                                                return (
+                                                    <li key={s.id} className={done ? 'done' : ''} aria-current={cur ? 'step' : undefined}>
+                                                        <div className="rail">
+                                                            <span className="dot">{done && <Check size={14} strokeWidth={3} aria-hidden />}</span>
+                                                            {i < stages.length - 1 && <span className="line" />}
+                                                        </div>
+                                                        <div className="txt">
+                                                            <span>{s.name}</span>
+                                                            {cur && <span className="pl-row-sub" style={{ marginTop: 0, fontWeight: 400 }}>Now</span>}
+                                                            {done && <span className="pl-sr">completed</span>}
+                                                        </div>
+                                                    </li>
+                                                )
+                                            })}
+                                        </ol>
+                                    )}
+                                </>
+                            )}
+                        </section>
+
+                        <section className="pl-card" aria-labelledby="hist-h">
+                            <div className="pl-card-h"><h2 id="hist-h">History</h2></div>
+                            {historyError ? (
+                                <div className="pl-empty" style={{ borderTop: 0 }}>
+                                    We couldn't load the history.{' '}
+                                    <button type="button" className="pl-link" onClick={() => window.location.reload()}>Try again</button>
+                                </div>
+                            ) : history === null ? (
+                                <div style={{ padding: '4px 22px 22px' }}><div className="pl-skel" style={{ height: 40 }} role="status" aria-label="Loading" /></div>
+                            ) : (
+                                history.map((h, i) => (
+                                    <div key={h.key} className="pl-row" style={i === 0 ? { borderTop: 0 } : undefined}>
+                                        <div className="pl-row-t" style={{ whiteSpace: 'normal' }}>{h.text}</div>
+                                        <span className="pl-row-sub" style={{ marginTop: 0, flex: 'none' }}>{formatDate(h.at, true)}</span>
+                                    </div>
+                                ))
+                            )}
+                        </section>
+                    </div>
+
+                    <div className="pl-stack">
+                        <section className="pl-card" aria-labelledby="docs-h">
+                            <div className="pl-card-h">
+                                <h2 id="docs-h">Documents</h2>
+                                <Link to="/documents" className="pl-link">See all</Link>
+                            </div>
+                            {docs === null ? (
+                                <div style={{ padding: '4px 22px 22px' }}><div className="pl-skel" style={{ height: 40 }} role="status" aria-label="Loading" /></div>
+                            ) : docs.length === 0 ? (
+                                <div className="pl-empty" style={{ borderTop: 0, paddingTop: 12 }}>No documents on this application yet.</div>
+                            ) : (
+                                docs.slice(0, 6).map((d, i) => (
+                                    <div key={d.id} className="pl-row" style={i === 0 ? { borderTop: 0 } : undefined}>
+                                        <FileText size={22} color="var(--pl-muted)" strokeWidth={1.8} aria-hidden style={{ flex: 'none' }} />
+                                        <div className="pl-row-t">
+                                            <div className="pl-row-title" style={{ fontWeight: 500 }}>{d.name}</div>
+                                            <div className="pl-row-sub">{[d.received_via, d.uploaded_at && `received ${formatDate(d.uploaded_at)}`].filter(Boolean).join(' · ')}</div>
+                                        </div>
+                                        <CheckCircle2 size={20} color="var(--pl-green)" role="img" aria-label="Received" style={{ flex: 'none' }} />
+                                    </div>
+                                ))
+                            )}
+                            <div style={{ padding: '6px 22px 22px' }}>
+                                <Link to="/documents" className="pl-btn2" style={{ width: '100%', boxSizing: 'border-box' }}>Upload a document</Link>
+                            </div>
+                        </section>
+
+                        <section className="pl-card" style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }} aria-labelledby="ask-h">
+                            <div>
+                                <h2 id="ask-h" className="pl-card-title" style={{ fontSize: 19, fontWeight: 700 }}>Questions about this application?</h2>
+                                {c?.case_reference && (
+                                    <p className="pl-note-d" style={{ marginTop: 6, color: 'var(--pl-muted)' }}>
+                                        Quote {c.case_reference} and the team will find it straight away.
+                                    </p>
+                                )}
+                            </div>
+                            <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="pl-btn">Message us on WhatsApp</a>
+                            <Link to={`/help?case=${caseId}`} className="pl-link" style={{ alignSelf: 'center', margin: '-8px 0' }}>Ask a question in the portal</Link>
+                        </section>
                     </div>
                 </div>
             </div>

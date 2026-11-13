@@ -36,6 +36,8 @@ export default function ElabUpdates({ compact=false }: { compact?: boolean }) {
  },[attempt])
  useEffect(()=>{if(active&&!active.stories.every(p=>posts.some(v=>v.id===p.id)&&Date.parse(p.expires_at)>now))setActive(null)},[active,posts,now])
  const visible=posts.filter(p=>Date.parse(p.starts_at)<=now&&Date.parse(p.expires_at)>now)
+ // On Home the strip only appears when there is something to watch.
+ if(compact&&(loading||error||!visible.length))return null
  return <section className={`eu ${compact?'eu-compact':''}`} aria-label="Updates from eLab">
   <header className="eu-header"><div><h2><Radio size={20} aria-hidden />eLab Status</h2><p>Tap a circle to watch the latest from our team.</p></div>{compact&&<Link to="/updates">View all</Link>}</header>
   {loading?<p className="eu-empty" role="status">Loading updates…</p>:error?<p className="eu-empty" role="alert">We couldn’t load updates. <button onClick={()=>setAttempt(v=>v+1)}>Try again</button></p>:!visible.length?<p className="eu-empty">No updates right now. Check back for news from eLab.</p>:<div className="es-strip">{visible.map((p,index)=><button key={p.id} className={`es-story ${seen.includes(p.id)?'es-seen':''}`} onClick={()=>setActive({initial:p.id,stories:visible})} aria-label={`Watch ${p.title}, ${storySlides(p).length} ${storySlides(p).length===1?'update':'updates'}`}><span className="es-ring"><span className={`es-cover es-cover-${index%3}`} aria-hidden>{storySlides(p).some(s=>s.media_type==='video')?<Play size={26} fill="currentColor"/>:<Radio size={28}/>}</span></span><strong>{p.title}</strong><small>{storySlides(p).length} {storySlides(p).length===1?'update':'updates'}</small></button>)}</div>}

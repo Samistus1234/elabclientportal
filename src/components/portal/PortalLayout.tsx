@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Home, Layers, FileText, CreditCard, LifeBuoy, Radio } from 'lucide-react'
+import { Home, Layers, FileText, CreditCard, LifeBuoy } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { getMyPerson, getMyWaitingCases, type MyPerson } from '@/lib/portalData'
+import { displayName, getMyPerson, getMyWaitingCases, type MyPerson } from '@/lib/portalData'
 import '@/portal-v2.css'
 
 const NAV = [
@@ -10,17 +10,19 @@ const NAV = [
     { to: '/applications', label: 'Applications', icon: Layers },
     { to: '/documents', label: 'Documents', icon: FileText },
     { to: '/payments', label: 'Payments', icon: CreditCard },
-    { to: '/updates', label: 'Updates', icon: Radio },
-    { to: '/help', label: 'Help', icon: LifeBuoy, Radio },
+    { to: '/help', label: 'Help', icon: LifeBuoy },
 ]
+// Five tabs at most on phones (Apple HIG). eLab Status (/updates) is reached from
+// its strip on Home, which only shows when there is something to watch.
 
 /** The signed-in applicant's frame: top bar on desktop, tab bar on phones. */
 export default function PortalLayout({ children }: { children: ReactNode }) {
     const navigate = useNavigate()
     const { pathname } = useLocation()
-    // An application page (/case/:id) belongs to the Applications tab.
+    // An application page (/case/:id) belongs to the Applications tab; eLab Status to Home.
     const isOn = (to: string) =>
-        pathname === to || pathname.startsWith(`${to}/`) || (to === '/applications' && pathname.startsWith('/case/'))
+        pathname === to || pathname.startsWith(`${to}/`) || (to === '/applications' && pathname.startsWith('/case/')) ||
+        (to === '/dashboard' && pathname.startsWith('/updates'))
     const [person, setPerson] = useState<MyPerson | null>(null)
     const [menuOpen, setMenuOpen] = useState(false)
     const [waitingCount, setWaitingCount] = useState(0)
@@ -72,7 +74,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
             <header className="pl-bar">
                 <div className="pl-bar-in">
                     <Link to="/dashboard" className="pl-logo" aria-label="eLab home">
-                        <img src="/elab-logo.png" alt="eLab Solutions International" />
+                        <img src="/elab-logo-blue.png" alt="eLab Solutions International" width="148" height="28" />
                     </Link>
                     <nav className="pl-nav" aria-label="Main">
                         {NAV.map((n) => (
@@ -99,7 +101,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
                                 {person && (
                                     <div style={{ padding: '8px 12px 10px', borderBottom: '1px solid var(--pl-line)', marginBottom: 4 }}>
                                         <div style={{ fontWeight: 600, fontSize: 14 }}>
-                                            {[person.first_name, person.last_name].filter(Boolean).join(' ')}
+                                            {[displayName(person.first_name), displayName(person.last_name)].filter(Boolean).join(' ')}
                                         </div>
                                         <div className="pl-row-sub">{person.email}</div>
                                     </div>

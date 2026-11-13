@@ -53,7 +53,7 @@ export default function DocumentsPage() {
 
     return (
         <PortalLayout>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 860 }}>
+            <div className="pl-page pl-page-narrow" style={{ maxWidth: 860 }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 12 }}>
                     <div style={{ flex: '1 1 260px' }}>
                         <h1 className="pl-h1">Documents</h1>
