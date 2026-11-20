@@ -188,6 +188,15 @@ a.pl-row:hover, a.pl-row:active { background: var(--pl-fill); }
 .pl-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 @media (max-width: 767px) { .pl-actions > * { flex: 1 1 100%; } }
 .pl-chev { color: #86868B; flex: none; }
+/* Phones: an application's name, step and reference are never cut off. In "Your other
+   applications" the step count drops under the text so the name keeps the row's width. */
+@media (max-width: 767px) {
+    .pl-row-app { display: grid; grid-template-columns: minmax(0, 1fr) auto; row-gap: 4px; }
+    .pl-row-app > .pl-row-t { grid-column: 1; }
+    .pl-row-app > .pl-row-step { grid-column: 1; grid-row: 2; }
+    .pl-row-app > .pl-chev { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+    .pl-row-app .pl-row-title, .pl-row-app .pl-row-sub, .pl-hero-next { white-space: normal; overflow-wrap: anywhere; }
+}
 .pl-feed-dot { width: 8px; height: 8px; border-radius: 4px; background: #D2D2D7; margin-top: 7px; flex: none; }
 .pl-feed-dot.new { background: var(--pl-blue); }
 .pl-split { display: grid; gap: 20px; }
