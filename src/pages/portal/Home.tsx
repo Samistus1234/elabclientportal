@@ -141,7 +141,7 @@ export default function Home() {
                                     ))}
                                 </ol>
                                 {focusPos && showLabels && (
-                                    <div className="pl-row-sub" style={{ marginTop: 0 }} aria-hidden>
+                                    <div className="pl-row-sub pl-hero-next" style={{ marginTop: 0 }} aria-hidden>
                                         Step {focusPos.index} of {focusPos.count}
                                         {focusStages[focusIndex + 1] ? ` · next: ${focusStages[focusIndex + 1].name}` : ''}
                                     </div>
@@ -216,14 +216,21 @@ export default function Home() {
                             {others.map((c, i) => {
                                 const pos = stepPosition(stages[c.pipeline_id || ''], c.stage_id)
                                 return (
-                                    <Link key={c.id} to={`/case/${c.id}`} className="pl-row" style={i === 0 ? { borderTop: 0 } : undefined}>
+                                    <Link key={c.id} to={`/case/${c.id}`} className="pl-row pl-row-app" style={i === 0 ? { borderTop: 0 } : undefined}>
                                         <div className="pl-row-t">
                                             <div className="pl-row-title">{c.pipeline_name || 'Application'}</div>
                                             <div className="pl-row-sub">
-                                                {[waitingIds.has(c.id) ? 'Needs your attention' : c.stage_name, c.case_reference].filter(Boolean).join(' · ')}
+                                                {waitingIds.has(c.id) ? 'Needs your attention' : c.stage_name}
+                                                {c.case_reference && (
+                                                    <>
+                                                        {(waitingIds.has(c.id) || c.stage_name) && ' · '}
+                                                        {/* kept whole, so a wrapped line never splits the reference */}
+                                                        <span style={{ whiteSpace: 'nowrap' }}>{c.case_reference}</span>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
-                                        {pos && <span className="pl-row-sub pl-num" style={{ marginTop: 0, flex: 'none' }}>Step {pos.index} of {pos.count}</span>}
+                                        {pos && <span className="pl-row-sub pl-row-step pl-num" style={{ marginTop: 0, flex: 'none' }}>Step {pos.index} of {pos.count}</span>}
                                         <ChevronRight size={18} className="pl-chev" aria-hidden />
                                     </Link>
                                 )
