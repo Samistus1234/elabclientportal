@@ -4,7 +4,8 @@ import { format, parseISO } from 'date-fns'
 import { Check } from 'lucide-react'
 import '@/portal-v2.css'
 import {
-    feeStateLabel, formatMoney, getCaseProgress, isElabPayee, keyDateLabel, sortDoneLatestFirst,
+    feeStateLabel, formatMoney, getCaseProgress, isElabPayee, isExpired, itemStatusLabel, keyDateLabel,
+    sortDoneLatestFirst, todayIso,
     type CaseProgress as Progress, type FeeState, type ProgressItem,
 } from '@/lib/caseProgress'
 
@@ -50,21 +51,32 @@ function Shell({ children }: { children: React.ReactNode }) {
     )
 }
 
-function ItemRow({ it, first, doneStyle }: { it: ProgressItem; first: boolean; doneStyle?: boolean }) {
+// How a row reads in its section: "waiting" shows the client's deadline,
+// "status" a grey In progress / Not started tag (R20), "done" the done date.
+type RowKind = 'waiting' | 'status' | 'done'
+
+function ItemRow({ it, first, kind, today }: { it: ProgressItem; first: boolean; kind: RowKind; today: string }) {
+    const tag = kind === 'status' ? itemStatusLabel(it.status) : null
     return (
         <div className="pl-row" style={{ alignItems: 'flex-start', ...(first ? { borderTop: 0 } : {}) }}>
             <div className="pl-row-t" style={WRAP}>
                 <div style={{ fontWeight: 600 }}>
-                    {doneStyle && it.done_on ? `${it.title} · ${fmt(it.done_on)}` : it.title}
+                    {kind === 'done' && it.done_on ? `${it.title} · ${fmt(it.done_on)}` : it.title}
                 </div>
                 {it.note && <div className="pl-note-d" style={WRAP}>{it.note}</div>}
-                {!doneStyle && it.due_on && <div className="pl-row-sub" style={{ whiteSpace: 'normal' }}>By {fmt(it.due_on)}</div>}
+                {kind === 'waiting' && it.due_on && <div className="pl-row-sub" style={{ whiteSpace: 'normal' }}>By {fmt(it.due_on)}</div>}
+                {isExpired(it.valid_until, today) && (
+                    <div className="pl-row-sub" style={{ whiteSpace: 'normal', color: 'var(--pl-red)', fontWeight: 600 }}>
+                        Expired {fmt(it.valid_until)}
+                    </div>
+                )}
             </div>
+            {tag && <span className="pl-tag pl-tag-grey" style={{ flexShrink: 0 }}>{tag}</span>}
         </div>
     )
 }
 
-function Section({ title, items, amber, doneStyle }: { title: string; items: ProgressItem[]; amber?: boolean; doneStyle?: boolean }) {
+function Section({ title, items, amber, kind, today }: { title: string; items: ProgressItem[]; amber?: boolean; kind: RowKind; today: string }) {
     if (items.length === 0) return null
     return (
         <section
@@ -73,12 +85,32 @@ function Section({ title, items, amber, doneStyle }: { title: string; items: Pro
             style={amber ? { boxShadow: 'inset 4px 0 0 var(--pl-amber-line)' } : undefined}
         >
             <div className="pl-card-h"><h2 style={WRAP}>{title}</h2></div>
-            {items.map((it, i) => <ItemRow key={`${it.title}-${i}`} it={it} first={i === 0} doneStyle={doneStyle} />)}
+            {items.map((it, i) => <ItemRow key={`${it.title}-${i}`} it={it} first={i === 0} kind={kind} today={today} />)}
         </section>
     )
 }
 
-function DoneSection({ items }: { items: ProgressItem[] }) {
+function ComingUp({ phases }: { phases: Progress['coming_up'] }) {
+    if (phases.length === 0) return null
+    return (
+        <section className="pl-card" aria-label="Coming up">
+            <div className="pl-card-h"><h2 style={{ color: 'var(--pl-muted)' }}>Coming up</h2></div>
+            {phases.map((ph, pi) => (
+                <div key={`${pi}-${ph.phase}`} style={pi > 0 ? { borderTop: '1px solid var(--pl-line)' } : undefined}>
+                    <h3 className="pl-eyebrow" style={{ padding: '14px 22px 2px', ...WRAP }}>{ph.phase}</h3>
+                    {ph.titles.map((t, i) => (
+                        <div key={`${t}-${i}`} className="pl-row" style={{ borderTop: 0, padding: '8px 22px', color: 'var(--pl-muted)', ...WRAP }}>
+                            {t}
+                        </div>
+                    ))}
+                </div>
+            ))}
+            <div style={{ height: 8 }} />
+        </section>
+    )
+}
+
+function DoneSection({ items, today }: { items: ProgressItem[]; today: string }) {
     const [all, setAll] = useState(false)
     if (items.length === 0) return null
     // Newest completion date first (items without a date last).
@@ -87,7 +119,7 @@ function DoneSection({ items }: { items: ProgressItem[] }) {
     return (
         <section className="pl-card" aria-label="Done">
             <div className="pl-card-h"><h2>Done</h2></div>
-            {shown.map((it, i) => <ItemRow key={`${it.title}-${i}`} it={it} first={i === 0} doneStyle />)}
+            {shown.map((it, i) => <ItemRow key={`${it.title}-${i}`} it={it} first={i === 0} kind="done" today={today} />)}
             {!all && ordered.length > 3 && (
                 <div className="pl-row" style={{ padding: '4px 22px' }}>
                     <button type="button" className="pl-link" onClick={() => setAll(true)}>Show all ({ordered.length})</button>
@@ -166,6 +198,7 @@ export default function CaseProgress() {
     }
 
     const g = data.groups
+    const today = todayIso()
     const others = new Map<string, ProgressItem[]>()
     for (const it of g.with_others) {
         const k = it.third_party || 'others'
@@ -180,10 +213,12 @@ export default function CaseProgress() {
                     <p className="pl-sub" style={{ margin: '8px 0 0', ...WRAP }}>{data.service} · Ref {data.case_reference}</p>
                     <div style={{ marginTop: 10 }}>
                         {data.is_complete ? (
-                            <span className="pl-tag pl-tag-green" style={{ display: 'inline-block', whiteSpace: 'normal', ...WRAP }}>{data.deliverable}</span>
-                        ) : (
+                            <span className="pl-tag pl-tag-green" style={{ display: 'inline-block', whiteSpace: 'normal', ...WRAP }}>
+                                Complete · {data.deliverable}
+                            </span>
+                        ) : data.last_updated ? (
                             <p className="pl-row-sub" style={{ margin: 0 }}>Last updated {fmt(data.last_updated)}</p>
-                        )}
+                        ) : null}
                     </div>
                 </div>
 
@@ -210,12 +245,13 @@ export default function CaseProgress() {
                     </section>
                 )}
 
-                <Section title="Waiting on you" items={g.waiting_on_you} amber />
-                <Section title="With eLab" items={g.with_elab} />
+                <Section title="Waiting on you" items={g.waiting_on_you} amber kind="waiting" today={today} />
+                <Section title="With eLab" items={g.with_elab} kind="status" today={today} />
                 {[...others.entries()].map(([who, items]) => (
-                    <Section key={who} title={`With ${who}`} items={items} />
+                    <Section key={who} title={`With ${who}`} items={items} kind="status" today={today} />
                 ))}
-                <DoneSection items={g.done} />
+                <ComingUp phases={data.coming_up ?? []} />
+                <DoneSection items={g.done} today={today} />
 
                 {data.key_dates.length > 0 && (
                     <section className="pl-card" aria-label="Key dates">

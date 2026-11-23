@@ -2,14 +2,18 @@ import { supabase } from '@/lib/supabase'
 
 export type PhaseState = 'done' | 'current' | 'upcoming'
 export type KeyDateKind = 'valid_until' | 'event' | 'due'
+/** Open items: todo / in_progress / waiting (R20). Items in the Done group carry 'done'. */
+export type ItemStatus = 'todo' | 'in_progress' | 'waiting' | 'done'
 export type FeeState =
     | 'paid' | 'being_checked' | 'part_paid' | 'invoiced'
     | 'coming_later' | 'paid_directly' | 'to_be_invoiced'
 
 export interface ProgressItem {
     title: string
+    status: ItemStatus
     note: string | null
     third_party: string | null
+    /** Sent only for waiting_on_you items (R21d). */
     due_on: string | null
     valid_until: string | null
     event_date: string | null
@@ -43,9 +47,11 @@ export interface CaseProgress {
         with_others: ProgressItem[]
         done: ProgressItem[]
     }
+    /** Open items in phases after the current one, titles only, in phase order (R20). */
+    coming_up: { phase: string; titles: string[] }[]
     key_dates: { label: string; kind: KeyDateKind; date: string }[]
     fees: ProgressFee[]
-    last_updated: string
+    last_updated: string | null
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -80,6 +86,27 @@ export function sortDoneLatestFirst(items: ProgressItem[]): ProgressItem[] {
     })
 }
 
+/** "In progress" / "Not started" for open items outside Waiting on you (R20). */
+export function itemStatusLabel(status: ItemStatus): string | null {
+    switch (status) {
+        case 'in_progress':
+        case 'waiting': return 'In progress'
+        case 'todo': return 'Not started'
+        default: return null
+    }
+}
+
+/** Today's date as YYYY-MM-DD in the viewer's local time. */
+export function todayIso(now: Date = new Date()): string {
+    const p = (n: number) => String(n).padStart(2, '0')
+    return `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}`
+}
+
+/** A valid_until strictly before today has expired (R21f). */
+export function isExpired(validUntil: string | null, today: string = todayIso()): boolean {
+    return !!validUntil && validUntil < today
+}
+
 export function feeStateLabel(fee: ProgressFee): string {
     switch (fee.state) {
         case 'paid': return 'Paid'
@@ -110,59 +137,86 @@ export async function getCaseProgress(token: string): Promise<CaseProgress | nul
 }
 
 const item = (title: string, extra: Partial<ProgressItem> = {}): ProgressItem => ({
-    title, note: null, third_party: null, due_on: null, valid_until: null,
+    title, status: 'todo', note: null, third_party: null, due_on: null, valid_until: null,
     event_date: null, done_on: null, is_milestone: false, ...extra,
 })
 
-// Dev-only sample (`?fixture=1`); never reached in production builds.
+// Dev-only samples (`?fixture=1`, `?fixture=alldone`); never reached in production builds.
+// The main sample is a mid-case Texas case (route texas_bon with optional item 5),
+// items 1-3 done, so the page shows what a real client sees: titles and phase
+// labels are the real ones from 20261123120000_licensure_checklist.sql.
+const T = {
+    ces: 'Your credential evaluation (CES) report',
+    quote: 'Quote agreed and first payment made',
+    appOpen: 'Your Texas application is open',
+    nmcn: 'Nigerian licence verification received by the Texas Board',
+    scfhs: 'Saudi licence verification received by the Texas Board',
+    prints: 'Your fingerprints have been accepted',
+    juris: 'Jurisprudence exam passed',
+    cleared: 'The Texas Board has cleared your file',
+    att: 'Your ATT (Authorization to Test) has been issued',
+    city: 'Test city chosen',
+    booked: 'Your exam is booked',
+    result: 'Your exam result',
+    licence: 'Your Texas nursing licence has been issued',
+}
+
 const FIXTURE: CaseProgress = {
     first_name: 'Amaka',
     case_reference: 'ELB-2026-04821',
-    service: 'Texas nursing licence',
-    deliverable: 'Authorization to Test',
+    service: 'Texas nursing licence (NCLEX)',
+    deliverable: 'Your Texas nursing licence',
     is_complete: false,
     last_updated: '2026-11-20T10:00:00Z',
     phases: [
         { label: 'Getting started', state: 'done' },
-        { label: 'Board application', state: 'current' },
-        { label: 'Fingerprints', state: 'upcoming' },
-        { label: 'Authorization to Test', state: 'upcoming' },
+        { label: 'Preparing your documents and verifications', state: 'current' },
+        { label: 'With the board', state: 'upcoming' },
+        { label: 'Your exam', state: 'upcoming' },
+        { label: 'Licensed / complete', state: 'upcoming' },
     ],
     groups: {
         waiting_on_you: [
-            item('Send a clear photo of your passport', {
-                note: 'The photo page, all four corners visible, no glare.', due_on: '2026-12-01',
+            item(T.prints, {
+                status: 'waiting',
+                note: 'Book your IdentoGO appointment with the code we sent on WhatsApp, then send us the receipt.',
+                due_on: '2026-12-05',
             }),
+            item(T.juris, { note: 'Take the online Texas jurisprudence exam. We will send you the link and a short guide.' }),
         ],
-        with_elab: [
-            item('Complete your board application', { note: 'We are filling in your profile and answering the background questions.' }),
-        ],
+        with_elab: [],
         with_others: [
-            item('Verification from your nursing council', { third_party: 'NMCN', note: 'They send it straight to the board. This usually takes several weeks.' }),
-            item('Transcript from your school', { third_party: 'University of Nigeria', valid_until: '2027-02-10' }),
-            item('Fingerprint appointment', { third_party: 'NMCN', event_date: '2026-12-15' }),
+            item(T.nmcn, {
+                status: 'in_progress', third_party: 'NMCN',
+                note: 'NMCN sends this straight to the Texas Board. It usually takes several weeks.',
+            }),
+            item(T.scfhs, { third_party: 'SCFHS' }),
         ],
         done: [
-            item('Account created', { done_on: '2026-11-02' }),
-            item('Documents received', { done_on: '2026-11-05' }),
-            item('Application fee paid', { done_on: '2026-11-08' }),
-            item('Identity check', { done_on: '2026-11-10' }),
+            item(T.ces, { status: 'done', done_on: '2026-10-28', valid_until: '2027-10-28' }),
+            item(T.quote, { status: 'done', done_on: '2026-11-02' }),
+            item(T.appOpen, { status: 'done', done_on: '2026-11-12', is_milestone: true, valid_until: '2027-11-12' }),
         ],
     },
+    coming_up: [
+        { phase: 'With the board', titles: [T.cleared] },
+        { phase: 'Your exam', titles: [T.att, T.city, T.booked, T.result] },
+        { phase: 'Licensed / complete', titles: [T.licence] },
+    ],
     key_dates: [
-        { label: 'Fingerprint appointment', kind: 'event', date: '2026-12-15' },
-        { label: 'Send a clear photo of your passport', kind: 'due', date: '2026-12-01' },
-        { label: 'Transcript from your school', kind: 'valid_until', date: '2027-02-10' },
+        { label: T.prints, kind: 'due', date: '2026-12-05' },
+        { label: T.ces, kind: 'valid_until', date: '2027-10-28' },
+        { label: T.appOpen, kind: 'valid_until', date: '2027-11-12' },
     ],
     fees: [
-        { label: 'Board application fee', payee: 'Texas BON', amount: 373, currency: 'USD', state: 'paid', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
-        { label: 'eLab service fee, first part', payee: 'elab', amount: 500, currency: 'USD', state: 'being_checked', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
+        { label: 'eLab service fee, first part', payee: 'elab', amount: 500, currency: 'USD', state: 'paid', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
+        { label: 'Credential evaluation (CES)', payee: 'elab', amount: 550, currency: 'USD', state: 'being_checked', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
         { label: 'eLab service fee, second part', payee: 'elab', amount: 400, currency: 'USD', state: 'part_paid', invoice_id: '11111111-1111-4111-8111-111111111111', amount_due: 150, amount_due_currency: 'USD', invoice_shared: false, due_with: null },
-        { label: 'Fingerprint processing', payee: 'elab', amount: 60000, currency: 'NGN', state: 'invoiced', invoice_id: '22222222-2222-4222-8222-222222222222', amount_due: 60000, amount_due_currency: 'NGN', invoice_shared: false, due_with: null },
-        { label: 'Exam booking', payee: 'elab', amount: 150, currency: 'USD', state: 'coming_later', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: 'your Authorization to Test arrives' },
+        { label: 'NMCN licence verification', payee: 'elab', amount: 70000, currency: 'NGN', state: 'invoiced', invoice_id: '22222222-2222-4222-8222-222222222222', amount_due: 70000, amount_due_currency: 'NGN', invoice_shared: false, due_with: null },
+        { label: 'NCLEX registration', payee: 'Pearson VUE', amount: 350, currency: 'USD', state: 'coming_later', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: T.att },
         { label: 'Courier', payee: 'elab', amount: 40, currency: 'USD', state: 'coming_later', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
-        { label: 'Fingerprint card', payee: 'IdentoGO', amount: 50, currency: 'USD', state: 'paid_directly', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
-        { label: 'Licence verification', payee: 'elab', amount: 70000, currency: 'NGN', state: 'to_be_invoiced', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
+        { label: 'Texas Board application fee', payee: 'Texas Board of Nursing', amount: 100, currency: 'USD', state: 'paid_directly', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
+        { label: 'SCFHS licence verification', payee: 'elab', amount: 300, currency: 'SAR', state: 'to_be_invoiced', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
         // USD line billed on an NGN invoice
         { label: 'Document courier', payee: 'elab', amount: 30, currency: 'USD', state: 'invoiced', invoice_id: '33333333-3333-4333-8333-333333333333', amount_due: 45000, amount_due_currency: 'NGN', invoice_shared: false, due_with: null },
         // shared invoice: no per-line amount
@@ -171,11 +225,32 @@ const FIXTURE: CaseProgress = {
     ],
 }
 
+// A case finished in September 2026; the CES, application and ATT validity
+// dates have since passed, so those rows show "Expired" (R21f).
 const FIXTURE_ALL_DONE: CaseProgress = {
     ...FIXTURE,
     is_complete: true,
+    last_updated: '2026-09-14T09:30:00Z',
     phases: FIXTURE.phases.map((p) => ({ ...p, state: 'done' as const })),
-    groups: { waiting_on_you: [], with_elab: [], with_others: [], done: FIXTURE.groups.done },
+    groups: {
+        waiting_on_you: [], with_elab: [], with_others: [],
+        done: [
+            item(T.ces, { status: 'done', done_on: '2025-10-28', valid_until: '2026-10-28' }),
+            item(T.quote, { status: 'done', done_on: '2025-11-02' }),
+            item(T.appOpen, { status: 'done', done_on: '2025-11-12', is_milestone: true, valid_until: '2026-11-12' }),
+            item(T.nmcn, { status: 'done', third_party: 'NMCN', done_on: '2025-12-20' }),
+            item(T.scfhs, { status: 'done', third_party: 'SCFHS', done_on: '2026-01-08' }),
+            item(T.prints, { status: 'done', done_on: '2025-12-03' }),
+            item(T.juris, { status: 'done', done_on: '2025-12-10' }),
+            item(T.cleared, { status: 'done', done_on: '2026-02-15' }),
+            item(T.att, { status: 'done', done_on: '2026-03-01', is_milestone: true, valid_until: '2026-05-30' }),
+            item(T.city, { status: 'done', done_on: '2026-03-04' }),
+            item(T.booked, { status: 'done', done_on: '2026-03-10', is_milestone: true, event_date: '2026-04-22' }),
+            item(T.result, { status: 'done', done_on: '2026-04-24', is_milestone: true }),
+            item(T.licence, { status: 'done', done_on: '2026-09-14', is_milestone: true }),
+        ],
+    },
+    coming_up: [],
     key_dates: [],
     fees: FIXTURE.fees.filter((f) => f.state === 'paid' || f.state === 'paid_directly'),
 }
