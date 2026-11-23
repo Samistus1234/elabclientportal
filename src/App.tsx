@@ -40,6 +40,7 @@ const ContactRegister = lazy(() => import('@/pages/ContactRegister'))
 const ContactDashboard = lazy(() => import('@/pages/ContactDashboard'))
 const ContactRequestDetail = lazy(() => import('@/pages/ContactRequestDetail'))
 const PayInvoice = lazy(() => import('@/pages/PayInvoice'))
+const CaseProgress = lazy(() => import('@/pages/CaseProgress'))
 const ToolsHome = lazy(() => import('@/pages/tools/ToolsHome'))
 const MergePdf = lazy(() => import('@/pages/tools/pdf/MergePdf'))
 const CompressPdf = lazy(() => import('@/pages/tools/pdf/CompressPdf'))
@@ -76,7 +77,7 @@ function isPublicPage(path: string) {
         '/forgot-password', '/reset-password', '/faq', '/support', '/privacy',
         '/terms', '/refund-policy', '/verification-fees', '/referral/join'].includes(path)
         || path.startsWith('/tools') || path.startsWith('/support/')
-        || path.startsWith('/pay/') || path.startsWith('/r/')
+        || path.startsWith('/pay/') || path.startsWith('/r/') || path.startsWith('/c/')
 }
 
 // Layout wrapper for authenticated pages
@@ -244,6 +245,7 @@ export default function App() {
 
                 {/* Public payment page - no auth required */}
                 <Route path="/pay/:invoiceId" element={<PayInvoice />} />
+                <Route path="/c/:token" element={<CaseProgress />} />
 
                 {/* Free Tools - Public, no auth required */}
                 <Route path="/tools" element={<ToolsHome />} />
