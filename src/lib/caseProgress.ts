@@ -25,6 +25,8 @@ export interface ProgressFee {
     state: FeeState
     invoice_id: string | null
     amount_due: number | null
+    amount_due_currency: string | null
+    invoice_shared: boolean
     due_with: string | null
 }
 
@@ -82,8 +84,13 @@ export function feeStateLabel(fee: ProgressFee): string {
     switch (fee.state) {
         case 'paid': return 'Paid'
         case 'being_checked': return 'Payment being checked'
-        case 'part_paid': return `Part paid, ${money(fee.amount_due, fee.currency)} left`
-        case 'invoiced': return `To pay: ${money(fee.amount_due, fee.currency)}`
+        // amount_due is in the invoice's own currency, which can differ from the line's.
+        case 'part_paid':
+            return fee.amount_due == null ? 'Part paid'
+                : `Part paid, ${money(fee.amount_due, fee.amount_due_currency || fee.currency)} left`
+        case 'invoiced':
+            return fee.amount_due == null ? 'To pay'
+                : `To pay: ${money(fee.amount_due, fee.amount_due_currency || fee.currency)}`
         case 'coming_later': return fee.due_with ? `Later, when ${fee.due_with}` : 'Later'
         case 'paid_directly': return `Paid directly to ${isElabPayee(fee.payee) ? 'eLab' : fee.payee}`
         case 'to_be_invoiced': return 'To be invoiced'
@@ -92,8 +99,10 @@ export function feeStateLabel(fee: ProgressFee): string {
 
 export async function getCaseProgress(token: string): Promise<CaseProgress | null> {
     if (!UUID_RE.test(token)) return null
-    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('fixture') === '1') {
-        return FIXTURE
+    if (import.meta.env.DEV) {
+        const fx = new URLSearchParams(window.location.search).get('fixture')
+        if (fx === '1') return FIXTURE
+        if (fx === 'alldone') return FIXTURE_ALL_DONE
     }
     const { data, error } = await supabase.rpc('get_public_case_progress', { p_token: token })
     if (error) throw error
@@ -146,13 +155,27 @@ const FIXTURE: CaseProgress = {
         { label: 'Transcript from your school', kind: 'valid_until', date: '2027-02-10' },
     ],
     fees: [
-        { label: 'Board application fee', payee: 'Texas BON', amount: 373, currency: 'USD', state: 'paid', invoice_id: null, amount_due: null, due_with: null },
-        { label: 'eLab service fee, first part', payee: 'elab', amount: 500, currency: 'USD', state: 'being_checked', invoice_id: null, amount_due: null, due_with: null },
-        { label: 'eLab service fee, second part', payee: 'elab', amount: 400, currency: 'USD', state: 'part_paid', invoice_id: '11111111-1111-4111-8111-111111111111', amount_due: 150, due_with: null },
-        { label: 'Fingerprint processing', payee: 'elab', amount: 60000, currency: 'NGN', state: 'invoiced', invoice_id: '22222222-2222-4222-8222-222222222222', amount_due: 60000, due_with: null },
-        { label: 'Exam booking', payee: 'elab', amount: 150, currency: 'USD', state: 'coming_later', invoice_id: null, amount_due: null, due_with: 'your Authorization to Test arrives' },
-        { label: 'Courier', payee: 'elab', amount: 40, currency: 'USD', state: 'coming_later', invoice_id: null, amount_due: null, due_with: null },
-        { label: 'Fingerprint card', payee: 'IdentoGO', amount: 50, currency: 'USD', state: 'paid_directly', invoice_id: null, amount_due: null, due_with: null },
-        { label: 'Licence verification', payee: 'elab', amount: 70000, currency: 'NGN', state: 'to_be_invoiced', invoice_id: null, amount_due: null, due_with: null },
+        { label: 'Board application fee', payee: 'Texas BON', amount: 373, currency: 'USD', state: 'paid', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
+        { label: 'eLab service fee, first part', payee: 'elab', amount: 500, currency: 'USD', state: 'being_checked', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
+        { label: 'eLab service fee, second part', payee: 'elab', amount: 400, currency: 'USD', state: 'part_paid', invoice_id: '11111111-1111-4111-8111-111111111111', amount_due: 150, amount_due_currency: 'USD', invoice_shared: false, due_with: null },
+        { label: 'Fingerprint processing', payee: 'elab', amount: 60000, currency: 'NGN', state: 'invoiced', invoice_id: '22222222-2222-4222-8222-222222222222', amount_due: 60000, amount_due_currency: 'NGN', invoice_shared: false, due_with: null },
+        { label: 'Exam booking', payee: 'elab', amount: 150, currency: 'USD', state: 'coming_later', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: 'your Authorization to Test arrives' },
+        { label: 'Courier', payee: 'elab', amount: 40, currency: 'USD', state: 'coming_later', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
+        { label: 'Fingerprint card', payee: 'IdentoGO', amount: 50, currency: 'USD', state: 'paid_directly', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
+        { label: 'Licence verification', payee: 'elab', amount: 70000, currency: 'NGN', state: 'to_be_invoiced', invoice_id: null, amount_due: null, amount_due_currency: null, invoice_shared: false, due_with: null },
+        // USD line billed on an NGN invoice
+        { label: 'Document courier', payee: 'elab', amount: 30, currency: 'USD', state: 'invoiced', invoice_id: '33333333-3333-4333-8333-333333333333', amount_due: 45000, amount_due_currency: 'NGN', invoice_shared: false, due_with: null },
+        // shared invoice: no per-line amount
+        { label: 'Translation', payee: 'elab', amount: 20, currency: 'USD', state: 'invoiced', invoice_id: '44444444-4444-4444-8444-444444444444', amount_due: null, amount_due_currency: null, invoice_shared: true, due_with: null },
+        { label: 'Notarisation', payee: 'elab', amount: 25, currency: 'USD', state: 'part_paid', invoice_id: '44444444-4444-4444-8444-444444444444', amount_due: null, amount_due_currency: null, invoice_shared: true, due_with: null },
     ],
+}
+
+const FIXTURE_ALL_DONE: CaseProgress = {
+    ...FIXTURE,
+    is_complete: true,
+    phases: FIXTURE.phases.map((p) => ({ ...p, state: 'done' as const })),
+    groups: { waiting_on_you: [], with_elab: [], with_others: [], done: FIXTURE.groups.done },
+    key_dates: [],
+    fees: FIXTURE.fees.filter((f) => f.state === 'paid' || f.state === 'paid_directly'),
 }
