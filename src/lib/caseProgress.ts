@@ -64,6 +64,20 @@ export function formatMoney(n: number, currency: string): string {
     return money(n, currency)
 }
 
+export function isElabPayee(payee: string): boolean {
+    return payee.trim().toLowerCase() === 'elab'
+}
+
+/** Latest done_on first, items with no date last; ties keep the reversed RPC order. */
+export function sortDoneLatestFirst(items: ProgressItem[]): ProgressItem[] {
+    return [...items].reverse().sort((a, b) => {
+        if (a.done_on === b.done_on) return 0
+        if (!a.done_on) return 1
+        if (!b.done_on) return -1
+        return a.done_on < b.done_on ? 1 : -1
+    })
+}
+
 export function feeStateLabel(fee: ProgressFee): string {
     switch (fee.state) {
         case 'paid': return 'Paid'
@@ -71,7 +85,7 @@ export function feeStateLabel(fee: ProgressFee): string {
         case 'part_paid': return `Part paid, ${money(fee.amount_due, fee.currency)} left`
         case 'invoiced': return `To pay: ${money(fee.amount_due, fee.currency)}`
         case 'coming_later': return fee.due_with ? `Later, when ${fee.due_with}` : 'Later'
-        case 'paid_directly': return `Paid directly to ${fee.payee}`
+        case 'paid_directly': return `Paid directly to ${isElabPayee(fee.payee) ? 'eLab' : fee.payee}`
         case 'to_be_invoiced': return 'To be invoiced'
     }
 }

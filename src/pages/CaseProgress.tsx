@@ -4,7 +4,7 @@ import { format, parseISO } from 'date-fns'
 import { Check } from 'lucide-react'
 import '@/portal-v2.css'
 import {
-    feeStateLabel, formatMoney, getCaseProgress, keyDateLabel,
+    feeStateLabel, formatMoney, getCaseProgress, isElabPayee, keyDateLabel, sortDoneLatestFirst,
     type CaseProgress as Progress, type FeeState, type ProgressItem,
 } from '@/lib/caseProgress'
 
@@ -81,8 +81,8 @@ function Section({ title, items, amber, doneStyle }: { title: string; items: Pro
 function DoneSection({ items }: { items: ProgressItem[] }) {
     const [all, setAll] = useState(false)
     if (items.length === 0) return null
-    // Latest first: the contract lists items in phase order, so the last ones are the newest.
-    const ordered = [...items].reverse()
+    // Newest completion date first (items without a date last).
+    const ordered = sortDoneLatestFirst(items)
     const shown = all ? ordered : ordered.slice(0, 3)
     return (
         <section className="pl-card" aria-label="Done">
@@ -191,8 +191,8 @@ export default function CaseProgress() {
                     <section className="pl-card pl-card-pad" aria-labelledby="prog-h" style={{ padding: '22px' }}>
                         <h2 id="prog-h" className="pl-card-title" style={{ fontSize: 19, fontWeight: 700, margin: '0 0 10px' }}>Your progress</h2>
                         <ol className="pl-steps">
-                            {data.phases.map((p) => (
-                                <li key={p.label} className="pl-step" aria-current={p.state === 'current' ? 'step' : undefined}>
+                            {data.phases.map((p, i) => (
+                                <li key={`${i}-${p.label}`} className="pl-step" aria-current={p.state === 'current' ? 'step' : undefined}>
                                     <span className={`pl-dot ${p.state === 'done' ? 'pl-dot-done' : p.state === 'current' ? 'pl-dot-cur' : 'pl-dot-todo'}`}>
                                         {p.state === 'done' && <Check size={13} strokeWidth={3} aria-hidden />}
                                     </span>
@@ -236,7 +236,7 @@ export default function CaseProgress() {
                                 <div className="pl-row-t" style={WRAP}>
                                     <div style={{ fontWeight: 600 }}>{f.label}</div>
                                     <div className="pl-row-sub pl-num" style={{ whiteSpace: 'normal', ...WRAP }}>
-                                        {f.payee !== 'elab' && `to ${f.payee} · `}{formatMoney(f.amount, f.currency)}
+                                        {!isElabPayee(f.payee) && `to ${f.payee} · `}{formatMoney(f.amount, f.currency)}
                                     </div>
                                     <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                                         <span className={`pl-tag ${FEE_TAG[f.state]}`} style={{ whiteSpace: 'normal', ...WRAP }}>{feeStateLabel(f)}</span>
